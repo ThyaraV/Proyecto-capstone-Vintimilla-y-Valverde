@@ -1,0 +1,227 @@
+main {
+  min-height: 80vh;
+}
+
+.rating span {
+  margin: 0.1rem;
+}
+
+.rating svg {
+  color: #f8e825;
+}
+
+.rating-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding-left: 0.5rem;
+}
+
+.product-title {
+  height: 2.5em; /* Set a fixed height */
+  overflow: hidden; /* Hide overflow content */
+  text-overflow: ellipsis; /* Add ellipsis for long text */
+  white-space: nowrap; /* Prevent wrapping */
+}
+
+table td,
+table th {
+  text-align: center;
+}
+
+.review {
+  margin-top: 30px;
+}
+
+.review h2 {
+  font-size: 24px;
+  background: #f4f4f4;
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+.review button {
+  margin-top: 10px;
+}
+
+.carousel-caption {
+  position: absolute;
+  width: 100%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+/* Agrega este estilo en tu archivo CSS */
+.filter-input {
+  margin-bottom: 15px; /* Espacio debajo de cada entrada */
+  width: 60%; /* Ocupar el ancho completo */
+  border-radius: 5px;
+}
+
+.filter-button {
+  width: 60%; /* Ocupar el ancho completo */
+  background-color: #bb8f56; /* Color del botón */
+  color: white; /* Color del texto */
+  border: none; /* Sin borde */
+  padding: 10px; /* Relleno para hacerlo más grande */
+  cursor: pointer; /* Cursor de mano al pasar por encima */
+  border-radius: 5px;
+}
+
+.filter-button:hover {
+  background-color: #d870b5; /* Cambiar color al pasar el ratón por encima */
+}
+
+.recommendations-container {
+  padding: 20px;
+}
+
+.recommendation-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.recommendation-card {
+  border: 1px solid #ddd;
+  padding: 20px;
+  border-radius: 8px;
+  width: 300px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.recommendation-card h3 {
+  margin-top: 0;
+}
+
+.reason {
+  font-style: italic;
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.recommendations {
+  padding: 20px;
+}
+
+.recommendation-section {
+  margin-bottom: 40px;
+}
+
+.recommendation-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.recommendation-card {
+  border: 1px solid #ddd;
+  padding: 20px;
+  border-radius: 8px;
+  width: 300px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.recommendation-card h3 {
+  margin-top: 0;
+}
+
+.reason {
+  font-style: italic;
+  color: #666;
+  font-size: 0.8rem;
+  margin-top: 15px;
+}
+
+.error {
+  color: red;
+  margin-top: 20px;
+}
+
+.recommendation-container {
+  padding: 20px;
+}
+
+.recommendation-section {
+  margin-bottom: 40px;
+}
+
+.recommendation-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.recommendation-card {
+  border: 1px solid #ddd;
+  padding: 20px;
+  border-radius: 8px;
+  width: 250px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.recommendation-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.recommendation-info {
+  padding: 10px;
+}
+
+/* Puedes añadir más estilos según sea necesario */
+
+
+.supplier-card {
+  max-width: 300px; /* Ajusta este valor según tus necesidades */
+  margin: auto;
+}
+
+.supplier-card-image {
+  max-height: 200px; /* Altura máxima para la imagen */
+  object-fit: cover; /* Asegura que la imagen cubra completamente el espacio asignado */
+}
+
+.supplier-card-description {
+  min-height: 100px; /* Asegura un mínimo de altura para la descripción */
+  overflow: hidden; /* Oculta el texto que exceda el espacio */
+  text-overflow: ellipsis; /* Añade puntos suspensivos si el texto es demasiado largo */
+}
+
+header {
+  background: linear-gradient(to right, #f06f4f, #2d3bb8); /* Degradado de color naranja a morado */
+  padding: 2px 0;
+  height: 60px;
+}
+
+header img {
+  height: 45px; /* Ajusta el tamaño del logo si es necesario */
+  
+}
+
+.navbar-brand {
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  height: 15px;
+  
+}
+
+.navbar-brand img {
+  margin-right: 2px; /* Espacio entre el logo y el texto */
+}
+
+.navbar-dark .navbar-nav .nav-link {
+  color: white;
+  font-weight: bold;
+}
+

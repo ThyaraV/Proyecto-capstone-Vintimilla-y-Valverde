@@ -1,13 +1,16 @@
 import {Navbar, Nav, Container} from 'react-bootstrap'
 import {FaUser} from 'react-icons/fa';
-
+import logo from '../assets/logo2.png'
 const Header = () => {
   return (
     <header>
-        <Navbar bg="dark" variant="dark" expand="lg" collapseOnSelect>
+        <Navbar variant="dark" expand="lg" collapseOnSelect>
             <Container>
-                <Navbar.Brand href="/">Clínica HIGEA</Navbar.Brand>
-                <Navbar.Toggle aria-controls='basic-navbar.nav'></Navbar.Toggle>
+                <Navbar.Brand href="/">
+                <img src={logo} alt='Seguimiento'></img>
+                Clínica del cerebro
+                </Navbar.Brand>
+                <Navbar.Toggle aria-controls='basic-navbar-nav'></Navbar.Toggle>
                 <Navbar.Collapse id='basic-navbar-nav'>
                 <Nav className='ms-auto'>
                     <Nav.Link href="/login">
