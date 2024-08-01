@@ -1,0 +1,15 @@
+{
+  "name": "seguimiento",
+  "version": "2.0.0",
+  "description": "Seguimiento de pacientes con problemas neurodegenerativos",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node backend/server.js"
+  },
+  "author": "Vintimilla y Valverde",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
