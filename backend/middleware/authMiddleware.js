@@ -1,9 +1,9 @@
-import jwt from "jsonwebtoken";
+//import jwt from "jsonwebtoken";
 import asyncHandler from './asyncHandler.js';
 import User from '../models/userModel.js';
 
 const protect=asyncHandler(async(req,res,next)=>{
-    let token;
+   /* let token;
 
     //Lee el jwt de la cookie
     token=req.cookies.jwt;
@@ -26,7 +26,7 @@ const protect=asyncHandler(async(req,res,next)=>{
     }else{
         res.status(401);
         throw new Error('No authorized, no token');
-    }
+    }*/
 });
 
 //Admin middleware
