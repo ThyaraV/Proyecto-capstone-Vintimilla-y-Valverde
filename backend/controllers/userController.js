@@ -1,6 +1,6 @@
 import asyncHandler from "../middleware/asyncHandler.js";
 import User from '../models/userModel.js';
-import jwt from 'jsonwebtoken'
+import generateToken from "../utils/generateToken.js";
 //import generateToken from "../utils/generateToken.js";
 
 //@desc Auth user and get token
@@ -15,16 +15,7 @@ const authUser=asyncHandler(async(req,res)=>{
     console.log('User found:', user);
     
     if (user && (await user.matchPassword(password))) {
-        const token =jwt.sign({userId:user._id}, process.env.JWT_SECRET,{
-            expiresIn:'30d',
-        });
-        res.cookie('jwt', token,{
-            httpOnly:true,
-            secure:process.env.NODE_ENV !== 'development',
-            sameSite:'strict',
-            maxAge:30*24*60*60*1000
-        })
-        //generateToken(res, user._id);
+        generateToken(res, user._id);
         res.status(200).json({
             _id: user._id,
             name: user.name,
@@ -41,7 +32,7 @@ const authUser=asyncHandler(async(req,res)=>{
 //@route GET/api/users
 //@access Public
 const registerUser=asyncHandler(async(req,res)=>{
-    /*const{name,email,password}=req.body;
+    const{name,lastName,cardId,email,phoneNumber,password}=req.body;
 
     const userExists=await User.findOne({email});
     if (userExists){
@@ -50,7 +41,10 @@ const registerUser=asyncHandler(async(req,res)=>{
     }
     const user=await User.create({
         name,
+        lastName,
+        cardId,
         email,
+        phoneNumber,
         password,
     });
     if(user){
@@ -59,14 +53,16 @@ const registerUser=asyncHandler(async(req,res)=>{
         res.status(201).json({
             _id:user._id,
             name:user.name,
+            lastName:user.lastName,
+            cardId:user.cardId,
             email:user.email,
+            phoneNumber:user.phoneNumber,
             isAdmin:user.isAdmin,
         });
     }else{
         res.status(400);
         throw new Error('Datos del usuario inválidos')
-    }*/
-        res.send('Register user');
+    }
 });
 
 
@@ -88,29 +84,35 @@ const logoutUser=asyncHandler(async(req,res)=>{
 //@route GET/api/users/profile
 //@access Private
 const getUserProfile=asyncHandler(async(req,res)=>{
-   /* const user=await User.findById(req.user._id);
+   const user=await User.findById(req.user._id);
     if(user){
         res.status(200).json({
             _id:user._id,
             name:user.name,
+            lastName:user.lastName,
+            cardId:user.cardId,
             email:user.email,
+            phoneNumber:user.phoneNumber,
             isAdmin:user.isAdmin,
         });
     }else{
         res.status(404);
         throw new Error('User not found');
-    }*/
-        res.send('get user profile');
+    
+}
 });
 
 //@desc Update user profile
 //@route PUT/api/users/profile
 //@access Private
 const updateUserProfile=asyncHandler(async(req,res)=>{
-   /* const user=await User.findById(req.user._id);
+   const user=await User.findById(req.user._id);
     if(user){
         user.name=req.body.name || user.name;
+        user.lastName=req.body.lastName || user.lastName;
         user.email=req.body.email || user.email;
+        user.cardId=req.body.cardId || user.cardId;
+        user.phoneNumber=req.body.phoneNumber || user.phoneNumber;
 
         if(req.body.password){
             user.password=req.body.password;
@@ -118,16 +120,18 @@ const updateUserProfile=asyncHandler(async(req,res)=>{
         const updateUser=await user.save();
 
         res.status(200).json({
-            _id:updateUser._id,
-            name:updateUser.name,
-            email:updateUser.email,
-            isAdmin:updateUser.isAdmin,
+            _id:user._id,
+            name:user.name,
+            lastName:user.lastName,
+            cardId:user.cardId,
+            email:user.email,
+            phoneNumber:user.phoneNumber,
+            isAdmin:user.isAdmin,
         });
     }else{
         res.status(404);
         throw new Error('Usuario no encontrado');
-    }*/
-        res.send('update user profile');
+    }
 });
 
 //@desc Get users

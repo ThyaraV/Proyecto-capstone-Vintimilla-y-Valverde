@@ -18,9 +18,11 @@
     "bcryptjs": "^2.4.3",
     "colors": "^1.4.0",
     "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.5.3"
+    "mongoose": "^8.5.3",
+    "react-toastify": "^10.0.5"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

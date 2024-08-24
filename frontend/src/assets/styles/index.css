@@ -198,7 +198,7 @@ table th {
 header {
   background: linear-gradient(to right, #ff914d, #1060ae); /* Degradado de color naranja a morado */
   padding: 2px 0;
-  height: 60px;
+  
 }
 
 header img {
@@ -212,8 +212,7 @@ header img {
   font-weight: bold;
   display: flex;
   align-items: center;
-  height: 15px;
-  
+  height: 15px;  
 }
 
 .navbar-brand img {
