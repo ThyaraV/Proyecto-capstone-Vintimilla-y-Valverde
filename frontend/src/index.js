@@ -7,6 +7,7 @@ import {
   RouterProvider
 } from 'react-router-dom';
 import {Provider} from 'react-redux';
+import PrivateRoute from './components/PrivateRoutes.jsx';
 import store from './store.js';
 import './assets/styles/bootstrap.custom.css';
 import './assets/styles/index.css';
@@ -14,12 +15,18 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import HomeScreenPaciente from './screens/HomeScreenPaciente';
 import Login from './screens/Login';
+import RegisterScreen from './screens/RegisterScreen.jsx';
 
 const router=createBrowserRouter(
   createRoutesFromElements(
   <Route path="/" element={<App/>}>
     <Route index={true} path="/" element={<HomeScreenPaciente/>}/>
     <Route path="/login" element={<Login/>}></Route>
+    <Route path="/register" element={<RegisterScreen/>}></Route>
+  
+    <Route path='' element={<PrivateRoute/>}>
+
+    </Route>
   </Route>
   
   )

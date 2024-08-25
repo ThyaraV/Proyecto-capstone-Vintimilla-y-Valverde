@@ -4,13 +4,13 @@ import cookieParser from 'cookie-parser';
 dotenv.config();
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import userRoutes from './routes/userRoutes.js';
-
-
 import connectDB from './config/db.js';
+
 const port=process.env.PORT || 5000;
 
 connectDB();//Connect to MongoDB
-const app =express();
+
+const app = express();
 
 //Body parser middleware
 app.use(express.json());
@@ -18,12 +18,12 @@ app.use(express.urlencoded({extended:true}));
 
 //Cookie parser middleware
 app.use(cookieParser());
+app.use('/api/users',userRoutes);
 
 app.get('/',(req,res)=>{
     res.send('API is running...')
 })
 
-app.use('/api/users',userRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

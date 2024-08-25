@@ -1,10 +1,30 @@
-import {Navbar, Nav, Container} from 'react-bootstrap'
-import {FaUser} from 'react-icons/fa';
-import logo from '../assets/logo2.png'
+import { useNavigate } from 'react-router-dom';
+import {Badge,Navbar,Nav,Container, NavDropdown} from 'react-bootstrap'
+import {FaShoppingCart,FaUser,FaListUl,FaAward} from 'react-icons/fa';
+import logo from "../assets/logo.png";
 import {LinkContainer} from 'react-router-bootstrap';
-
+import { useSelector,useDispatch} from 'react-redux';
+import {useLogoutMutation} from '../slices/usersApiSlice.js';
+import {logout} from '../slices/authSlice.js';
 
 const Header = () => {
+    const {userInfo}=useSelector((state)=>state.auth);
+        
+    const dispatch=useDispatch();
+    const navigate=useNavigate();
+
+    const[logoutApiCall]=useLogoutMutation();
+
+    const logoutHandler=async()=>{
+        try{
+            await logoutApiCall().unwrap();
+            dispatch(logout());
+            navigate('/login');
+
+        }catch(err){
+            console.log(err);
+        }
+    }
   return (
     <header>
         <Navbar variant="dark" expand="lg" collapseOnSelect>
@@ -18,17 +38,20 @@ const Header = () => {
                 <Navbar.Toggle aria-controls='basic-navbar-nav'></Navbar.Toggle>
                 <Navbar.Collapse id='basic-navbar-nav'>
                 <Nav className='ms-auto'>
-                <LinkContainer to="/login">
-                    <Nav.Link >
-                        <FaUser/>Iniciar Sesión
-                    </Nav.Link>
-                </LinkContainer>
-                <LinkContainer to="/registrarse">
-                    <Nav.Link >
-                        <FaUser/>Registrarse
-                    </Nav.Link>
-                </LinkContainer>     
-                </Nav>
+                {userInfo ? (
+                            <NavDropdown title={userInfo.name} id='username'>
+                                <LinkContainer to='/profile'>
+                                    <NavDropdown.Item>Perfil</NavDropdown.Item>
+                                </LinkContainer>
+                                <NavDropdown.Item onClick={logoutHandler}>Cerrar Sesión</NavDropdown.Item>
+                            </NavDropdown>
+                        ):(
+                            <LinkContainer to='/login'>
+                            <Nav.Link href='/login'><FaUser/>Iniciar Sesión
+                            </Nav.Link>
+                            </LinkContainer>
+                        )}
+                 </Nav>
                 </Navbar.Collapse>
             </Container>
         </Navbar>
