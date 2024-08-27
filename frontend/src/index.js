@@ -16,6 +16,7 @@ import reportWebVitals from './reportWebVitals';
 import HomeScreenPaciente from './screens/HomeScreenPaciente';
 import Login from './screens/Login';
 import RegisterScreen from './screens/RegisterScreen.jsx';
+import ProfileScreen from './screens/ProfileScreen.jsx';
 
 const router=createBrowserRouter(
   createRoutesFromElements(
@@ -25,7 +26,7 @@ const router=createBrowserRouter(
     <Route path="/register" element={<RegisterScreen/>}></Route>
   
     <Route path='' element={<PrivateRoute/>}>
-
+      <Route path="/profile" element={<ProfileScreen/>}></Route>
     </Route>
   </Route>
   
