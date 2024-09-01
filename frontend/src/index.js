@@ -19,6 +19,8 @@ import RegisterScreen from './screens/RegisterScreen.jsx';
 import ProfileScreen from './screens/ProfileScreen.jsx';
 import AdminRoute from './components/AdminRoute.jsx';
 import HomeScreenMedico from './screens/Médico/HomeScreenMedico.jsx';
+import UserListScreen from './screens/Médico/UserListScreen.jsx';
+import UserEditScreen from './screens/Médico/UserEditScreen.jsx';
 
 const router=createBrowserRouter(
   createRoutesFromElements(
@@ -32,7 +34,9 @@ const router=createBrowserRouter(
     </Route>
 
     <Route path='' element={<AdminRoute/>}>
-      <Route path="/admin/userList" element={<HomeScreenMedico/>}></Route>
+      <Route path="/admin/userlist" element={<UserListScreen/>}></Route>
+      <Route path="/admin/user/:id/edit" element={<UserEditScreen/>}></Route>
+
     </Route>
   </Route>
   
