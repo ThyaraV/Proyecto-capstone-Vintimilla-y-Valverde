@@ -77,14 +77,7 @@ const doctors = [
 
 const patients = [
     {
-        name: 'Alice Brown',
-        lastName: 'Brown',
-        cardId: '2222221',
-        email: 'alice.brown@domain.com',
-        phoneNumber: '123-987-6540',
-        password: bcrypt.hashSync('patient123', 10),
-        isAdmin: false,
-        role: 'Patient',
+        _id: new mongoose.Types.ObjectId(),
         school: 'High School No. 1',
         birthdate: new Date('2005-03-12'),
         gender: 'Femenino',
@@ -98,14 +91,7 @@ const patients = [
         doctor: doctors[0]._id, // Asignado a Dr. Alice
     },
     {
-        name: 'Bob Green',
-        lastName: 'Green',
-        cardId: '2222222',
-        email: 'bob.green@domain.com',
-        phoneNumber: '321-654-0987',
-        password: bcrypt.hashSync('patient123', 10),
-        isAdmin: false,
-        role: 'Patient',
+        _id: new mongoose.Types.ObjectId(),
         school: 'Elementary School No. 2',
         birthdate: new Date('2008-07-25'),
         gender: 'Masculino',
@@ -119,14 +105,7 @@ const patients = [
         doctor: doctors[1]._id, // Asignado a Dr. Bob
     },
     {
-        name: 'Charlie White',
-        lastName: 'White',
-        cardId: '2222223',
-        email: 'charlie.white@domain.com',
-        phoneNumber: '987-321-6540',
-        password: bcrypt.hashSync('patient123', 10),
-        isAdmin: false,
-        role: 'Patient',
+        _id: new mongoose.Types.ObjectId(),
         school: 'Middle School No. 3',
         birthdate: new Date('2010-11-05'),
         gender: 'Masculino',
@@ -139,6 +118,50 @@ const patients = [
         referredTo: 'Neurología',
         doctor: doctors[2]._id, // Asignado a Dr. Carol
     }
+
 ];
 
-export { users, doctors, patients };
+const activities = [
+    {
+        name: 'Asociación de Fotos',
+        description: 'Seleccionar el nombre correcto para la imagen mostrada.',
+        type: 'asociacion_fotos',
+        dateCompletion: new Date('2024-09-10'),
+        scoreObtained: 85,
+        timeUsed: 120, // segundos
+        difficultyLevel: 2, // Dificultad intermedia
+        Observations: 'Buena precisión pero requiere mejorar en tiempo de respuesta.',
+        progress: 'mejorando',
+        patientId: patients[1]._id, // Asociado a Alice Brown
+    },
+    {
+        name: 'Juego de Memoria',
+        description: 'Recordar y emparejar imágenes iguales en pares.',
+        type: 'memoria',
+        dateCompletion: new Date('2024-09-08'),
+        scoreObtained: 120,
+        timeUsed: 200, // segundos
+        difficultyLevel: 1, // Dificultad fácil
+        Observations: 'Mejor desempeño en comparación con la sesión anterior.',
+        progress: 'mejorando',
+        patientId: patients[1]._id, // Asociado a Bob Green
+
+    },
+    {
+        name: 'Suma y Resta',
+        description: 'Resolver ecuaciones matemáticas sencillas lo más rápido posible.',
+        type: 'matematicas',
+        dateCompletion: new Date('2024-09-07'),
+        scoreObtained: 70,
+        timeUsed: 90, // segundos
+        difficultyLevel: 2, // Dificultad intermedia
+        Observations: 'Resultados precisos pero requiere mejorar en velocidad.',
+        progress: 'mejorando',
+        patientId: patients[0]._id, // Asociado a Alice Brown
+
+    },
+    
+];
+
+
+export { users, doctors, patients,activities };

@@ -99,7 +99,6 @@ const UserEditScreen = () => {
                         label='Is Admin'
                         checked={isAdmin}
                         onChange={(e)=>setIsAdmin(e.target.checked)}>
-
                         </Form.Check>
 
                     </Form.Group>

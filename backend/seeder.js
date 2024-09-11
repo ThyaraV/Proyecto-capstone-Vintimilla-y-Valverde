@@ -5,18 +5,19 @@ import dotenv from 'dotenv';
 import User from './models/userModel.js'; 
 import Doctor from './models/doctorModel.js';
 import Patient from './models/patientModel.js';
-import { users, doctors, patients } from './data/users.js';
+import Activity from './models/activityModel.js'; // Importar modelo de actividades
+import { users, doctors, patients, activities } from './data/users.js'; // Asegúrate de que 'activities' esté exportado correctamente
 
 dotenv.config();
 
 connectDB();
-
 
 const importData = async () => {
     try {
         await User.deleteMany();
         await Doctor.deleteMany();
         await Patient.deleteMany();
+        await Activity.deleteMany(); // Asegúrate de eliminar actividades antiguas antes de insertar nuevas
 
         // Insertar usuarios genéricos
         const createdUsers = await User.insertMany(users);
@@ -42,8 +43,31 @@ const importData = async () => {
             };
         });
 
-        // Insertar pacientes con la referencia al médico y usuario
-        await Patient.insertMany(samplePatients);
+        const createdPatients = await Patient.insertMany(samplePatients);
+
+        // Relacionar actividades con pacientes
+        const sampleActivities = activities.map((activity) => {
+            if (!activity.patientId) {
+                console.warn(`Warning: No patientId found for activity ${activity.name}`);
+                return null; // Saltar actividades sin patientId
+            }
+
+            // Busca el paciente correspondiente a la actividad
+            const patient = createdPatients.find((p) => p._id.toString() === activity.patientId.toString());
+
+            if (!patient) {
+                console.warn(`Warning: No patient found for activity with patientId ${activity.patientId}`);
+                return null; // Saltar actividades sin un paciente válido
+            }
+
+            return {
+                ...activity,
+                patientId: patient._id // Asignar el ID de paciente a la actividad
+            };
+        }).filter(activity => activity !== null); // Filtrar actividades sin paciente
+
+        // Insertar actividades
+        await Activity.insertMany(sampleActivities);
 
         console.log('Data Imported!'.green.inverse);
         process.exit();
@@ -58,6 +82,7 @@ const destroyData = async () => {
         await User.deleteMany();
         await Doctor.deleteMany();
         await Patient.deleteMany();
+        await Activity.deleteMany(); // Eliminar también las actividades
 
         console.log('Data Destroyed'.red.inverse);
         process.exit();
