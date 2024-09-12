@@ -132,6 +132,8 @@ const activities = [
         difficultyLevel: 2, // Dificultad intermedia
         Observations: 'Buena precisión pero requiere mejorar en tiempo de respuesta.',
         progress: 'mejorando',
+        image: '/images/fiesta/f1.png',
+        activeView: true,
         patientId: patients[1]._id, // Asociado a Alice Brown
     },
     {
@@ -144,6 +146,8 @@ const activities = [
         difficultyLevel: 1, // Dificultad fácil
         Observations: 'Mejor desempeño en comparación con la sesión anterior.',
         progress: 'mejorando',
+        image: '/images/fiesta/f1.png',
+        activeView: true,
         patientId: patients[1]._id, // Asociado a Bob Green
 
     },
@@ -157,6 +161,8 @@ const activities = [
         difficultyLevel: 2, // Dificultad intermedia
         Observations: 'Resultados precisos pero requiere mejorar en velocidad.',
         progress: 'mejorando',
+        image: '/images/fiesta/f1.png',
+        activeView: true,
         patientId: patients[0]._id, // Asociado a Alice Brown
 
     },
