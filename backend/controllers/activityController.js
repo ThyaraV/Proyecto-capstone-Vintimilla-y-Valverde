@@ -14,7 +14,7 @@ const getActivities = asyncHandler(async (req, res) => {
 //@access Private/admin
 const createActivity = asyncHandler(async (req, res) => {
     try {
-        const { name, description, type, dateCompletion, scoreObtained, timeUsed, difficultyLevel, observations, progress, patientId } = req.body;
+        const { name, description, type, dateCompletion, scoreObtained, timeUsed, difficultyLevel, observations, progress, image, activeView, patientId } = req.body;
 
         const activity = new Activity({
             name: name || "Sample activity",
@@ -26,7 +26,9 @@ const createActivity = asyncHandler(async (req, res) => {
             difficultyLevel: difficultyLevel || 1,
             observations: observations || "No observations",
             progress: progress || "pending",
-            patientId: patientId // Asumiendo que se está enviando este dato en la solicitud
+            image: image || '/images/sample.jpg',
+            activeView: activeView || true,
+            patientId: req.user._id // Asumiendo que se está enviando este dato en la solicitud
         });
 
         const createdActivity = await activity.save();
@@ -41,7 +43,7 @@ const createActivity = asyncHandler(async (req, res) => {
 //@route GET/api/activities/:id
 //@access Public
 const getActivityById = asyncHandler(async (req, res) => {
-    const activity = await Activity.findById(req.params.id).populate('patientId');
+    const activity = await Activity.findById(req.params.id);
 
     if (activity) {
         res.json(activity);
@@ -55,7 +57,7 @@ const getActivityById = asyncHandler(async (req, res) => {
 //@route PUT/api/activities/:id
 //@access Private/Admin
 const updateActivity = asyncHandler(async (req, res) => {
-    const { name, description, type, dateCompletion, scoreObtained, timeUsed, difficultyLevel, observations, progress, patientId } = req.body;
+    const { name, description, type, dateCompletion, scoreObtained, timeUsed, difficultyLevel, observations, progress,image, activeView, patientId } = req.body;
     const activity = await Activity.findById(req.params.id);
 
     if (activity) {
@@ -68,7 +70,8 @@ const updateActivity = asyncHandler(async (req, res) => {
         activity.difficultyLevel = difficultyLevel || activity.difficultyLevel;
         activity.observations = observations || activity.observations;
         activity.progress = progress || activity.progress;
-        activity.patientId = patientId !== undefined ? patientId : activity.patientId;
+        activity.image= image || activity.image;
+        activity.activeView=activeView||activity.activeView;
 
         const updatedActivity = await activity.save();
         res.json(updatedActivity);
