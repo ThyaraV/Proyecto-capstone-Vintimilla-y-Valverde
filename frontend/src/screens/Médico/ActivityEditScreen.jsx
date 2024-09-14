@@ -77,16 +77,20 @@ const ActivityEditScreen = () => {
     };
 
     const uploadFileHandler = async (e) => {
+        const file = e.target.files[0];
         const formData = new FormData();
-        formData.append('image', e.target.files[0]);
+        formData.append('image', file);
+    
         try {
             const res = await uploadActivityImage(formData).unwrap();
-            toast.success(res.image);
+            toast.success('Image uploaded successfully');
             setImage(res.image);
         } catch (err) {
-            toast.error(err?.data?.message || err.error);
+            console.error('Upload error:', err);
+            toast.error(err?.data?.message || 'Error uploading file');
         }
     };
+    
 
     return (
         <>

@@ -1,3 +1,4 @@
+import path from 'path';
 import express from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
@@ -6,8 +7,10 @@ import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import userRoutes from './routes/userRoutes.js';
 import activitiesRoutes from './routes/activitiesRoutes.js'
 import connectDB from './config/db.js';
+import uploadRoutes from './routes/uploadRoutes.js'
 
 const port=process.env.PORT || 5000;
+
 
 connectDB();//Connect to MongoDB
 
@@ -20,8 +23,11 @@ app.use(express.urlencoded({extended:true}));
 //Cookie parser middleware
 app.use(cookieParser());
 app.use('/api/users',userRoutes);
-
 app.use('/api/activities',activitiesRoutes);
+app.use('/api/upload',uploadRoutes);
+
+const __dirname=path.resolve();
+app.use('/uploads',express.static(path.join(__dirname,'/uploads')));
 
 app.get('/',(req,res)=>{
     res.send('API is running...')

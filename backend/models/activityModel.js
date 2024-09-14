@@ -8,7 +8,7 @@ const activitySchema = new mongoose.Schema({
   scoreObtained: { type: Number }, // Puntaje obtenido por el paciente
   timeUsed: { type: Number }, // Tiempo en segundos que tardó el paciente en completar la actividad
   difficultyLevel: { type: Number }, // Nivel de dificultad de la actividad (ej. 1: fácil, 2: medio, 3: difícil)
-  Observations: { type: String }, // Comentarios adicionales sobre el desempeño del paciente
+  observations: { type: String }, // Comentarios adicionales sobre el desempeño del paciente
   progress: { type: String }, // Evaluación cualitativa del progreso del paciente (ej. "mejorando", "estable", "deteriorando")
   image:{ type:String, required:true},
   activeView:{type:Boolean, required:true},
