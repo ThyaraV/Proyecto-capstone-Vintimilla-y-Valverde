@@ -16,7 +16,7 @@ const Activity = ({ activity }) => {
 
         <Card.Text as="div">
           {/* Si deseas mostrar el nivel de dificultad de la actividad, lo puedes hacer aquí */}
-          <div>Nivel de dificultad: {activity.difficulty}</div>
+          <div>Nivel de dificultad: {activity.difficultyLevel}</div>
         </Card.Text>
 
         <Card.Text as="div">
