@@ -27,7 +27,7 @@ const createActivity = asyncHandler(async (req, res) => {
             observations: observations || "No observations",
             progress: progress || "pending",
             image: image || '/images/sample.jpg',
-            activeView: activeView || true,
+            activeView: activeView ,
             patientId: req.user._id // Asumiendo que se está enviando este dato en la solicitud
         });
 

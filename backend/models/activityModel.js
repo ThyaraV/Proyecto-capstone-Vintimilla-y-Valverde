@@ -11,7 +11,7 @@ const activitySchema = new mongoose.Schema({
   observations: { type: String }, // Comentarios adicionales sobre el desempeño del paciente
   progress: { type: String }, // Evaluación cualitativa del progreso del paciente (ej. "mejorando", "estable", "deteriorando")
   image:{ type:String, required:true},
-  activeView:{type:Boolean, required:true},
+  activeView:{type:Boolean, required:true, default: false },
   patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Patient', required: true }, // Referencia al paciente que realiza la actividad
 });
 
