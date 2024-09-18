@@ -24,6 +24,7 @@ import UserEditScreen from './screens/Médico/UserEditScreen.jsx';
 import ActivitiesListScreen from './screens/Médico/ActivitiesListScreen.jsx';
 import ActivityEditScreen from './screens/Médico/ActivityEditScreen.jsx';
 import ActivitiesScreen from './screens/ActivitiesScreen.jsx';
+import ActivityScreen1 from './screens/ActivityScreen1.jsx';
 
 const router=createBrowserRouter(
   createRoutesFromElements(
@@ -35,6 +36,7 @@ const router=createBrowserRouter(
     <Route path='' element={<PrivateRoute/>}>
       <Route path="/profile" element={<ProfileScreen/>}></Route>
       <Route path="/activities" element={<ActivitiesScreen/>}></Route>
+      <Route path="/activity/1" element={<ActivityScreen1/>}></Route>
     </Route>
 
     <Route path='' element={<AdminRoute/>}>
@@ -42,6 +44,7 @@ const router=createBrowserRouter(
       <Route path="/admin/user/:id/edit" element={<UserEditScreen/>}></Route>
       <Route path="/admin/activities" element={<ActivitiesListScreen/>}></Route>
       <Route path="/admin/activities/:id/edit" element={<ActivityEditScreen/>}></Route>
+
 
     </Route>
   </Route>
