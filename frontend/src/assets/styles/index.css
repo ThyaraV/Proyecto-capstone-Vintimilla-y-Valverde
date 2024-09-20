@@ -276,3 +276,40 @@ header img {
   cursor: pointer;
   background-color: #f0f0f0; /* Agrega un color de fondo al pasar el mouse */
 }
+
+.photo-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.options-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.option-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.option-button:hover {
+  background-color: #e0e0e0;
+}
+
+.answer-message {
+  margin-top: 20px;
+  font-size: 18px;
+  color: #333;
+  text-align: center;
+}
+
+.game-finished {
+  margin-top: 20px;
+  font-size: 24px;
+  text-align: center;
+}
