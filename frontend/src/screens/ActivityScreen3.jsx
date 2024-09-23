@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
 const generateEquation = (type) => {
@@ -7,9 +6,9 @@ const generateEquation = (type) => {
   const num2 = Math.floor(Math.random() * 100);
 
   if (type === 'sum') {
-    return { equation: `${num1} + ${num2}`, correctAnswer: num1 + num2 };
+    return { equation: `${num1} + ${num2}`, correctAnswer: num1 + num2, num1, num2, operator: '+' };
   } else {
-    return { equation: `${num1} - ${num2}`, correctAnswer: num1 - num2 };
+    return { equation: `${num1} - ${num2}`, correctAnswer: num1 - num2, num1, num2, operator: '-' };
   }
 };
 
@@ -20,7 +19,8 @@ const ActivityScreen3 = () => {
   const [score, setScore] = useState(0);
   const [timer, setTimer] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
-  const [isSaving, setIsSaving] = useState(false); // Bandera para bloquear el guardado duplicado
+  const [activitySaved, setActivitySaved] = useState(false);
+  const [message, setMessage] = useState(''); // Cuadro de texto para el mensaje de respuesta
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,45 +45,38 @@ const ActivityScreen3 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
+  useEffect(() => {
+    if (gameFinished && !activitySaved) {
+      saveActivity(score);
+      setActivitySaved(true);
+    }
+  }, [gameFinished, activitySaved, score]);
+
   const handleSubmitAnswer = () => {
     const currentEquation = equations[currentEquationIndex];
     const correctAnswer = currentEquation.correctAnswer;
 
     // Actualizar el puntaje según la respuesta
     if (parseInt(userAnswer) === correctAnswer) {
-      setScore((prevScore) => {
-        const newScore = prevScore + 5;
-        processNextStep(newScore);
-        return newScore;
-      });
-      toast.success('¡Correcto! Ganaste 5 puntos.');
+      setScore((prevScore) => prevScore + 5);
+      setMessage(`¡Correcto! Ganaste 5 puntos.`);
     } else {
-      setScore((prevScore) => {
-        const newScore = prevScore - 2;
-        processNextStep(newScore);
-        return newScore;
-      });
-      toast.error(`Incorrecto. La respuesta correcta es ${correctAnswer}. Perdiste 2 puntos.`);
+      setScore((prevScore) => prevScore - 2);
+      setMessage(`Incorrecto. La respuesta correcta es ${correctAnswer}. Perdiste 2 puntos.`);
     }
 
     setUserAnswer('');
+    setTimeout(() => processNextStep(), 3000); // Retraso antes de limpiar el mensaje y avanzar
   };
 
-  const processNextStep = (newScore) => {
+  const processNextStep = () => {
     const nextEquationIndex = currentEquationIndex + 1;
 
     if (nextEquationIndex === equations.length) {
-      // Si es la última ecuación, terminar el juego y guardar el puntaje
       setGameFinished(true);
-
-      // Guardar la actividad solo si no se está guardando ya
-      if (!isSaving) {
-        setIsSaving(true); // Marca como guardando
-        saveActivity(newScore);
-      }
     } else {
-      // Avanzar a la siguiente ecuación
       setCurrentEquationIndex(nextEquationIndex);
+      setMessage(''); // Limpiar el mensaje después de que se muestre durante 3 segundos
     }
   };
 
@@ -92,12 +85,12 @@ const ActivityScreen3 = () => {
       name: 'Sumas y Restas',
       description: 'Actividad de sumas y restas con puntajes.',
       type: 'sumas_restas',
-      scoreObtained: finalScore, // Usar el puntaje final actualizado
-      timeUsed: timer, // Tiempo total en segundos
-      difficultyLevel: 1, // Puedes ajustar esto
+      scoreObtained: finalScore,
+      timeUsed: timer,
+      difficultyLevel: 1,
       observations: 'El paciente completó la actividad de sumas y restas.',
-      progress: 'mejorando', // Puedes ajustar esto
-      patientId: 'somePatientId', // Reemplaza con el ID real del paciente
+      progress: 'mejorando',
+      patientId: 'somePatientId',
     };
 
     try {
@@ -110,47 +103,55 @@ const ActivityScreen3 = () => {
       });
 
       if (response.ok) {
-        toast.success('Actividad guardada correctamente');
-        navigate('/activities'); // Redirige a otra página después de guardar
+        navigate('/activities');
       } else {
-        toast.error('Error al guardar la actividad');
+        setMessage('Error al guardar la actividad');
       }
     } catch (error) {
-      toast.error('Hubo un problema al guardar la actividad');
+      setMessage('Hubo un problema al guardar la actividad');
     }
   };
 
   return (
     <div className="game-screen">
       <h1>Juego de Sumas y Restas</h1>
-      <p>Puntaje: {score}</p>
-      <p>Tiempo: {timer} segundos</p>
+      <p style={{ fontWeight: 'bold' }}>Puntaje: {score}</p>
+      <p style={{ fontWeight: 'bold' }}>Tiempo: {timer} segundos</p>
 
       {gameFinished ? (
         <div className="game-finished">
-          <h2>¡Juego terminado!</h2>
+          <h2 style={{ fontWeight: 'bold' }}>¡Juego terminado!</h2>
           <p>Tiempo total: {timer} segundos</p>
           <p>Puntaje final: {score}</p>
         </div>
       ) : (
         <>
-          <div className="equation">
-            <h3>{equations[currentEquationIndex]?.equation}</h3>
-            <input
-              type="number"
-              value={userAnswer}
-              onChange={(e) => setUserAnswer(e.target.value)}
-              placeholder="Escribe tu respuesta"
-              disabled={isSaving} // Desactivar el input si ya se está guardando
-            />
-            <button onClick={handleSubmitAnswer} disabled={isSaving}>
+          <div className="equation" style={{ textAlign: 'center', fontSize: '28px', fontWeight: 'bold' }}>
+            <div style={{ marginBottom: '10px' }}>
+              <div>{equations[currentEquationIndex]?.num1}</div>
+              <div>{equations[currentEquationIndex]?.operator} {equations[currentEquationIndex]?.num2}</div>
+              <hr style={{ width: '50px', margin: '10px auto' }} />
+              <input
+                type="number"
+                value={userAnswer}
+                onChange={(e) => setUserAnswer(e.target.value)}
+                placeholder="?"
+                style={{ fontSize: '32px', textAlign: 'center', width: '80px', height: '50px' }} // Más grande el cuadro de respuesta
+                disabled={gameFinished}
+              />
+            </div>
+            <button onClick={handleSubmitAnswer} disabled={gameFinished} style={{ fontSize: '18px', fontWeight: 'bold' }}>
               Responder
             </button>
           </div>
+
+          {message && (
+            <div className="message-box" style={{ marginTop: '20px', fontSize: '22px', color: 'black', fontWeight: 'bold' }}>
+              <p>{message}</p>
+            </div>
+          )}
         </>
       )}
-
-      <ToastContainer />
     </div>
   );
 };
