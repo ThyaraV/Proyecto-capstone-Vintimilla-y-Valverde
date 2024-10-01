@@ -1,39 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; 
 
-const generateEquation = (type) => {
-  const num1 = Math.floor(Math.random() * 100);
-  const num2 = Math.floor(Math.random() * 100);
+const photos = [
+  { src: require('../images/photo1.jpg'), name: 'Pizza' },
+  { src: require('../images/photo2.jpg'), name: 'Café' },
+  { src: require('../images/photo3.jpg'), name: 'Mariposa' },
+  { src: require('../images/photo4.jpg'), name: 'Oso' },
+  { src: require('../images/photo5.jpg'), name: 'Ensalada' }
+];
 
-  if (type === 'sum') {
-    return { equation: `${num1} + ${num2}`, correctAnswer: num1 + num2 };
-  } else {
-    return { equation: `${num1} - ${num2}`, correctAnswer: num1 - num2 };
-  }
+const shuffle = (array) => {
+  return array.sort(() => Math.random() - 0.5);
 };
 
-const ActivityScreen3 = () => {
-  const [equations, setEquations] = useState([]);
-  const [currentEquationIndex, setCurrentEquationIndex] = useState(0);
-  const [userAnswer, setUserAnswer] = useState('');
+const ActivityScreen2 = () => {
+  const [photoQueue, setPhotoQueue] = useState([]); // Lista barajada de fotos
+  const [currentPhoto, setCurrentPhoto] = useState(null);
+  const [options, setOptions] = useState([]);
   const [score, setScore] = useState(0);
+  const [answeredPhotos, setAnsweredPhotos] = useState(0);
+  const [message, setMessage] = useState('');
+  const [showAnswer, setShowAnswer] = useState(false);
   const [timer, setTimer] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
-  const [isSaving, setIsSaving] = useState(false); // Bandera para bloquear el guardado duplicado
+  const [activitySaved, setActivitySaved] = useState(false); // Bloqueo para evitar guardado doble
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Genera 2 sumas y 3 restas
-    const generatedEquations = [
-      generateEquation('sum'),
-      generateEquation('sum'),
-      generateEquation('sub'),
-      generateEquation('sub'),
-      generateEquation('sub'),
-    ];
-    setEquations(generatedEquations);
+    // Barajar las imágenes al inicio
+    setPhotoQueue(shuffle([...photos]));
   }, []);
+
+  useEffect(() => {
+    if (answeredPhotos < 5 && !gameFinished && photoQueue.length > 0) {
+      const nextPhoto = photoQueue[answeredPhotos];
+      const randomOptions = shuffleOptions(nextPhoto);
+      setCurrentPhoto(nextPhoto);
+      setOptions(randomOptions);
+    }
+  }, [answeredPhotos, gameFinished, photoQueue]);
 
   useEffect(() => {
     let interval;
@@ -45,59 +51,62 @@ const ActivityScreen3 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
-  const handleSubmitAnswer = () => {
-    const currentEquation = equations[currentEquationIndex];
-    const correctAnswer = currentEquation.correctAnswer;
-
-    // Actualizar el puntaje según la respuesta
-    if (parseInt(userAnswer) === correctAnswer) {
-      setScore((prevScore) => {
-        const newScore = prevScore + 5;
-        processNextStep(newScore);
-        return newScore;
-      });
-      toast.success('¡Correcto! Ganaste 5 puntos.');
-    } else {
-      setScore((prevScore) => {
-        const newScore = prevScore - 2;
-        processNextStep(newScore);
-        return newScore;
-      });
-      toast.error(`Incorrecto. La respuesta correcta es ${correctAnswer}. Perdiste 2 puntos.`);
-    }
-
-    setUserAnswer('');
+  const shuffleOptions = (correctPhoto) => {
+    const randomNames = photos.map((photo) => photo.name).filter((name) => name !== correctPhoto.name);
+    const wrongOptions = randomNames.sort(() => 0.5 - Math.random()).slice(0, 2);
+    return shuffle([correctPhoto.name, ...wrongOptions]);
   };
 
-  const processNextStep = (newScore) => {
-    const nextEquationIndex = currentEquationIndex + 1;
+  const handleOptionClick = (selectedName) => {
+    if (answeredPhotos >= 5 || gameFinished) return;
 
-    if (nextEquationIndex === equations.length) {
-      // Si es la última ecuación, terminar el juego y guardar el puntaje
-      setGameFinished(true);
-
-      // Guardar la actividad solo si no se está guardando ya
-      if (!isSaving) {
-        setIsSaving(true); // Marca como guardando
-        saveActivity(newScore);
-      }
+    let newScore = score;
+    if (selectedName === currentPhoto.name) {
+      newScore += 5;
+      setMessage('¡Correcto! Has ganado 5 puntos.');
     } else {
-      // Avanzar a la siguiente ecuación
-      setCurrentEquationIndex(nextEquationIndex);
+      newScore -= 2;
+      setMessage(`Incorrecto. La respuesta correcta es ${currentPhoto.name}. Has perdido 2 puntos.`);
     }
+
+    setScore(newScore);
+    setShowAnswer(true);
+
+    setTimeout(() => {
+      setShowAnswer(false);
+
+      setAnsweredPhotos((prevAnswered) => {
+        const newAnswered = prevAnswered + 1;
+
+        if (newAnswered === 5 && !gameFinished) { // Verificar que el juego no haya terminado
+          setGameFinished(true);
+        }
+
+        return newAnswered;
+      });
+    }, 3000); // Mostrar el mensaje por 3 segundos antes de pasar a la siguiente imagen
   };
+
+  // Guardar actividad solo cuando el juego ha terminado
+  useEffect(() => {
+    if (gameFinished && !activitySaved) {
+      saveActivity(score);
+      setActivitySaved(true);
+    }
+  }, [gameFinished, activitySaved, score]);
 
   const saveActivity = async (finalScore) => {
     const activityData = {
-      name: 'Sumas y Restas',
-      description: 'Actividad de sumas y restas con puntajes.',
-      type: 'sumas_restas',
-      scoreObtained: finalScore, // Usar el puntaje final actualizado
-      timeUsed: timer, // Tiempo total en segundos
-      difficultyLevel: 1, // Puedes ajustar esto
-      observations: 'El paciente completó la actividad de sumas y restas.',
-      progress: 'mejorando', // Puedes ajustar esto
-      patientId: 'somePatientId', // Reemplaza con el ID real del paciente
+      name: 'Juego de Asociación de Fotos',
+      description: 'Actividad de asociación de fotos con nombres.',
+      type: 'asociacion_fotos',
+      scoreObtained: finalScore,
+      timeUsed: timer, 
+      difficultyLevel: 1,
+      observations: 'El paciente completó la actividad de asociación de fotos.',
+      progress: 'mejorando',
+      image: currentPhoto?.src || '',
+      patientId: 'somePatientId' 
     };
 
     try {
@@ -111,7 +120,9 @@ const ActivityScreen3 = () => {
 
       if (response.ok) {
         toast.success('Actividad guardada correctamente');
-        navigate('/activities'); // Redirige a otra página después de guardar
+        setTimeout(() => {
+            navigate('/activities'); // Redirige a la lista de actividades después de mostrar el toast
+          }, 3000);
       } else {
         toast.error('Error al guardar la actividad');
       }
@@ -121,8 +132,8 @@ const ActivityScreen3 = () => {
   };
 
   return (
-    <div className="game-screen">
-      <h1>Juego de Sumas y Restas</h1>
+    <div className="photo-association-game">
+      <h1>Juego de Asociación de Fotos</h1>
       <p>Puntaje: {score}</p>
       <p>Tiempo: {timer} segundos</p>
 
@@ -134,19 +145,25 @@ const ActivityScreen3 = () => {
         </div>
       ) : (
         <>
-          <div className="equation">
-            <h3>{equations[currentEquationIndex]?.equation}</h3>
-            <input
-              type="number"
-              value={userAnswer}
-              onChange={(e) => setUserAnswer(e.target.value)}
-              placeholder="Escribe tu respuesta"
-              disabled={isSaving} // Desactivar el input si ya se está guardando
-            />
-            <button onClick={handleSubmitAnswer} disabled={isSaving}>
-              Responder
-            </button>
+          {currentPhoto && (
+            <div className="photo-container">
+              <img src={currentPhoto.src} alt="Imagen actual" style={{ width: '300px', height: '300px' }} />
+            </div>
+          )}
+
+          <div className="options-container">
+            {options.map((option, index) => (
+              <button key={index} onClick={() => handleOptionClick(option)} className="option-button">
+                {option}
+              </button>
+            ))}
           </div>
+
+          {showAnswer && (
+            <div className="answer-message">
+              <p>{message}</p>
+            </div>
+          )}
         </>
       )}
 
@@ -155,4 +172,4 @@ const ActivityScreen3 = () => {
   );
 };
 
-export default ActivityScreen3;
+export default ActivityScreen2;
