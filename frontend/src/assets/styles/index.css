@@ -334,3 +334,64 @@ button {
   text-align: center;
   margin-top: 20px;
 }
+
+.find-differences-game {
+  text-align: center;
+}
+
+.images-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.images-container img {
+  width: 300px;
+  height: auto;
+  margin: 0 20px;
+}
+
+.options-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+
+.option {
+  padding: 10px;
+  border: 2px solid #333;
+  cursor: pointer;
+  margin: 5px;
+  width: 100px;
+  text-align: center;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.option:hover {
+  background-color: #f0f0f0;
+}
+
+.option.selected {
+  background-color: #4caf50;
+  color: white;
+}
+
+.submit-button {
+  padding: 10px 20px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 20px;
+}
+
+.results {
+  margin-top: 20px;
+}
+
+.Toastify__toast {
+  font-size: 16px;
+}
