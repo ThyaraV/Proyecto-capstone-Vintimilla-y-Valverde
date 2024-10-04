@@ -395,3 +395,36 @@ button {
 .Toastify__toast {
   font-size: 16px;
 }
+
+.phrase-game {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.options-container {
+  margin: 20px 0;
+}
+
+.option-button {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.submit-button, .next-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.option-button.selected {
+  background-color: #4caf50;
+  color: white;
+}
+
+.results {
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: bold;
+}

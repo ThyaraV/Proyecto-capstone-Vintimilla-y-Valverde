@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
+// Importa las imágenes directamente
+import Image1 from '../images/photo1.jpg'; // Asegúrate de usar la ruta correcta
+import Image2 from '../images/photo2.jpg'; // Asegúrate de usar la ruta correcta
+
 
 const differences = [
   { id: 1, name: 'Diferencia 1', isCorrect: true },
@@ -68,17 +72,19 @@ const ActivityScreen4 = () => {
     setCorrectAnswers(correct);
     setIncorrectAnswers(incorrect);
     setGameFinished(true);
+
     saveActivity(correct, incorrect);
   };
 
   const saveActivity = async (correct, incorrect) => {
     const activityData = {
-      name: 'Encontra diferencias',
+      name: 'Encuentra diferencias',
       description: 'Actividad para encontrar las diferencias entre dos imágenes.',
       type: 'diferencias_imagenes',
       correctAnswers: correct,
       incorrectAnswers: incorrect,
       timeUsed: timer,
+      scoreObtained: correct, // Guardamos simplemente la cantidad de respuestas correctas
       patientId: 'somePatientId', // Reemplaza con el ID real del paciente
     };
 
@@ -108,8 +114,8 @@ const ActivityScreen4 = () => {
       <p>Tiempo: {timer} segundos</p>
 
       <div className="images-container">
-        <img src="/path/to/image1.jpg" alt="Imagen 1" />
-        <img src="/path/to/image2.jpg" alt="Imagen 2" />
+        <img src={Image1} alt="Imagen 1" />
+        <img src={Image2} alt="Imagen 2" />
       </div>
 
       <div className="options-container">
