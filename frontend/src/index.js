@@ -30,6 +30,10 @@ import ActivityScreen3 from './screens/ActivityScreen3.jsx';
 import ActivityScreen4 from './screens/ActivityScreen4.jsx';
 import ActivityScreen5 from './screens/ActivityScreen5.jsx';
 import ActivityScreen6 from './screens/ActivityScreen6.jsx';
+import ActivityScreen7 from './screens/ActivityScreen7.jsx';
+import ActivityScreen8 from './screens/ActivityScreen8.jsx';
+import ActivityScreen9 from './screens/ActivityScreen9.jsx';
+
 
 const router=createBrowserRouter(
   createRoutesFromElements(
@@ -47,8 +51,9 @@ const router=createBrowserRouter(
       <Route path="/activity/4" element={<ActivityScreen4/>}></Route>
       <Route path="/activity/5" element={<ActivityScreen5/>}></Route>
       <Route path="/activity/6" element={<ActivityScreen6/>}></Route>
-
-
+      <Route path="/activity/7" element={<ActivityScreen7/>}></Route>
+      <Route path="/activity/8" element={<ActivityScreen8/>}></Route>
+      <Route path="/activity/9" element={<ActivityScreen9/>}></Route>
 
     </Route>
 

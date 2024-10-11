@@ -29,7 +29,7 @@ const ActivityScreen1 = () => {
         name: 'Búsqueda de letras',
         description: 'Actividad para encontrar la letra correcta en un tablero.',
         type: 'memoria',
-        scoreObtained: 100,
+        scoreObtained: 5,
         timeUsed: miliseconds, // Pasa el tiempo usado en milisegundos
         difficultyLevel: 1,
         observations: 'El paciente completó la actividad satisfactoriamente.',
