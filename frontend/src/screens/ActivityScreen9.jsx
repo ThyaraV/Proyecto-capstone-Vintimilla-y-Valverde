@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate } from 'react-router-dom';
 
-
-const validFruitsP = ['piña', 'pera', 'papaya', 'plátano', 'paraguayo']; // Frutas válidas con P
+// Listas de validaciones específicas
+const validFruitsP = ['piña', 'pera', 'papaya', 'plátano', 'paraguayo'];
+const validAnimalsT = ['tiburón', 'tortuga', 'tapir', 'ternero','toro', 'tarantula'];
+const validCitiesM = ['madrid', 'manta', 'montevideo', 'miami', 'monpiche', 'muisne', 'manabi'];
 
 const instructions = [
   { 
     id: 1, 
     type: 'input', 
     prompt: 'Escribe una palabra que empiece por la letra A', 
-    validator: (response) => response.trim().toLowerCase().startsWith('a')
+    validator: (response) => response.trim().toLowerCase().startsWith('a') 
   },
   { 
     id: 2, 
     type: 'input', 
     prompt: 'Escribe una ciudad que empiece con la letra M', 
-    validator: (response) => response.trim().toLowerCase().startsWith('m')
+    validator: (response) => validCitiesM.includes(response.trim().toLowerCase()) 
   },
   { 
     id: 3, 
@@ -43,7 +46,7 @@ const instructions = [
     id: 6, 
     type: 'input', 
     prompt: 'Escribe una palabra que empiece con la letra S', 
-    validator: (response) => response.trim().toLowerCase().startsWith('s')
+    validator: (response) => response.trim().toLowerCase().startsWith('s') 
   },
   { 
     id: 7, 
@@ -56,7 +59,7 @@ const instructions = [
     id: 8, 
     type: 'input', 
     prompt: 'Escribe un animal que comience con la letra T', 
-    validator: (response) => response.trim().toLowerCase().startsWith('t')
+    validator: (response) => validAnimalsT.includes(response.trim().toLowerCase()) 
   },
   { 
     id: 9, 
@@ -69,7 +72,7 @@ const instructions = [
     id: 10, 
     type: 'input', 
     prompt: 'Escribe una fruta que empiece con la letra P', 
-    validator: (response) => validFruitsP.includes(response.trim().toLowerCase())
+    validator: (response) => validFruitsP.includes(response.trim().toLowerCase()) 
   }
 ];
 
@@ -78,13 +81,12 @@ const ActivityScreen9 = () => {
   const [score, setScore] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let interval;
     if (!gameFinished) {
-      interval = setInterval(() => {
-        setTimer((prevTimer) => prevTimer + 0.1);
-      }, 100);
+      interval = setInterval(() => setTimer((prevTimer) => prevTimer + 0.1), 100);
     }
     return () => clearInterval(interval);
   }, [gameFinished]);
@@ -95,34 +97,55 @@ const ActivityScreen9 = () => {
 
   const handleSubmit = () => {
     let finalScore = 0;
-  
+
     instructions.forEach((instruction) => {
-      const userResponse = responses[instruction.id] || ''; // Asegurar que no sea undefined
-  
-      if (instruction.type === 'input') {
-        let isValid = false;
-        // Verificar si la respuesta es válida según el tipo de pregunta
-        if (instruction.id === 10) {
-          // Validación especial para frutas que empiezan con "P"
-          isValid = validFruitsP.includes(userResponse.trim().toLowerCase());
-        } else {
-          // Validación general para palabras que empiezan con la letra requerida
-          isValid = instruction.validator(userResponse.trim());
-        }
-  
-        if (isValid) {
-          finalScore += 0.50;
-        }
+      const userResponse = responses[instruction.id] || ''; // Asegura que no sea undefined
+
+      if (instruction.type === 'input' && instruction.validator(userResponse)) {
+        finalScore += 0.50;
       } else if (instruction.type === 'multiple' && userResponse === instruction.correctAnswer) {
         finalScore += 0.50;
       }
     });
-  
+
     setScore(finalScore);
     setGameFinished(true);
     toast.success('Juego terminado. ¡Revisa tus resultados!');
+    saveActivity(finalScore, timer.toFixed(2));
+    setTimeout(() => navigate('/activities'), 8000); // Redirigir después de 8 segundos
   };
-  
+
+  const saveActivity = async (finalScore, timeUsed) => {
+    const activityData = {
+      name: 'Seguir Instrucciones',
+      description: 'Juego de seguir instrucciones con respuestas mixtas.',
+      type: 'seguir_instrucciones',
+      scoreObtained: finalScore,
+      timeUsed: parseFloat(timeUsed),
+      difficultyLevel: 1,
+      observations: 'El usuario completó la actividad satisfactoriamente.',
+      progress: 'mejorando',
+      patientId: 'somePatientId' // Reemplazar con el ID real del paciente
+    };
+
+    try {
+      const response = await fetch('/api/activities', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(activityData),
+      });
+
+      if (response.ok) {
+        toast.success('Actividad guardada correctamente.');
+      } else {
+        toast.error('Error al guardar la actividad.');
+      }
+    } catch (error) {
+      toast.error('Hubo un problema al guardar la actividad.');
+    }
+  };
 
   return (
     <div className="follow-instructions-container">
