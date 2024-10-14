@@ -7,8 +7,11 @@ import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import userRoutes from "./routes/userRoutes.js";
 import activitiesRoutes from "./routes/activitiesRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
-import doctorRoutes from "./routes/doctorRoutes.js"; // Importar las rutas de doctores
+import doctorRoutes from "./routes/doctorRoutes.js";
+import patientRoutes from "./routes/patientRoutes.js";
+
 import connectDB from "./config/db.js";
+import chatRoutes from "./routes/chatRoutes.js"; // Import chat routes
 
 const port = process.env.PORT || 5000;
 
@@ -27,7 +30,9 @@ app.use(cookieParser());
 app.use("/api/users", userRoutes);
 app.use("/api/activities", activitiesRoutes);
 app.use("/api/upload", uploadRoutes);
-app.use("/api/doctors", doctorRoutes); // Agregar la ruta de doctores
+app.use("/api/doctors", doctorRoutes);
+app.use("/api/patients", patientRoutes);
+app.use("/api/chats", chatRoutes);
 
 const __dirname = path.resolve();
 app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
