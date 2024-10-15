@@ -3,11 +3,11 @@ import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom'; 
 
 const photos = [
-  { src: require('../images/photo1.jpg'), name: 'Pizza' },
-  { src: require('../images/photo2.jpg'), name: 'Café' },
-  { src: require('../images/photo3.jpg'), name: 'Mariposa' },
-  { src: require('../images/photo4.jpg'), name: 'Oso' },
-  { src: require('../images/photo5.jpg'), name: 'Ensalada' }
+  { src: require('../images/pizza.jpg'), name: 'Pizza' },
+  { src: require('../images/cafe.jpg'), name: 'Café' },
+  { src: require('../images/mariposa.jpg'), name: 'Mariposa' },
+  { src: require('../images/oso.jpg'), name: 'Oso' },
+  { src: require('../images/ensalada.jpg'), name: 'Ensalada' }
 ];
 
 const shuffle = (array) => {
@@ -97,7 +97,7 @@ const ActivityScreen2 = () => {
 
   const saveActivity = async (finalScore) => {
     const activityData = {
-      name: 'Juego de Asociación de Fotos',
+      name: 'Asociación de Fotos',
       description: 'Actividad de asociación de fotos con nombres.',
       type: 'asociacion_fotos',
       scoreObtained: finalScore,

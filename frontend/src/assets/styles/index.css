@@ -576,11 +576,14 @@ button {
 
 .question {
   margin-bottom: 20px;
+  text-align: left;
+
 }
 
 .question-text {
   font-weight: bold;
   margin-bottom: 10px;
+  text-align: left;
 }
 
 .option-button {

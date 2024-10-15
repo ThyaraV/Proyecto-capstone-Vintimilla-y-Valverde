@@ -4,11 +4,11 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const images = [
-  { id: 1, src: require('../images/photo1.jpg') },
-  { id: 2, src: require('../images/photo2.jpg') },
-  { id: 3, src: require('../images/photo3.jpg') },
-  { id: 4, src: require('../images/photo4.jpg') },
-  { id: 5, src: require('../images/photo5.jpg') }
+  { id: 1, src: require('../images/fresa.jpg') },
+  { id: 2, src: require('../images/arandanos.jpg') },
+  { id: 3, src: require('../images/Kywi.jpg') },
+  { id: 4, src: require('../images/limon.jpg') },
+  { id: 5, src: require('../images/mango.jpg') }
 ];
 
 const shuffle = (array) => {

@@ -1,23 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
 
-// Importa las imágenes directamente
-import Image1 from '../images/photo1.jpg'; // Asegúrate de usar la ruta correcta
-import Image2 from '../images/photo2.jpg'; // Asegúrate de usar la ruta correcta
-
+// Importa las imágenes
+import Image1 from '../images/Encontrar7diferenciasp1.png'; 
+import Image2 from '../images/Encontrar7diferenciasp2.png'; 
 
 const differences = [
-  { id: 1, name: 'Diferencia 1', isCorrect: true },
-  { id: 2, name: 'Diferencia 2', isCorrect: false },
-  { id: 3, name: 'Diferencia 3', isCorrect: true },
-  { id: 4, name: 'Diferencia 4', isCorrect: false },
-  { id: 5, name: 'Diferencia 5', isCorrect: true },
-  { id: 6, name: 'Diferencia 6', isCorrect: false },
-  { id: 7, name: 'Diferencia 7', isCorrect: true },
-  { id: 8, name: 'Diferencia 8', isCorrect: false },
-  { id: 9, name: 'Diferencia 9', isCorrect: true },
-  { id: 10, name: 'Diferencia 10', isCorrect: false },
+  { id: 1, name: 'Expresión del niño', isCorrect: true },
+  { id: 2, name: 'Nube adicional', isCorrect: false },
+  { id: 3, name: 'Luz de la lámpara', isCorrect: true },
+  { id: 4, name: 'Color dentro del libro', isCorrect: true },
+  { id: 5, name: 'Hora del reloj', isCorrect: false },
+  { id: 6, name: 'Posición del lápiz', isCorrect: false },
+  { id: 7, name: 'Círculo del libro', isCorrect: true },
+  { id: 8, name: 'Triángulo en la pared', isCorrect: true },
+  { id: 9, name: 'Círculo detrás de la lámpara', isCorrect: true },
+  { id: 10, name: 'Color del tablero de la pared', isCorrect: true },
+  { id: 11, name: 'Número de libros en la mesa', isCorrect: false },
+  { id: 12, name: 'Posición de los patos', isCorrect: false },
+  { id: 13, name: 'Luz del sol más brillante', isCorrect: false },
+  { id: 14, name: 'Número de lápices en la mesa', isCorrect: false },
+  { id: 15, name: 'Sombras en la pared', isCorrect: false }
 ];
 
 const ActivityScreen4 = () => {
@@ -28,6 +33,7 @@ const ActivityScreen4 = () => {
   const [timer, setTimer] = useState(0);
   const navigate = useNavigate();
 
+  // Temporizador
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -38,9 +44,10 @@ const ActivityScreen4 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
+  // Selección de opciones
   const handleOptionClick = (id) => {
-    if (selectedOptions.length >= 5 && !selectedOptions.includes(id)) {
-      toast.warning('Ya has seleccionado 5 opciones');
+    if (selectedOptions.length >= 7 && !selectedOptions.includes(id)) {
+      toast.warning('Ya has seleccionado las 7 opciones');
       return;
     }
 
@@ -51,9 +58,10 @@ const ActivityScreen4 = () => {
     );
   };
 
+  // Enviar respuestas
   const handleSubmit = () => {
-    if (selectedOptions.length !== 5) {
-      toast.error('Debes seleccionar 5 opciones antes de enviar');
+    if (selectedOptions.length !== 7) {
+      toast.error('Debes seleccionar las 7 opciones antes de enviar');
       return;
     }
 
@@ -76,6 +84,7 @@ const ActivityScreen4 = () => {
     saveActivity(correct, incorrect);
   };
 
+  // Guardar la actividad
   const saveActivity = async (correct, incorrect) => {
     const activityData = {
       name: 'Encuentra diferencias',
@@ -84,8 +93,8 @@ const ActivityScreen4 = () => {
       correctAnswers: correct,
       incorrectAnswers: incorrect,
       timeUsed: timer,
-      scoreObtained: correct, // Guardamos simplemente la cantidad de respuestas correctas
-      patientId: 'somePatientId', // Reemplaza con el ID real del paciente
+      scoreObtained: correct, // Se guarda la cantidad de respuestas correctas como puntaje
+      patientId: 'somePatientId',
     };
 
     try {
@@ -110,7 +119,7 @@ const ActivityScreen4 = () => {
 
   return (
     <div className="find-differences-game">
-      <h1>Encuentra las 5 diferencias</h1>
+      <h1>Encuentra las 7 diferencias</h1>
       <p>Tiempo: {timer} segundos</p>
 
       <div className="images-container">
