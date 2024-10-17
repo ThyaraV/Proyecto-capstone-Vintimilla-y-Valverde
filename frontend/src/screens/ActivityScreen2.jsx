@@ -122,7 +122,7 @@ const ActivityScreen2 = () => {
         toast.success('Actividad guardada correctamente');
         setTimeout(() => {
             navigate('/activities'); // Redirige a la lista de actividades después de mostrar el toast
-          }, 3000);
+          }, 6000);
       } else {
         toast.error('Error al guardar la actividad');
       }

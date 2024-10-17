@@ -83,6 +83,12 @@ const ActivityScreen9 = () => {
   const [timer, setTimer] = useState(0);
   const navigate = useNavigate();
 
+  // Mover la página directamente al inicio sin animación
+  useEffect(() => {
+    window.scrollTo(0, 0); // Colocar la página en la parte superior al cargar
+  }, []);
+
+  // Temporizador
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -90,6 +96,16 @@ const ActivityScreen9 = () => {
     }
     return () => clearInterval(interval);
   }, [gameFinished]);
+
+  // Redirigir después de 6 segundos de haber finalizado el juego
+  useEffect(() => {
+    if (gameFinished) {
+      const timeout = setTimeout(() => {
+        navigate('/activities'); // Navegar a /activities después de 6 segundos
+      }, 6000);
+      return () => clearTimeout(timeout);
+    }
+  }, [gameFinished, navigate]);
 
   const handleChange = (id, value) => {
     setResponses((prev) => ({ ...prev, [id]: value }));
@@ -112,7 +128,6 @@ const ActivityScreen9 = () => {
     setGameFinished(true);
     toast.success('Juego terminado. ¡Revisa tus resultados!');
     saveActivity(finalScore, timer.toFixed(2));
-    setTimeout(() => navigate('/activities'), 8000); // Redirigir después de 8 segundos
   };
 
   const saveActivity = async (finalScore, timeUsed) => {

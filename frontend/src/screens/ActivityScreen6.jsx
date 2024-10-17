@@ -3,7 +3,7 @@ import { useDrag, useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+import { useNavigate } from 'react-router-dom'; // Para redireccionar
 
 const categories = [
   { id: 1, name: 'Colores' },
@@ -15,7 +15,12 @@ const words = [
   { id: 2, text: 'Círculo', category: 'Formas' },
   { id: 3, text: 'Azul', category: 'Colores' },
   { id: 4, text: 'Cuadrado', category: 'Formas' },
-  { id: 5, text: 'Verde', category: 'Colores' }
+  { id: 5, text: 'Verde', category: 'Colores' },
+  { id: 6, text: 'Triángulo', category: 'Formas' },
+  { id: 7, text: 'Amarillo', category: 'Colores' },
+  { id: 8, text: 'Hexágono', category: 'Formas' },
+  { id: 9, text: 'Naranja', category: 'Colores' },
+  { id: 10, text: 'Pentágono', category: 'Formas' }
 ];
 
 const ActivityScreen6 = () => {
@@ -23,6 +28,7 @@ const ActivityScreen6 = () => {
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
+  const navigate = useNavigate(); // Para navegación
 
   useEffect(() => {
     let interval;
@@ -30,9 +36,14 @@ const ActivityScreen6 = () => {
       interval = setInterval(() => {
         setTimer((prevTimer) => prevTimer + 1);
       }, 1000);
+    } else {
+      // Regresar a /activities después de 10 segundos
+      setTimeout(() => {
+        navigate('/activities');
+      }, 6000); // 10 segundos
     }
     return () => clearInterval(interval);
-  }, [gameFinished]);
+  }, [gameFinished, navigate]);
 
   const handleDrop = (word, category) => {
     setAssignedCategories((prevAssigned) => ({
@@ -48,9 +59,9 @@ const ActivityScreen6 = () => {
         correctCount += 1;
       }
     });
-    setCorrectAnswers(correctCount);
+    setCorrectAnswers(correctCount * 0.5); // Cada palabra correcta cuenta 0.5 puntos
     setGameFinished(true);
-    saveActivity(correctCount);
+    saveActivity(correctCount * 0.5); // Guardar el puntaje
   };
 
   const saveActivity = async (score) => {
@@ -116,7 +127,7 @@ const ActivityScreen6 = () => {
         {gameFinished && (
           <div className="results">
             <h2>¡Juego Terminado!</h2>
-            <p>Respuestas correctas: {correctAnswers} de {words.length}</p>
+            <p>Respuestas correctas: {correctAnswers} de {words.length * 0.5}</p>
             <p>Tiempo total: {timer} segundos</p>
           </div>
         )}
@@ -174,4 +185,4 @@ const Category = ({ category, assignedWords, onDrop }) => {
   );
 };
 
-export default ActivityScreen6
+export default ActivityScreen6;

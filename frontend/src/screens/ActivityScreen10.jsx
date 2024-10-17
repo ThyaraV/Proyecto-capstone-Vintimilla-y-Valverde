@@ -84,6 +84,11 @@ const ActivityScreen10 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
+  // Desplazar al inicio de la página cuando el juego inicia
+  useEffect(() => {
+    window.scrollTo(0, 0); // Desplazar al tope cuando se carga el componente
+  }, []);
+
   const handleOptionClick = (selectedOption) => {
     const currentObject = objects[currentObjectIndex];
 
@@ -96,6 +101,9 @@ const ActivityScreen10 = () => {
       toast.error(`Incorrecto. La respuesta correcta es: ${currentObject.correctUse}`);
     }
 
+    // Desplazar al tope de la página cada vez que se selecciona una opción
+    window.scrollTo(0, 0);
+
     // Avanzar al siguiente objeto después de mostrar el mensaje
     setTimeout(() => {
       if (currentObjectIndex + 1 < objects.length) {
@@ -104,7 +112,7 @@ const ActivityScreen10 = () => {
         setGameFinished(true);
         toast.success('¡Juego terminado!');
         saveActivity(newScore, timer.toFixed(2)); // Guardar la actividad con el puntaje actualizado
-        setTimeout(() => navigate('/activities'), 8000); // Redirigir después de 8 segundos
+        setTimeout(() => navigate('/activities'), 6000); // Redirigir después de 6 segundos
       }
     }, 2000);
   };
@@ -141,7 +149,7 @@ const ActivityScreen10 = () => {
     }
   };
 
-  const currentObject = objects[currentObjectIndex];
+  const currentObject = objects[currentObjectIndex] || {}; // Asegúrate de que `currentObject` no sea undefined
 
   return (
     <div className="identify-objects-game-container">
@@ -150,9 +158,14 @@ const ActivityScreen10 = () => {
 
       {!gameFinished ? (
         <div className="object-card">
-          <img src={currentObject.image} alt="Objeto" className="object-image" />
+          {/* Verificar si `image` existe antes de intentar mostrarla */}
+          {currentObject.image ? (
+            <img src={currentObject.image} alt="Objeto" className="object-image" />
+          ) : (
+            <p>Cargando imagen...</p>
+          )}
           <div className="options-group">
-            {currentObject.options.map((option, index) => (
+            {currentObject.options && currentObject.options.map((option, index) => (
               <button
                 key={index}
                 onClick={() => handleOptionClick(option)}

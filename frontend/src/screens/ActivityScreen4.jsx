@@ -44,6 +44,17 @@ const ActivityScreen4 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
+  // Navegar a /activities después de 6 segundos
+  useEffect(() => {
+    if (gameFinished) {
+      const timer = setTimeout(() => {
+        navigate('/activities');
+      }, 6000); // Redirige después de 6 segundos
+
+      return () => clearTimeout(timer); // Limpiar el temporizador si se desmonta el componente
+    }
+  }, [gameFinished, navigate]);
+
   // Selección de opciones
   const handleOptionClick = (id) => {
     if (selectedOptions.length >= 7 && !selectedOptions.includes(id)) {
@@ -108,7 +119,6 @@ const ActivityScreen4 = () => {
 
       if (response.ok) {
         toast.success('Actividad guardada correctamente');
-        navigate('/activities');
       } else {
         toast.error('Error al guardar la actividad');
       }

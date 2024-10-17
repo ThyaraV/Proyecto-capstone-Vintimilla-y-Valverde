@@ -43,7 +43,7 @@ const ActivityScreen7 = () => {
       // Redirigir a la pantalla de inicio 5 segundos después
       setTimeout(() => {
         navigate('/activities');
-      }, 8000);
+      }, 6000);
     }
   }, [matchedCards, navigate, score, timer]);
 

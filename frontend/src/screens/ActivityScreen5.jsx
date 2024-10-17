@@ -54,6 +54,17 @@ const ActivityScreen5 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
+  useEffect(() => {
+    // Cuando el juego termina, después de 6 segundos redirige a /activities
+    if (gameFinished) {
+      const timeout = setTimeout(() => {
+        navigate('/activities');
+      }, 6000); // Espera de 6 segundos antes de redirigir
+
+      return () => clearTimeout(timeout); // Limpia el timeout si el componente se desmonta
+    }
+  }, [gameFinished, navigate]);
+
   const handleOptionClick = (option) => {
     setSelectedOption(option);
   };
@@ -99,7 +110,6 @@ const ActivityScreen5 = () => {
 
       if (response.ok) {
         toast.success('Actividad guardada correctamente');
-        navigate('/activities');
       } else {
         toast.error('Error al guardar la actividad');
       }

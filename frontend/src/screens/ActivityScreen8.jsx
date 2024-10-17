@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
 const questions = [
   {
     id: 1,
@@ -44,6 +43,11 @@ const ActivityScreen8 = () => {
   const [timer, setTimer] = useState(0);
   const navigate = useNavigate();
 
+  // Mover la página directamente al inicio sin animación
+  useEffect(() => {
+    window.scrollTo(0, 0); // Se asegura de que la página esté en el tope al cargar
+  }, []);
+
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -53,6 +57,15 @@ const ActivityScreen8 = () => {
     }
     return () => clearInterval(interval);
   }, [gameFinished]);
+
+  useEffect(() => {
+    if (gameFinished) {
+      const timeout = setTimeout(() => {
+        navigate('/activities'); // Navegar a /activities después de 6 segundos
+      }, 6000);
+      return () => clearTimeout(timeout);
+    }
+  }, [gameFinished, navigate]);
 
   const handleOptionClick = (questionId, answer) => {
     setSelectedAnswers((prevAnswers) => ({
@@ -95,9 +108,6 @@ const ActivityScreen8 = () => {
 
       if (response.ok) {
         toast.success('Actividad guardada correctamente');
-        setTimeout(() => {
-          navigate('/'); // Regresar a la pantalla de inicio después de 5 segundos
-        }, 5000);
       } else {
         toast.error('Error al guardar la actividad');
       }
@@ -153,4 +163,4 @@ const ActivityScreen8 = () => {
   );
 };
 
-export default ActivityScreen8
+export default ActivityScreen8;

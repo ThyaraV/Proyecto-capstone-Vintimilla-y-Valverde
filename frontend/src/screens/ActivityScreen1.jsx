@@ -52,7 +52,7 @@ const ActivityScreen1 = () => {
         // Espera 3 segundos para que el mensaje de éxito sea visible antes de redirigir
         setTimeout(() => {
           navigate('/activities'); // Redirige a la lista de actividades después de mostrar el toast
-        }, 3000); // Espera 3 segundos antes de redirigir
+        }, 6000); // Espera 9 segundos antes de redirigir
       } else {
         toast.error('Error al guardar la actividad');
       }
