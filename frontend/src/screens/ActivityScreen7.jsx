@@ -16,7 +16,7 @@ const shuffle = (array) => {
 };
 
 const ActivityScreen7 = () => {
-  const [cards, setCards] = useState(shuffle([...images, ...images])); // Duplicar y mezclar las imágenes
+  const [cards] = useState(shuffle([...images, ...images])); // Duplicar y mezclar las imágenes
   const [flippedCards, setFlippedCards] = useState([]);
   const [matchedCards, setMatchedCards] = useState([]);
   const [score, setScore] = useState(0);
