@@ -57,10 +57,16 @@ export const usersApiSlice=apiSlice.injectEndpoints({
             }),
             invalidatesTags:['Users'],
         }),
+        searchUsers: builder.query({
+            query: (searchTerm) => ({
+                url: `${USERS_URL}/search?query=${searchTerm}`,
+            }),
+            providesTags: ['Users'],
+        }),        
     }),
 });
 
 export const {useLoginMutation,useLogoutMutation, 
 useRegisterMutation,useProfileMutation,useGetUsersQuery,
 useDeleteUserMutation,useGetUserDetailsQuery,
-useUpdateUserMutation}=usersApiSlice;
+useUpdateUserMutation, useSearchUsersQuery}=usersApiSlice;

@@ -325,6 +325,25 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 });
 
+//@desc Search users
+//@route GET /api/users/search
+//@access Private/Admin
+const searchUsers = asyncHandler(async (req, res) => {
+  const { query } = req.query; // obtenemos la consulta de búsqueda de los parámetros de la URL
+
+  // Buscamos usuarios que coincidan con la consulta
+  const users = await User.find({
+    $or: [
+      { name: { $regex: query, $options: "i" } },
+      { lastName: { $regex: query, $options: "i" } },
+      { email: { $regex: query, $options: "i" } },
+    ],
+  });
+
+  res.status(200).json(users);
+});
+
+
 export {
   authUser,
   registerUser,
@@ -336,4 +355,5 @@ export {
   getUserByID,
   updateUser,
   getFaceData,
+  searchUsers
 };
