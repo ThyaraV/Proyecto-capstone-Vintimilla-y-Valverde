@@ -741,3 +741,126 @@ button {
 .option-button:hover {
   background-color: #039c17;
 }
+
+.activity-card {
+  --main-color: #f5b235;
+  --submain-color: #3caaff;
+  --bg-color: #fff;
+  font-family: 'Arial', sans-serif;
+  position: relative;
+  width: 300px;
+  height: 450px; /* Fijamos la altura para que todas sean del mismo tamaño */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between; /* Asegura que los elementos internos se distribuyan uniformemente */
+  border-radius: 20px;
+  background: var(--bg-color);
+  box-shadow: 0 4px 8px rgba(194, 161, 14, 0.1);
+  overflow: hidden;
+  text-align: center;
+  margin: 20px; /* Aumenta el margen para asegurar la separación */
+}
+
+.activity-card__bg {
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  position: relative;
+}
+
+.activity-background-image {
+  width: 100%;
+  height: 150%;
+  object-fit: cover;
+}
+
+.activity-card__avatar {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: var(--bg-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.activity-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.activity-title {
+  margin-top: 40px; /* Reducir el margen para acercar el texto a la imagen */
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--main-color);
+}
+
+.activity-description {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--submain-color);
+}
+
+.activity-card__wrapper {
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.activity-card__btn {
+  margin: 5px;
+  width: 120px; /* Ajuste del tamaño del botón */
+  height: 35px;
+  border: 2px solid var(--main-color);
+  border-radius: 5px;
+  font-weight: 700;
+  font-size: 14px; /* Aumentar el tamaño de la fuente */
+  color: var(--main-color);
+  background: var(--bg-color);
+  transition: all 0.3s;
+}
+
+.activity-card__btn:hover {
+  background: var(--main-color);
+  color: var(--bg-color);
+}
+
+.activity-card__btn-solid {
+  background: var(--main-color);
+  color: var(--bg-color);
+}
+
+.activity-card__btn-solid:hover {
+  background: var(--bg-color);
+  color: var(--main-color);
+}
+
+.activity-card-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 20px; /* Añadimos un espacio entre las filas también */
+}
+
+.activity-card-container {
+  padding: 20px; /* Añade un padding alrededor del contenedor si es necesario */
+}
+
+.activity-card {
+  margin: 0 10px 20px 10px; /* Ajusta el margen entre tarjetas si es necesario */
+}
+
+.activity-card {
+  margin-left: 2px; /* Ajusta el margen izquierdo */
+  margin-right: 2px; /* Ajusta el margen derecho */
+  /* Si necesitas forzar el tamaño */
+  max-width: 280px; /* Fija un tamaño máximo para evitar que las tarjetas se expandan demasiado */
+}

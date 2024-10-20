@@ -8,21 +8,13 @@ import Image1 from '../images/Encontrar7diferenciasp1.png';
 import Image2 from '../images/Encontrar7diferenciasp2.png'; 
 
 const differences = [
-  { id: 1, name: 'Expresión del niño', isCorrect: true },
-  { id: 2, name: 'Nube adicional', isCorrect: false },
-  { id: 3, name: 'Luz de la lámpara', isCorrect: true },
-  { id: 4, name: 'Color dentro del libro', isCorrect: true },
-  { id: 5, name: 'Hora del reloj', isCorrect: false },
-  { id: 6, name: 'Posición del lápiz', isCorrect: false },
-  { id: 7, name: 'Círculo del libro', isCorrect: true },
-  { id: 8, name: 'Triángulo en la pared', isCorrect: true },
-  { id: 9, name: 'Círculo detrás de la lámpara', isCorrect: true },
-  { id: 10, name: 'Color del tablero de la pared', isCorrect: true },
-  { id: 11, name: 'Número de libros en la mesa', isCorrect: false },
-  { id: 12, name: 'Posición de los patos', isCorrect: false },
-  { id: 13, name: 'Luz del sol más brillante', isCorrect: false },
-  { id: 14, name: 'Número de lápices en la mesa', isCorrect: false },
-  { id: 15, name: 'Sombras en la pared', isCorrect: false }
+  { id: 1, name: 'Expresión del niño', x: 228, y: 255, width: 50, height: 50 },
+  { id: 2, name: 'Luz de la lámpara', x: 90, y: 90, width: 40, height: 40 },
+  { id: 3, name: 'Color dentro del libro', x: 200, y: 350, width: 40, height: 40 },
+  { id: 4, name: 'Círculo detrás de la lámpara', x: 60, y: 120, width: 50, height: 50 },
+  { id: 5, name: 'Color del tablero de la pared', x: 330, y: 60, width: 50, height: 50 },
+  { id: 6, name: 'Triángulo en la pared', x: 290, y: 210, width: 40, height: 40 },
+  { id: 7, name: 'Círculo del libro', x: 250, y: 370, width: 40, height: 40 },
 ];
 
 const ActivityScreen4 = () => {
@@ -47,26 +39,25 @@ const ActivityScreen4 = () => {
   // Navegar a /activities después de 6 segundos
   useEffect(() => {
     if (gameFinished) {
-      const timer = setTimeout(() => {
+      const timeout = setTimeout(() => {
         navigate('/activities');
       }, 6000); // Redirige después de 6 segundos
 
-      return () => clearTimeout(timer); // Limpiar el temporizador si se desmonta el componente
+      return () => clearTimeout(timeout); // Limpiar el temporizador si se desmonta el componente
     }
   }, [gameFinished, navigate]);
 
-  // Selección de opciones
+  // Selección de diferencias
   const handleOptionClick = (id) => {
     if (selectedOptions.length >= 7 && !selectedOptions.includes(id)) {
       toast.warning('Ya has seleccionado las 7 opciones');
       return;
     }
 
-    setSelectedOptions((prevSelected) =>
-      prevSelected.includes(id)
-        ? prevSelected.filter((option) => option !== id)
-        : [...prevSelected, id]
-    );
+    if (!selectedOptions.includes(id)) {
+      setSelectedOptions([...selectedOptions, id]); // Añadir diferencia seleccionada
+      toast.success('Has seleccionado una diferencia');
+    }
   };
 
   // Enviar respuestas
@@ -81,7 +72,7 @@ const ActivityScreen4 = () => {
 
     selectedOptions.forEach((id) => {
       const option = differences.find((diff) => diff.id === id);
-      if (option && option.isCorrect) {
+      if (option) {
         correct += 1;
       } else {
         incorrect += 1;
@@ -132,21 +123,32 @@ const ActivityScreen4 = () => {
       <h1>Encuentra las 7 diferencias</h1>
       <p>Tiempo: {timer} segundos</p>
 
-      <div className="images-container">
-        <img src={Image1} alt="Imagen 1" />
-        <img src={Image2} alt="Imagen 2" />
-      </div>
-
-      <div className="options-container">
-        {differences.map((difference) => (
-          <div
-            key={difference.id}
-            className={`option ${selectedOptions.includes(difference.id) ? 'selected' : ''}`}
-            onClick={() => handleOptionClick(difference.id)}
-          >
-            {difference.name}
-          </div>
-        ))}
+      <div className="images-container" style={{ position: 'relative' }}>
+        <img src={Image1} alt="Imagen 1" style={{ width: '464px', height: '534px' }} />
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <img
+            src={Image2}
+            alt="Imagen 2"
+            style={{ width: '464px', height: '534px', cursor: 'pointer' }}
+          />
+          {/* Botones transparentes */}
+          {differences.map((difference) => (
+            <button
+              key={difference.id}
+              onClick={() => handleOptionClick(difference.id)}
+              style={{
+                position: 'absolute',
+                top: `${difference.y}px`,
+                left: `${difference.x}px`,
+                width: `${difference.width}px`,
+                height: `${difference.height}px`,
+                backgroundColor: 'transparent',
+                border: '2px solid rgba(255, 255, 255, 0.5)', // Líneas para ver la ubicación, puedes quitarlas
+                cursor: 'pointer',
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       {!gameFinished && (

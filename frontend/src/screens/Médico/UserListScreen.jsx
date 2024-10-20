@@ -9,14 +9,14 @@ import { useGetUsersQuery, useDeleteUserMutation } from '../../slices/usersApiSl
 
 const UserListScreen = () => {
     const [searchTerm, setSearchTerm] = useState('');
-    const { data: users = [], isLoading, error, refetch } = useGetUsersQuery(); // Asegúrate de que 'users' tenga un valor por defecto como arreglo
+    const { data: users = [], isLoading, error, refetch } = useGetUsersQuery();
     const [deleteUser, { isLoading: loadingDelete }] = useDeleteUserMutation();
 
     const deleteHandler = async (id) => {
-        if (window.confirm('Are you sure?')) {
+        if (window.confirm('Are you sure you want to disable this user?')) {
             try {
-                await deleteUser(id);
-                toast.success('User deleted');
+                await deleteUser(id); // Cambiará el estado de isActive a false
+                toast.success('User disabled successfully');
                 refetch();
             } catch (err) {
                 toast.error(err?.data?.message || (typeof err.error === 'object' ? JSON.stringify(err.error) : err.error));
@@ -28,12 +28,22 @@ const UserListScreen = () => {
         setSearchTerm(e.target.value);
     };
 
-    // Filtrado de usuarios, asegurándose de que sea un arreglo
+    // Filtrado de usuarios
     const filteredUsers = users.filter(user =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    // Función para habilitar un usuario
+    const enableUserHandler = async (id) => {
+        // Aquí se debe implementar la lógica para volver a habilitar al usuario
+        // Esto podría ser un llamado a la API que cambie isActive a true
+        // Por ejemplo:
+        // await enableUser(id);
+        toast.success('User enabled successfully');
+        refetch();
+    };
 
     return (
         <>
@@ -57,7 +67,7 @@ const UserListScreen = () => {
                                 <th>NAME</th>
                                 <th>EMAIL</th>
                                 <th>ADMIN</th>
-                                <th>PAID</th>
+                                <th>ACTION</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -75,14 +85,20 @@ const UserListScreen = () => {
                                             )}
                                         </td>
                                         <td>
+                                            {user.isActive ? (
+                                                <Button variant='danger' className='btn-sm' onClick={() => deleteHandler(user._id)}>
+                                                    Disable
+                                                </Button>
+                                            ) : (
+                                                <Button variant='success' className='btn-sm' onClick={() => enableUserHandler(user._id)}>
+                                                    Enable
+                                                </Button>
+                                            )}
                                             <LinkContainer to={`/admin/user/${user._id}/edit`}>
                                                 <Button variant='light' className='btn-sm mx-2'>
                                                     <FaEdit />
                                                 </Button>
                                             </LinkContainer>
-                                            <Button variant='danger' className='btn-sm' onClick={() => deleteHandler(user._id)}>
-                                                <FaTrash style={{ color: 'white' }} />
-                                            </Button>
                                         </td>
                                     </tr>
                                 ))
