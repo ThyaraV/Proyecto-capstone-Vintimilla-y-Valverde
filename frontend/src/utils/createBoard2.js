@@ -1,34 +1,21 @@
 import { createCell } from "./createCell.js";
-const couples=[
-    ["B", "D"],
-    ["C", "D"],
-    ["g", "q"],
-    ["G", "6"],
-    ["L", "I"],
-    ["O", "0"],
-    ["V", "U"],
-    ["Z", "2"],
-    ["F", "E"],
-    ["K", "X"],
-    ["p", "q"],
-    ["B", "8"],
-    ["W", "M"],
-    ["S", "5"],
-
-];
-
-export function createBoard(level = 1) {
+export function createBoard(level = 2) {
     const board = [];
-    let randomRow = 5;  // Tablero 5x5
-    let randomCol = 5;
-    
-    // Solo usar 5 combinaciones fáciles
+    let randomRow = 8;  // Tablero 8x8
+    let randomCol = 8;
+  
+    // Usar 10 combinaciones intermedias
     const couplesLevel = [
       ["B", "D"],
       ["C", "D"],
+      ["g", "q"],
+      ["G", "6"],
       ["L", "I"],
       ["O", "0"],
       ["V", "U"],
+      ["Z", "2"],
+      ["F", "E"],
+      ["K", "X"],
     ];
   
     const randomIdx = Math.floor(Math.random() * couplesLevel.length);
@@ -44,13 +31,11 @@ export function createBoard(level = 1) {
       board.push(newRow);
     }
   
-    // Insertar letra oculta
     insertRandomHidden(board, randomCouple[hiddenLetter], randomRow, randomCol);
     return board;
   }
   
-
-function insertRandomHidden(board,letter,r,c){
+  function insertRandomHidden(board,letter,r,c){
     const row=Math.floor(Math.random()*r);
     const col=Math.floor(Math.random()*c);
     if(board[row][col]){

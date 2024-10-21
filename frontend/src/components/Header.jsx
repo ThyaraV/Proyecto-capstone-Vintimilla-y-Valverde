@@ -42,8 +42,12 @@ const Header = () => {
                                 <Nav.Link><FaListUl /> Actividades</Nav.Link>
                             </LinkContainer>
 
-                            <LinkContainer to='/activitiesN2'>
+                            <LinkContainer to='/activitiesL2'>
                                 <Nav.Link><FaListUl /> Actividades 2</Nav.Link>
+                            </LinkContainer>
+
+                            <LinkContainer to='/activitiesL3'>
+                                <Nav.Link><FaListUl /> Actividades 3</Nav.Link>
                             </LinkContainer>
 
                             {userInfo ? (                 

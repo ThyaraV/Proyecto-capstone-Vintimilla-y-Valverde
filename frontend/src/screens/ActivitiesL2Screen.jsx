@@ -3,7 +3,7 @@ import Activity2 from '../components/Activity2.jsx'; // Componente de actividad
 import Loader from '../components/Loader.jsx';
 import { useGetActivitiesQuery } from '../slices/activitiesSlice.js'; // Para obtener actividades
 
-const ActivitiesN2Screen = () => {
+const ActivitiesL2Screen = () => {
   const { data: activities, isLoading } = useGetActivitiesQuery(); // Consultar actividades
 
   return (
@@ -26,4 +26,4 @@ const ActivitiesN2Screen = () => {
   );
 };
 
-export default ActivitiesN2Screen;
+export default ActivitiesL2Screen;

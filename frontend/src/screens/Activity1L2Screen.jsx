@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { createBoard } from '../utils/createBoard';
+import { createBoard } from '../utils/createBoard2.js';
 import Cell from '../components/Activity 1/Cell';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 
-const ActivityScreen1 = () => {
-  const [board, setBoard] = useState(() => createBoard(1)); // Nivel 1
-  const [gamesToWin, setGamesToWin] = useState(5); // 5 tableros por nivel
+const Activity1L2Screen = () => {
+  const [board, setBoard] = useState(() => createBoard(2)); // Nivel 2
+  const [gamesToWin, setGamesToWin] = useState(5);
   const [timer, setTimer] = useState(0);
   const miliseconds = (timer / 10).toFixed(2);
   const navigate = useNavigate();
@@ -23,12 +23,12 @@ const ActivityScreen1 = () => {
   const saveActivity = async () => {
     try {
       const activityData = {
-        name: 'Búsqueda de letras - Nivel Fácil',
-        description: 'Encuentra la letra correcta en un tablero pequeño.',
+        name: 'Búsqueda de letras - Nivel Intermedio',
+        description: 'Encuentra la letra correcta en un tablero mediano.',
         type: 'memoria',
         scoreObtained: gamesToWin === 0 ? 5 : 0,
         timeUsed: miliseconds,
-        difficultyLevel: 1,
+        difficultyLevel: 2,
         observations: 'El paciente completó la actividad satisfactoriamente.',
         progress: 'mejorando',
         image: 'image_url',
@@ -45,7 +45,7 @@ const ActivityScreen1 = () => {
 
       if (response.ok) {
         toast.success('Actividad guardada correctamente');
-        setTimeout(() => navigate('/activities'), 6000); // Redirige después de 6 segundos
+        setTimeout(() => navigate('/activities'), 6000);
       } else {
         toast.error('Error al guardar la actividad');
       }
@@ -59,16 +59,16 @@ const ActivityScreen1 = () => {
       setGamesToWin(gamesToWin - 1);
 
       if (gamesToWin > 1) {
-        setTimeout(() => setBoard(createBoard(1)), 500);
+        setTimeout(() => setBoard(createBoard(2)), 500);
       } else if (gamesToWin === 1) {
-        saveActivity(); // Guardar al completar el último tablero
+        saveActivity(); 
       }
     }
   };
 
   return (
     <div className='activity-screen'>
-      <h1>Encuentra la letra (Nivel 1 - Fácil)</h1>
+      <h1>Encuentra la letra (Nivel 2 - Intermedio)</h1>
       {gamesToWin > 0 && <p>Tiempo: {miliseconds} segundos</p>}
       {gamesToWin === 0 ? (
         <p>Felicidades, tu tiempo fue: {miliseconds} segundos</p>
@@ -91,4 +91,4 @@ const ActivityScreen1 = () => {
   );
 };
 
-export default ActivityScreen1;
+export default Activity1L2Screen;

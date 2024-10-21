@@ -1,33 +1,33 @@
 import { Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import backgroundImg from '../images/background2.png'; // Ruta a la imagen de fondo
+import backgroundImg from '../images/background3.png'; // Ruta a la imagen de fondo
 
 const Activity = ({ activity }) => {
   // Determina la ruta basada en el tipo de actividad o un identificador único
   const getActivityLink = (activity) => {
     switch (activity.name) {
       case 'Búsqueda de letra':
-        return '/activity/level2/1';
+        return '/activity/level3/1';
       case 'Asociación de fotos':
-        return '/activity/level2/2';
+        return '/activity/level3/2';
       case 'Sumas y Restas':
-        return '/activity/level2/3';
+        return '/activity/level3/3';
       case 'Encuentra diferencias':
-        return '/activity/level2/4';
+        return '/activity/level3/4';
       case 'Forma las frases correctas':
-        return '/activity/level2/5';
+        return '/activity/level3/5';
       case 'Clasificación de palabras':
-        return '/activity/level2/6';
+        return '/activity/level3/6';
       case 'Memoria a corto plazo':
-        return '/activity/level2/7';
+        return '/activity/level3/7';
       case 'Responde preguntas':
-        return '/activity/level2/8';
+        return '/activity/level3/8';
       case 'Sigue instrucciones':
-        return '/activity/level2/9';
+        return '/activity/level3/9';
       case 'Identificación de objetos y sus usos':
-        return '/activity/level2/10';
+        return '/activity/level3/10';
       default:
-        return `/activity/level2/${activity._id}`;
+        return `/activity/level3/${activity._id}`;
     }
   };
 
