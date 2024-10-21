@@ -196,7 +196,7 @@ table th {
 }
 
 header {
-  background: linear-gradient(to right, #ff914d, #1060ae); /* Degradado de color naranja a morado */
+  background: linear-gradient(to right, #fcb64c, #1986f3); /* Degradado de color naranja a morado */
   padding: 2px 0;
   
 }
@@ -929,7 +929,7 @@ button {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  width: 100%;
+  width: 30%;
 }
 
 .results {
