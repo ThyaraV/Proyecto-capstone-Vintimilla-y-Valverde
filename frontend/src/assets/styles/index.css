@@ -625,7 +625,7 @@ button {
 }
 
 .submit-button:hover {
-  background-color: #45a049;
+  background-color: #f8b44f;
 }
 
 .results {
@@ -863,4 +863,98 @@ button {
   margin-right: 2px; /* Ajusta el margen derecho */
   /* Si necesitas forzar el tamaño */
   max-width: 280px; /* Fija un tamaño máximo para evitar que las tarjetas se expandan demasiado */
+}
+
+.story-game-container {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  z-index: 1;
+}
+
+.background-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(250, 228, 130, 0.2); /* Color con transparencia */
+  border: 2px solid #f5b326; /* Borde del cuadro */
+  z-index: -1; /* Se envía el cuadro al fondo */
+  border-radius: 15px; /* Bordes redondeados (opcional) */
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  padding: 20px; /* Más espacio dentro del contenedor para que el contenido no esté ajustado */
+}
+
+.timer-container {
+  text-align: right;
+  margin-bottom: 10px; /* Espacio debajo del temporizador */
+}
+
+.story-text {
+  margin-bottom: 30px;
+  max-height: 400px; /* Aumenta la altura máxima del contenedor para que permita más contenido */
+  overflow-y: auto; /* Permite scroll si el contenido es muy largo */
+  padding: 10px; /* Espacio interior para mayor legibilidad */
+  background-color: #f5f5f5; /* Color de fondo opcional para distinguir el texto */
+  border-radius: 10px; /* Bordes redondeados opcionales */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra ligera para destacar el contenedor */
+}
+
+.questions-container {
+  margin-top: 20px;
+  overflow: hidden; /* Asegura que el contenido del carrusel no se desborde */
+}
+
+.question-slide {
+  padding: 20px;
+}
+
+.navigation-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.submit-button {
+  margin-top: 30px;
+  padding: 10px 20px;
+  background-color: #f8d538;
+  color: rgb(10, 10, 10);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.results {
+  margin-top: 20px;
+}
+
+.option-button {
+  margin-top: 10px;
+  padding: 10px;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.option-button:hover {
+  background-color: #ddd;
+}
+
+.option-button:disabled {
+  background-color: #8dc4e4; /* Evitar cambios en el color cuando está deshabilitado */
+  color: black;
+}
+
+.dots {
+  text-align: center;
+  margin-top: 15px;
 }

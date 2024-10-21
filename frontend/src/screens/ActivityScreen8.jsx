@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Slider from 'react-slick';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
 
 const questions = [
   {
@@ -42,8 +45,8 @@ const ActivityScreen8 = () => {
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
   const navigate = useNavigate();
+  const sliderRef = React.useRef(null);
 
-  // Mover la página directamente al inicio sin animación
   useEffect(() => {
     window.scrollTo(0, 0); // Se asegura de que la página esté en el tope al cargar
   }, []);
@@ -116,49 +119,79 @@ const ActivityScreen8 = () => {
     }
   };
 
+  const settings = {
+    dots: true,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    arrows: true,
+    swipe: false, // Desactiva el swipe para obligar al uso de botones
+    adaptiveHeight: true
+  };
+
   return (
     <div className="story-game-container">
-      <div className="timer-container">
-        <p>Tiempo: {timer} segundos</p>
-      </div>
-      <h1>El paseo de María</h1>
-      <p className="story-text">
-        María es una mujer alegre que vive en un pequeño pueblo. Un día soleado, decidió salir a pasear por el parque cercano. Primero, se puso su sombrero azul favorito y tomó su bolso. En el camino, se encontró con su amiga Ana, quien llevaba una bufanda roja. Juntas caminaron hasta la heladería donde compraron un helado de vainilla. Luego, se sentaron en un banco frente al lago y vieron a los patos nadando tranquilamente. Antes de regresar a casa, María compró flores amarillas para decorar su mesa del comedor. Al llegar a su casa, estaba feliz por haber tenido un día tan bonito.
-      </p>
+      {/* Fondo del cuadro */}
+      <div className="background-box"></div>
 
-      <div className="questions-container">
-        {questions.map((question) => (
-          <div key={question.id} className="question">
-            <p className="question-text">{question.question}</p>
-            {question.options.map((option, index) => (
-              <button
-                key={index}
-                className="option-button"
-                onClick={() => handleOptionClick(question.id, option)}
-                disabled={gameFinished}
-                style={{
-                  backgroundColor: selectedAnswers[question.id] === option ? '#4caf50' : '#f0f0f0',
-                  color: selectedAnswers[question.id] === option ? 'white' : 'black'
-                }}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>
-
-      {!gameFinished ? (
-        <button onClick={handleSubmit} className="submit-button">Enviar Respuestas</button>
-      ) : (
-        <div className="results">
-          <h2>¡Juego Terminado!</h2>
-          <p>Puntuación final: {score}</p>
-          <p>Tiempo total: {timer} segundos</p>
+      {/* Contenido principal */}
+      <div className="content">
+        <div className="timer-container">
+          <p>Tiempo: {timer} segundos</p>
         </div>
-      )}
+        <h1>El paseo de María</h1>
+        <p className="story-text">
+        María es una mujer alegre que vive en un pequeño pueblo. Un día soleado, decidió salir a pasear por el parque cercano. Primero, se puso su sombrero azul favorito y tomó su bolso. En el camino, se encontró con su amiga Ana, quien llevaba una bufanda roja. Juntas caminaron hasta la heladería donde compraron un helado de vainilla. Luego, se sentaron en un banco frente al lago y vieron a los patos nadando tranquilamente. Antes de regresar a casa, María compró flores amarillas para decorar su mesa del comedor. Al llegar a su casa, estaba feliz por haber tenido un día tan bonito.
+        </p>
 
-      <ToastContainer />
+        {!gameFinished ? (
+          <>
+            <div className="questions-container">
+              <Slider ref={sliderRef} {...settings}>
+                {questions.map((question) => (
+                  <div key={question.id} className="question-slide">
+                    <div className="question">
+                      <p className="question-text">{question.question}</p>
+                      <div className="options-container">
+                        {question.options.map((option, index) => (
+                          <button
+                            key={index}
+                            className="option-button"
+                            onClick={() => handleOptionClick(question.id, option)}
+                            disabled={gameFinished}
+                            style={{
+                              backgroundColor: selectedAnswers[question.id] === option ? '#4caf50' : '#f0f0f0',
+                              color: selectedAnswers[question.id] === option ? 'white' : 'black'
+                            }}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </Slider>
+            </div>
+
+            <div className="navigation-buttons">
+              <button onClick={() => sliderRef.current.slickPrev()} className="prev-button">Anterior</button>
+              <button onClick={() => sliderRef.current.slickNext()} className="next-button">Siguiente</button>
+            </div>
+
+            <button onClick={handleSubmit} className="submit-button">Enviar Respuestas</button>
+          </>
+        ) : (
+          <div className="results">
+            <h2>¡Juego Terminado!</h2>
+            <p>Puntuación final: {score}</p>
+            <p>Tiempo total: {timer} segundos</p>
+          </div>
+        )}
+
+        <ToastContainer />
+      </div>
     </div>
   );
 };

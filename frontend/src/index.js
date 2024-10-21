@@ -1,4 +1,5 @@
 import React from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import ReactDOM from 'react-dom/client';
 import {
   createBrowserRouter,
@@ -34,6 +35,7 @@ import ActivityScreen7 from './screens/ActivityScreen7.jsx';
 import ActivityScreen8 from './screens/ActivityScreen8.jsx';
 import ActivityScreen9 from './screens/ActivityScreen9.jsx';
 import ActivityScreen10 from './screens/ActivityScreen10.jsx';
+import ActivitiesN2Screen from './screens/ActivitiesN2Screen.jsx';
 
 
 const router=createBrowserRouter(
@@ -56,6 +58,7 @@ const router=createBrowserRouter(
       <Route path="/activity/8" element={<ActivityScreen8/>}></Route>
       <Route path="/activity/9" element={<ActivityScreen9/>}></Route>
       <Route path="/activity/10" element={<ActivityScreen10/>}></Route>
+      <Route path="/activitiesN2" element={<ActivitiesN2Screen/>}></Route>
 
     </Route>
 

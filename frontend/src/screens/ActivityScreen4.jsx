@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useNavigate } from 'react-router-dom';
 
 // Importa las imágenes
 import Image1 from '../images/Encontrar7diferenciasp1.png'; 
@@ -9,20 +9,23 @@ import Image2 from '../images/Encontrar7diferenciasp2.png';
 
 const differences = [
   { id: 1, name: 'Expresión del niño', x: 228, y: 255, width: 50, height: 50 },
-  { id: 2, name: 'Luz de la lámpara', x: 90, y: 90, width: 40, height: 40 },
-  { id: 3, name: 'Color dentro del libro', x: 200, y: 350, width: 40, height: 40 },
-  { id: 4, name: 'Círculo detrás de la lámpara', x: 60, y: 120, width: 50, height: 50 },
-  { id: 5, name: 'Color del tablero de la pared', x: 330, y: 60, width: 50, height: 50 },
-  { id: 6, name: 'Triángulo en la pared', x: 290, y: 210, width: 40, height: 40 },
-  { id: 7, name: 'Círculo del libro', x: 250, y: 370, width: 40, height: 40 },
+  { id: 2, name: 'Luz de la lámpara', x: 105, y: 185, width: 40, height: 40 },
+  { id: 3, name: 'Triángulo en la pared', x: 336, y: 203, width: 60, height: 60 },
+  { id: 4, name: 'Círculo detrás de la lámpara', x: 20, y: 233, width: 60, height: 60 },
+  { id: 5, name: 'Color del tablero de la pared', x: 355, y: 70, width: 50, height: 50 },
+  { id: 6, name: 'Círculo del libro', x: 384, y: 345, width: 60, height:50 },
+  { id: 7, name: 'Color dentro del libro', x: 75, y: 375, width: 50, height: 50 },
 ];
 
 const ActivityScreen4 = () => {
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
+  const [points, setPoints] = useState(0);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [differencesFound, setDifferencesFound] = useState(0); // Contador de diferencias encontradas
   const navigate = useNavigate();
 
   // Temporizador
@@ -47,43 +50,48 @@ const ActivityScreen4 = () => {
     }
   }, [gameFinished, navigate]);
 
-  // Selección de diferencias
-  const handleOptionClick = (id) => {
-    if (selectedOptions.length >= 7 && !selectedOptions.includes(id)) {
-      toast.warning('Ya has seleccionado las 7 opciones');
-      return;
-    }
+  // Función para manejar el clic en cualquier parte de la imagen
+  const handleImageClick = (e) => {
+    const rect = e.target.getBoundingClientRect();
+    const x = e.clientX - rect.left; // Coordenadas del clic en la imagen
+    const y = e.clientY - rect.top;
 
-    if (!selectedOptions.includes(id)) {
-      setSelectedOptions([...selectedOptions, id]); // Añadir diferencia seleccionada
-      toast.success('Has seleccionado una diferencia');
+    let clickedOnDifference = false;
+
+    differences.forEach((difference) => {
+      if (
+        x >= difference.x &&
+        x <= difference.x + difference.width &&
+        y >= difference.y &&
+        y <= difference.y + difference.height
+      ) {
+        clickedOnDifference = true;
+        if (!selectedOptions.includes(difference.id)) {
+          setSelectedOptions([...selectedOptions, difference.id]);
+          setCorrectAnswers((prev) => prev + 1);
+          setPoints((prev) => prev + 5);
+          setDifferencesFound((prev) => prev + 1); // Incrementa el contador de diferencias encontradas
+          setFeedbackMessage('¡Correcto! Has encontrado una diferencia.');
+        }
+      }
+    });
+
+    if (!clickedOnDifference) {
+      setIncorrectAnswers((prev) => prev + 1);
+      setPoints((prev) => prev - 2);
+      setFeedbackMessage('¡Incorrecto! Esa no es una diferencia.');
     }
   };
 
   // Enviar respuestas
   const handleSubmit = () => {
     if (selectedOptions.length !== 7) {
-      toast.error('Debes seleccionar las 7 opciones antes de enviar');
+      setFeedbackMessage('Debes seleccionar las 7 opciones antes de enviar');
       return;
     }
 
-    let correct = 0;
-    let incorrect = 0;
-
-    selectedOptions.forEach((id) => {
-      const option = differences.find((diff) => diff.id === id);
-      if (option) {
-        correct += 1;
-      } else {
-        incorrect += 1;
-      }
-    });
-
-    setCorrectAnswers(correct);
-    setIncorrectAnswers(incorrect);
     setGameFinished(true);
-
-    saveActivity(correct, incorrect);
+    saveActivity(correctAnswers, incorrectAnswers);
   };
 
   // Guardar la actividad
@@ -95,7 +103,7 @@ const ActivityScreen4 = () => {
       correctAnswers: correct,
       incorrectAnswers: incorrect,
       timeUsed: timer,
-      scoreObtained: correct, // Se guarda la cantidad de respuestas correctas como puntaje
+      scoreObtained: points, // Se guarda la cantidad de puntos obtenidos como puntaje
       patientId: 'somePatientId',
     };
 
@@ -122,8 +130,11 @@ const ActivityScreen4 = () => {
     <div className="find-differences-game">
       <h1>Encuentra las 7 diferencias</h1>
       <p>Tiempo: {timer} segundos</p>
+      <p>Puntaje: {points}</p>
+      <p>Diferencias encontradas: {differencesFound} de 7</p> {/* Contador de diferencias encontradas */}
+      <p>{feedbackMessage}</p>
 
-      <div className="images-container" style={{ position: 'relative' }}>
+      <div className="images-container" style={{ position: 'relative' }} onClick={handleImageClick}>
         <img src={Image1} alt="Imagen 1" style={{ width: '464px', height: '534px' }} />
         <div style={{ position: 'relative', display: 'inline-block' }}>
           <img
@@ -131,23 +142,6 @@ const ActivityScreen4 = () => {
             alt="Imagen 2"
             style={{ width: '464px', height: '534px', cursor: 'pointer' }}
           />
-          {/* Botones transparentes */}
-          {differences.map((difference) => (
-            <button
-              key={difference.id}
-              onClick={() => handleOptionClick(difference.id)}
-              style={{
-                position: 'absolute',
-                top: `${difference.y}px`,
-                left: `${difference.x}px`,
-                width: `${difference.width}px`,
-                height: `${difference.height}px`,
-                backgroundColor: 'transparent',
-                border: '2px solid rgba(255, 255, 255, 0.5)', // Líneas para ver la ubicación, puedes quitarlas
-                cursor: 'pointer',
-              }}
-            />
-          ))}
         </div>
       </div>
 
@@ -160,6 +154,7 @@ const ActivityScreen4 = () => {
           <p>Correctas: {correctAnswers}</p>
           <p>Incorrectas: {incorrectAnswers}</p>
           <p>Tiempo total: {timer} segundos</p>
+          <p>Puntaje final: {points}</p>
         </div>
       )}
 
