@@ -26,7 +26,7 @@ const ActivityScreen1 = () => {
         name: 'Búsqueda de letras - Nivel Fácil',
         description: 'Encuentra la letra correcta en un tablero pequeño.',
         type: 'memoria',
-        scoreObtained: gamesToWin === 0 ? 5 : 0,
+        scoreObtained: 100,
         timeUsed: miliseconds,
         difficultyLevel: 1,
         observations: 'El paciente completó la actividad satisfactoriamente.',

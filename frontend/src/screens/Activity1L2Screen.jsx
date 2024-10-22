@@ -26,7 +26,7 @@ const Activity1L2Screen = () => {
         name: 'Búsqueda de letras - Nivel Intermedio',
         description: 'Encuentra la letra correcta en un tablero mediano.',
         type: 'memoria',
-        scoreObtained: gamesToWin === 0 ? 5 : 0,
+        scoreObtained: 100,
         timeUsed: miliseconds,
         difficultyLevel: 2,
         observations: 'El paciente completó la actividad satisfactoriamente.',
