@@ -12,7 +12,8 @@ import {
   updateUser,
   getFaceData,
   searchUsers,
-  disableUser // Importar getFaceData
+  disableUser,
+  enableUser// Importar getFaceData
 } from "../controllers/userController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
@@ -44,5 +45,9 @@ router
   .delete(protect, admin, disableUser)
   .get(protect, admin, getUserByID)
   .put(protect, admin, updateUser);
+
+router
+  .route("/:id/enable")
+  .put(protect, admin, enableUser);
 
 export default router;

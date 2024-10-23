@@ -5,12 +5,13 @@ import { FaEdit, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
 import Message from '../../components/Message';
 import Loader from '../../components/Loader';
 import { toast } from 'react-toastify';
-import { useGetUsersQuery, useDeleteUserMutation } from '../../slices/usersApiSlice';
+import { useGetUsersQuery, useDeleteUserMutation, useEnableUserMutation } from '../../slices/usersApiSlice';
 
 const UserListScreen = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { data: users = [], isLoading, error, refetch } = useGetUsersQuery();
   const [deleteUser, { isLoading: loadingDelete }] = useDeleteUserMutation();
+  const [enableUser] = useEnableUserMutation(); // Nueva mutación para habilitar usuarios
 
   const deleteHandler = async (id) => {
     if (window.confirm('¿Estás seguro de que deseas deshabilitar este usuario?')) {
@@ -18,6 +19,18 @@ const UserListScreen = () => {
         await deleteUser(id); // Cambiará el estado de isActive a false
         toast.success('Usuario deshabilitado correctamente');
         refetch();
+      } catch (err) {
+        toast.error(err?.data?.message || (typeof err.error === 'object' ? JSON.stringify(err.error) : err.error));
+      }
+    }
+  };
+
+  const enableUserHandler = async (id) => {
+    if (window.confirm('¿Estás seguro de que deseas habilitar este usuario?')) {
+      try {
+        await enableUser(id); // Cambiará el estado de isActive a true
+        toast.success('Usuario habilitado correctamente');
+        refetch(); // Actualiza la lista de usuarios
       } catch (err) {
         toast.error(err?.data?.message || (typeof err.error === 'object' ? JSON.stringify(err.error) : err.error));
       }
@@ -33,12 +46,6 @@ const UserListScreen = () => {
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // Función para habilitar un usuario
-  const enableUserHandler = async (id) => {
-    toast.success('Usuario habilitado correctamente');
-    refetch();
-  };
 
   return (
     <>

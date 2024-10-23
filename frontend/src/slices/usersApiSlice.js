@@ -62,11 +62,17 @@ export const usersApiSlice=apiSlice.injectEndpoints({
                 url: `${USERS_URL}/search?query=${searchTerm}`,
             }),
             providesTags: ['Users'],
-        }),        
+        }), 
+        enableUser: builder.mutation({
+            query: (userId) => ({
+              url: `${USERS_URL}/${userId}/enable`, // Asegúrate de que esté en la ruta correcta
+              method: 'PUT',
+            }),
+          }),                           
     }),
 });
 
 export const {useLoginMutation,useLogoutMutation, 
 useRegisterMutation,useProfileMutation,useGetUsersQuery,
 useDeleteUserMutation,useGetUserDetailsQuery,
-useUpdateUserMutation, useSearchUsersQuery}=usersApiSlice;
+useUpdateUserMutation, useSearchUsersQuery, useEnableUserMutation}=usersApiSlice;
