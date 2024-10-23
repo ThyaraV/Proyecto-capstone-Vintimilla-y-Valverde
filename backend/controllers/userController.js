@@ -11,12 +11,12 @@ import * as faceapi from "face-api.js";
 //@access Public
 const authUser = asyncHandler(async (req, res) => {
   const { email, password, faceData } = req.body;
-  
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        res.status(400);
-        throw new Error("Correo electrónico no válido");
-    }
+  if (!emailRegex.test(email)) {
+    res.status(400);
+    throw new Error("Correo electrónico no válido");
+  }
   const user = await User.findOne({ email });
 
   if (!user) {
@@ -24,7 +24,8 @@ const authUser = asyncHandler(async (req, res) => {
     throw new Error("Usuario no encontrado");
   }
 
-  if (!user.isActive) { // Verificar si el usuario está inhabilitado
+  if (!user.isActive) {
+    // Verificar si el usuario está inhabilitado
     res.status(403); // Forbidden
     throw new Error("Usuario inhabilitado. No se puede iniciar sesión.");
   }
@@ -33,7 +34,7 @@ const authUser = asyncHandler(async (req, res) => {
     // Autenticación con reconocimiento facial
     if (!user.faceData || user.faceData.length === 0) {
       res.status(401);
-      throw new Error("El usuario no tiene datos faciales registrados");
+      throw new Error("El usuario no tiene datos faciales registrados ");
     }
 
     const storedFaceDescriptor = new Float32Array(user.faceData);
@@ -83,7 +84,6 @@ const authUser = asyncHandler(async (req, res) => {
     );
   }
 });
-
 
 //@desc Get face data for a user
 //@route POST /api/users/facedata
@@ -366,7 +366,6 @@ const searchUsers = asyncHandler(async (req, res) => {
   res.status(200).json(users);
 });
 
-
 export {
   authUser,
   registerUser,
@@ -379,5 +378,5 @@ export {
   updateUser,
   getFaceData,
   searchUsers,
-  disableUser
+  disableUser,
 };
