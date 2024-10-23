@@ -6,28 +6,28 @@ const Activity = ({ activity }) => {
   // Determina la ruta basada en el tipo de actividad o un identificador único
   const getActivityLink = (activity) => {
     switch (activity.name) {
-      case 'Búsqueda de letra':
+      case 'Búsqueda de Letras':
         return '/activity/level2/1';
-      case 'Asociación de fotos':
+      case 'Asociación de Fotos':
         return '/activity/level2/2';
       case 'Sumas y Restas':
         return '/activity/level2/3';
-      case 'Encuentra diferencias':
+      case 'Encontrar Diferencias':
         return '/activity/level2/4';
-      case 'Forma las frases correctas':
+      case 'Formar Refranes':
         return '/activity/level2/5';
-      case 'Clasificación de palabras':
+      case 'Clasificación de Palabras':
         return '/activity/level2/6';
-      case 'Memoria a corto plazo':
+      case 'Ejercicio de Memoria':
         return '/activity/level2/7';
-      case 'Responde preguntas':
+      case 'Lectura y Preguntas':
         return '/activity/level2/8';
-      case 'Sigue instrucciones':
+      case 'Cumplir Instrucciones':
         return '/activity/level2/9';
-      case 'Identificación de objetos y sus usos':
+      case 'Identificar Objetos':
         return '/activity/level2/10';
       default:
-        return `/activity/level2/${activity._id}`;
+        return `/activity/${activity._id}`;
     }
   };
 
