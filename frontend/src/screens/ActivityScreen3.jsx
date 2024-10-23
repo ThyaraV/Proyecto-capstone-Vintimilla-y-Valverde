@@ -49,8 +49,13 @@ const ActivityScreen3 = () => {
     if (gameFinished && !activitySaved) {
       saveActivity(score);
       setActivitySaved(true);
+      
+      // Redirigir a /activities después de 8 segundos
+      setTimeout(() => {
+        navigate('/activities');
+      }, 6000); // 8000 milisegundos = 8 segundos
     }
-  }, [gameFinished, activitySaved, score]);
+  }, [gameFinished, activitySaved, score, navigate]);
 
   const handleSubmitAnswer = () => {
     const currentEquation = equations[currentEquationIndex];
@@ -90,7 +95,7 @@ const ActivityScreen3 = () => {
       difficultyLevel: 1,
       observations: 'El paciente completó la actividad de sumas y restas.',
       progress: 'mejorando',
-      patientId: 'somePatientId',
+      patientId: 'somePatientId', // Reemplaza con el ID real del paciente
     };
 
     try {
@@ -102,9 +107,7 @@ const ActivityScreen3 = () => {
         body: JSON.stringify(activityData),
       });
 
-      if (response.ok) {
-        navigate('/activities');
-      } else {
+      if (!response.ok) {
         setMessage('Error al guardar la actividad');
       }
     } catch (error) {

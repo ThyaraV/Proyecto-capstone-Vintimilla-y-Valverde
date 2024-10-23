@@ -10,7 +10,9 @@ import {
   deleteUser,
   getUserByID,
   updateUser,
-  getFaceData, // Importar getFaceData
+  getFaceData,
+  searchUsers,
+  disableUser // Importar getFaceData
 } from "../controllers/userController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
 
@@ -32,10 +34,14 @@ router
   .get(protect, getUserProfile)
   .put(protect, updateUserProfile);
 
+// Ruta para buscar usuarios
+router.get("/search", protect, admin, searchUsers);
+
+
 // Rutas para la gestión de usuarios (solo admin)
 router
   .route("/:id")
-  .delete(protect, admin, deleteUser)
+  .delete(protect, admin, disableUser)
   .get(protect, admin, getUserByID)
   .put(protect, admin, updateUser);
 

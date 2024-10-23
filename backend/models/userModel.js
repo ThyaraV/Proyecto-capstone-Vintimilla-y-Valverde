@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
   phoneNumber: { type: String, required: true },
   password: { type: String, required: true },
   isAdmin: { type: Boolean, required: true, default: false },
+  isActive: { type: Boolean, default: true },
   faceData: {
     type: [Number],
     required: true,

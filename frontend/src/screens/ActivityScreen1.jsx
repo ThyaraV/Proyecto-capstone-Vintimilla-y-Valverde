@@ -1,4 +1,3 @@
-// src/screens/ActivityScreen1.jsx
 import React, { useState, useEffect } from 'react';
 import { createBoard } from '../utils/createBoard';
 import Cell from '../components/Activity 1/Cell';
@@ -6,36 +5,34 @@ import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 
 const ActivityScreen1 = () => {
-  const [board, setBoard] = useState(() => createBoard());
-  const [gamesToWin, setGamesToWin] = useState(4);
+  const [board, setBoard] = useState(() => createBoard(1)); // Nivel 1
+  const [gamesToWin, setGamesToWin] = useState(5); // 5 tableros por nivel
   const [timer, setTimer] = useState(0);
-  const miliseconds = (timer / 10).toFixed(2); // Convierte el tiempo en milisegundos
+  const miliseconds = (timer / 10).toFixed(2);
   const navigate = useNavigate();
 
-  // Incrementa el temporizador mientras haya juegos pendientes
   useEffect(() => {
     if (gamesToWin > 0) {
       const interval = setInterval(() => {
-        setTimer(prevTimer => prevTimer + 1); // Incrementa correctamente el timer
-      }, 100); // 100ms = 0.1 segundos
+        setTimer(prevTimer => prevTimer + 1);
+      }, 100);
       return () => clearInterval(interval);
     }
   }, [gamesToWin]);
 
-  // Guarda la actividad incluyendo el tiempo usado
   const saveActivity = async () => {
     try {
       const activityData = {
-        name: 'Búsqueda de letras',
-        description: 'Actividad para encontrar la letra correcta en un tablero.',
+        name: 'Búsqueda de letras - Nivel Fácil',
+        description: 'Encuentra la letra correcta en un tablero pequeño.',
         type: 'memoria',
         scoreObtained: 100,
-        timeUsed: miliseconds, // Pasa el tiempo usado en milisegundos
+        timeUsed: miliseconds,
         difficultyLevel: 1,
         observations: 'El paciente completó la actividad satisfactoriamente.',
         progress: 'mejorando',
         image: 'image_url',
-        patientId: 'somePatientId', // Reemplaza con el ID real del paciente
+        patientId: 'somePatientId',
       };
 
       const response = await fetch('/api/activities', {
@@ -48,11 +45,7 @@ const ActivityScreen1 = () => {
 
       if (response.ok) {
         toast.success('Actividad guardada correctamente');
-
-        // Espera 3 segundos para que el mensaje de éxito sea visible antes de redirigir
-        setTimeout(() => {
-          navigate('/activities'); // Redirige a la lista de actividades después de mostrar el toast
-        }, 3000); // Espera 3 segundos antes de redirigir
+        setTimeout(() => navigate('/activities'), 6000); // Redirige después de 6 segundos
       } else {
         toast.error('Error al guardar la actividad');
       }
@@ -61,25 +54,21 @@ const ActivityScreen1 = () => {
     }
   };
 
-  // Maneja el clic en las celdas del juego
   const handleClick = (row, col) => {
     if (board[row][col].isHidden) {
       setGamesToWin(gamesToWin - 1);
 
-      setTimeout(() => {
-        setBoard(createBoard());
-      }, 500);
-
-      // Cuando solo queda un juego, guarda la actividad
-      if (gamesToWin === 1) {
-        saveActivity(); // Ya no necesitas pasar `timer` como argumento, lo usas directamente
+      if (gamesToWin > 1) {
+        setTimeout(() => setBoard(createBoard(1)), 500);
+      } else if (gamesToWin === 1) {
+        saveActivity(); // Guardar al completar el último tablero
       }
     }
   };
 
   return (
     <div className='activity-screen'>
-      <h1>Encuentra la letra</h1>
+      <h1>Encuentra la letra (Nivel 1 - Fácil)</h1>
       {gamesToWin > 0 && <p>Tiempo: {miliseconds} segundos</p>}
       {gamesToWin === 0 ? (
         <p>Felicidades, tu tiempo fue: {miliseconds} segundos</p>

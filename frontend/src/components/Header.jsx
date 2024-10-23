@@ -56,6 +56,18 @@ const Header = () => {
                 </Nav.Link>
               </LinkContainer>
 
+              <LinkContainer to="/activitiesL2">
+                <Nav.Link>
+                  <FaListUl /> Actividades 2
+                </Nav.Link>
+              </LinkContainer>
+
+              <LinkContainer to="/activitiesL3">
+                <Nav.Link>
+                  <FaListUl /> Actividades 3
+                </Nav.Link>
+              </LinkContainer>
+
               {userInfo ? (
                 <NavDropdown title={userInfo.name} id="username">
                   <LinkContainer to="/profile">

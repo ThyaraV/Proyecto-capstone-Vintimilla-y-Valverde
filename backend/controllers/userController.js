@@ -6,14 +6,27 @@ import * as faceapi from "face-api.js";
 //@desc Auth user and get token
 //@route POST /api/users/login
 //@access Public
+//@desc Auth user and get token
+//@route POST /api/users/auth
+//@access Public
 const authUser = asyncHandler(async (req, res) => {
   const { email, password, faceData } = req.body;
-
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        res.status(400);
+        throw new Error("Correo electrónico no válido");
+    }
   const user = await User.findOne({ email });
 
   if (!user) {
     res.status(401);
     throw new Error("Usuario no encontrado");
+  }
+
+  if (!user.isActive) { // Verificar si el usuario está inhabilitado
+    res.status(403); // Forbidden
+    throw new Error("Usuario inhabilitado. No se puede iniciar sesión.");
   }
 
   if (faceData) {
@@ -30,8 +43,6 @@ const authUser = asyncHandler(async (req, res) => {
       storedFaceDescriptor,
       queryDescriptor
     );
-
-    console.log(`Distancia calculada: ${distance}`);
 
     if (distance < 0.6) {
       generateToken(res, user._id);
@@ -72,6 +83,7 @@ const authUser = asyncHandler(async (req, res) => {
     );
   }
 });
+
 
 //@desc Get face data for a user
 //@route POST /api/users/facedata
@@ -301,6 +313,17 @@ const deleteUser = asyncHandler(async (req, res) => {
   }
 });
 
+const disableUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (user) {
+    user.isActive = false; // Cambiar el estado a inhabilitado
+    await user.save(); // Guardar los cambios en la base de datos
+    res.status(200).json({ message: "User disabled successfully" });
+  } else {
+    res.status(404);
+    throw new Error("User not found");
+  }
+});
 //@desc Update user
 //@route PUT /api/users/:id
 //@access Private/Admin
@@ -325,6 +348,25 @@ const updateUser = asyncHandler(async (req, res) => {
   }
 });
 
+//@desc Search users
+//@route GET /api/users/search
+//@access Private/Admin
+const searchUsers = asyncHandler(async (req, res) => {
+  const { query } = req.query; // obtenemos la consulta de búsqueda de los parámetros de la URL
+
+  // Buscamos usuarios que coincidan con la consulta
+  const users = await User.find({
+    $or: [
+      { name: { $regex: query, $options: "i" } },
+      { lastName: { $regex: query, $options: "i" } },
+      { email: { $regex: query, $options: "i" } },
+    ],
+  });
+
+  res.status(200).json(users);
+});
+
+
 export {
   authUser,
   registerUser,
@@ -336,4 +378,6 @@ export {
   getUserByID,
   updateUser,
   getFaceData,
+  searchUsers,
+  disableUser
 };
