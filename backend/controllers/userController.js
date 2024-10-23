@@ -218,59 +218,106 @@ const getUserProfile = asyncHandler(async (req, res) => {
 //@desc Update user profile
 //@route PUT /api/users/profile
 //@access Private
+// Función para validar la cédula
+const validateCedula = (cedula) => {
+  if (!/^\d{10}$/.test(cedula)) {
+    return false;
+  }
+
+  const verificador = parseInt(cedula[9], 10);
+  const provincia = parseInt(cedula.substring(0, 2), 10);
+
+  if (provincia < 0 || provincia > 24) {
+    return false;
+  }
+
+  const coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+  let suma = 0;
+
+  for (let i = 0; i < 9; i++) {
+    let digito = parseInt(cedula[i], 10) * coeficientes[i];
+    if (digito >= 10) {
+      digito -= 9;
+    }
+    suma += digito;
+  }
+
+  const modulo = suma % 10;
+  const resultadoFinal = modulo === 0 ? 0 : 10 - modulo;
+
+  return resultadoFinal === verificador;
+};
+
+// Función para validar el formato del email
+const validateEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
 const updateUserProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
   if (user) {
-    user.name = req.body.name || user.name;
-    user.lastName = req.body.lastName || user.lastName;
-    user.email = req.body.email || user.email;
-    user.cardId = req.body.cardId || user.cardId;
-    user.phoneNumber = req.body.phoneNumber || user.phoneNumber;
+    const { name, lastName, cardId, email, phoneNumber, password, faceDescriptor } = req.body;
 
-    if (req.body.password) {
-      user.password = req.body.password;
+    // Validación de cédula
+    if (cardId && !validateCedula(cardId)) {
+      res.status(400);
+      throw new Error('Cédula inválida. Asegúrate de que tenga 10 dígitos y sea coherente.');
     }
 
-    // Procesa el faceDescriptor localmente
-    if (req.body.faceDescriptor) {
-      let faceDescriptor = req.body.faceDescriptor;
+    // Validación de email
+    if (email && !validateEmail(email)) {
+      res.status(400);
+      throw new Error('Correo electrónico inválido. Asegúrate de que sea un formato válido.');
+    }
 
-      if (typeof faceDescriptor === "string") {
+    // Actualización de los campos en el perfil
+    user.name = name || user.name;
+    user.lastName = lastName || user.lastName;
+    user.cardId = cardId || user.cardId;
+    user.email = email || user.email;
+    user.phoneNumber = phoneNumber || user.phoneNumber;
+
+    // Si el usuario actualiza la contraseña
+    if (password) {
+      user.password = password;
+    }
+
+    // Procesamiento de faceDescriptor
+    if (faceDescriptor) {
+      let parsedDescriptor = faceDescriptor;
+      if (typeof parsedDescriptor === "string") {
         try {
-          faceDescriptor = JSON.parse(faceDescriptor);
+          parsedDescriptor = JSON.parse(parsedDescriptor);
         } catch (error) {
-          console.error("Error parsing faceDescriptor JSON:", error.message);
           res.status(400);
           throw new Error("Invalid faceDescriptor format");
         }
       }
-
-      if (
-        Array.isArray(faceDescriptor) &&
-        faceDescriptor.every((num) => typeof num === "number")
-      ) {
-        user.faceData = faceDescriptor;
+      
+      if (Array.isArray(parsedDescriptor) && parsedDescriptor.every((num) => typeof num === "number")) {
+        user.faceData = parsedDescriptor;
       } else {
-        console.error("Invalid faceDescriptor format: Not an array of numbers");
         res.status(400);
         throw new Error("Invalid faceDescriptor format");
       }
     }
 
+    // Guardar los cambios en el perfil
     const updatedUser = await user.save();
-    res.status(200).json({
+
+    res.json({
       _id: updatedUser._id,
       name: updatedUser.name,
       lastName: updatedUser.lastName,
       cardId: updatedUser.cardId,
       email: updatedUser.email,
       phoneNumber: updatedUser.phoneNumber,
-      isAdmin: updatedUser.isAdmin,
     });
   } else {
     res.status(404);
-    throw new Error("User not found");
+    throw new Error('User not found');
   }
 });
 
