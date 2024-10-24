@@ -23,7 +23,7 @@ const Activity1L3Screen = () => {
   const saveActivity = async () => {
     try {
       const activityData = {
-        name: 'Búsqueda de letras - Nivel Difícil',
+        name: 'Búsqueda de Letras',
         description: 'Encuentra la letra correcta en un tablero grande.',
         type: 'memoria',
         scoreObtained: gamesToWin === 0 ? 5 : 100,//100% debería ser
@@ -68,7 +68,7 @@ const Activity1L3Screen = () => {
 
   return (
     <div className='activity-screen'>
-      <h1>Encuentra la letra (Nivel 3 - Difícil)</h1>
+      <h1>Encuentra la letra (Nivel 3)</h1>
       {gamesToWin > 0 && <p>Tiempo: {miliseconds} segundos</p>}
       {gamesToWin === 0 ? (
         <p>Felicidades, tu tiempo fue: {miliseconds} segundos</p>

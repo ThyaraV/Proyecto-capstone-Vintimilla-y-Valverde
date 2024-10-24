@@ -41,6 +41,8 @@ import ActivitiesL3Screen from './screens/ActivitiesL3Screen.jsx';
 import Activity1L2Screen from './screens/Activity1L2Screen.jsx';
 import Activity1L3Screen from './screens/Activity1L3Screen.jsx';
 import Activity2L2Screen from './screens/Activity2L2Screen.jsx';
+import Activity2L3Screen from './screens/Activity2L3Screen.jsx';
+
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -68,6 +70,8 @@ const router = createBrowserRouter(
         <Route path="/activity/level2/2" element={<Activity2L2Screen />} />
         <Route path="/activitiesL3" element={<ActivitiesL3Screen />} />
         <Route path="/activity/level3/1" element={<Activity1L3Screen />} />
+        <Route path="/activity/level3/2" element={<Activity2L3Screen />} />
+
       </Route>
 
       <Route path="" element={<AdminRoute />}>

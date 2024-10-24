@@ -5,8 +5,8 @@ import dotenv from 'dotenv';
 import User from './models/userModel.js'; 
 import Doctor from './models/doctorModel.js';
 import Patient from './models/patientModel.js';
-import Activity from './models/activityModel.js'; // Importar modelo de actividades
-import { users, doctors, patients, activities } from './data/users.js'; // Asegúrate de que 'activities' esté exportado correctamente
+import Activity from './models/activityModel.js';
+import { users, doctors, patients, activities } from './data/users.js'; // Exportar correctamente 'activities'
 
 dotenv.config();
 
@@ -14,26 +14,26 @@ connectDB();
 
 const importData = async () => {
     try {
-        await User.deleteMany();
-        await Doctor.deleteMany();
+        // 1. Eliminar los datos existentes en orden (dependencias)
+        await Activity.deleteMany(); // Primero eliminar actividades
         await Patient.deleteMany();
-        await Activity.deleteMany(); // Asegúrate de eliminar actividades antiguas antes de insertar nuevas
+        await Doctor.deleteMany();
+        await User.deleteMany();
 
-        // Insertar usuarios genéricos
+        // 2. Insertar usuarios
         const createdUsers = await User.insertMany(users);
-        const adminUser = createdUsers[0]._id;
+        const adminUser = createdUsers[0]._id; // Asumir que el primer usuario es el administrador
 
-        // Crear doctores con referencia al usuario correspondiente
+        // 3. Insertar doctores
         const sampleDoctors = doctors.map((doctor, index) => {
             return { 
                 ...doctor, 
                 user: createdUsers[index + 1]?._id || adminUser // Asigna un usuario a cada doctor
             };
         });
-
         const createdDoctors = await Doctor.insertMany(sampleDoctors);
 
-        // Asignar médicos a pacientes y asegurarse de que cada paciente tenga un user asignado
+        // 4. Insertar pacientes
         const samplePatients = patients.map((patient, index) => {
             const assignedDoctor = createdDoctors[index % createdDoctors.length]; // Asignar un doctor al paciente
             return {
@@ -42,34 +42,28 @@ const importData = async () => {
                 user: createdUsers[index + doctors.length + 1]?._id || adminUser // Asigna un usuario a cada paciente
             };
         });
-
         const createdPatients = await Patient.insertMany(samplePatients);
 
-        // Relacionar actividades con pacientes
-        const sampleActivities = activities.map((activity) => {
-            if (!activity.patientId) {
-                console.warn(`Warning: No patientId found for activity ${activity.name}`);
-                return null; // Saltar actividades sin patientId
-            }
-
-            // Busca el paciente correspondiente a la actividad
-            const patient = createdPatients.find((p) => p._id.toString() === activity.patientId.toString());
+        // 5. Insertar actividades en el orden dado, verificando el patientId
+        const sampleActivities = activities.map((activity, index) => {
+            // Buscar el paciente correspondiente para asegurar que el ID sea correcto
+            const patient = createdPatients.find(p => p._id.toString() === activity.patientId.toString());
 
             if (!patient) {
-                console.warn(`Warning: No patient found for activity with patientId ${activity.patientId}`);
-                return null; // Saltar actividades sin un paciente válido
+                console.warn(`Warning: No patient found for activity at index ${index}`);
+                return null;
             }
 
             return {
                 ...activity,
-                patientId: patient._id // Asignar el ID de paciente a la actividad
+                patientId: patient._id // Asignar el ID correcto de paciente
             };
-        }).filter(activity => activity !== null); // Filtrar actividades sin paciente
+        }).filter(activity => activity !== null); // Filtrar cualquier actividad sin paciente
 
-        // Insertar actividades
+        // 6. Insertar actividades respetando el orden
         await Activity.insertMany(sampleActivities);
 
-        console.log('Data Imported!'.green.inverse);
+        console.log('Data Imported in Order!'.green.inverse);
         process.exit();
     } catch (error) {
         console.error(`${error.message}`.red.inverse);
@@ -79,10 +73,11 @@ const importData = async () => {
 
 const destroyData = async () => {
     try {
-        await User.deleteMany();
-        await Doctor.deleteMany();
+        // Eliminar en orden inverso
+        await Activity.deleteMany();
         await Patient.deleteMany();
-        await Activity.deleteMany(); // Eliminar también las actividades
+        await Doctor.deleteMany();
+        await User.deleteMany();
 
         console.log('Data Destroyed'.red.inverse);
         process.exit();
@@ -92,6 +87,7 @@ const destroyData = async () => {
     }
 };
 
+// Determinar si destruir o importar los datos
 if (process.argv[2] === '-d') {
     destroyData();
 } else {

@@ -23,7 +23,7 @@ const Activity1L2Screen = () => {
   const saveActivity = async () => {
     try {
       const activityData = {
-        name: 'Búsqueda de letras - Nivel Intermedio',
+        name: 'Búsqueda de Letras',
         description: 'Encuentra la letra correcta en un tablero mediano.',
         type: 'memoria',
         scoreObtained: 100,
@@ -68,7 +68,7 @@ const Activity1L2Screen = () => {
 
   return (
     <div className='activity-screen'>
-      <h1>Encuentra la letra (Nivel 2 - Intermedio)</h1>
+      <h1>Encuentra la letra (Nivel 2)</h1>
       {gamesToWin > 0 && <p>Tiempo: {miliseconds} segundos</p>}
       {gamesToWin === 0 ? (
         <p>Felicidades, tu tiempo fue: {miliseconds} segundos</p>

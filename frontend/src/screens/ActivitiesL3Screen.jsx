@@ -14,7 +14,7 @@ const ActivitiesL3Screen = () => {
         <>
           <h1>Actividades</h1>
           <Row className="justify-content-center">
-            {activities.slice(20, 32).map((activity) => ( // Cambiamos el slice
+            {activities.slice(20, 30).map((activity) => ( // Cambiamos el slice
               <Col key={activity._id} sm={12} md={6} lg={4} xl={3} className="mb-4 d-flex justify-content-center">
                 <Activity3 activity={activity} /> {/* Renderiza cada actividad */}
               </Col>

@@ -68,7 +68,7 @@ const ActivityScreen1 = () => {
 
   return (
     <div className='activity-screen'>
-      <h1>Encuentra la letra (Nivel 1 - Fácil)</h1>
+      <h1>Encuentra la letra (Nivel 1)</h1>
       {gamesToWin > 0 && <p>Tiempo: {miliseconds} segundos</p>}
       {gamesToWin === 0 ? (
         <p>Felicidades, tu tiempo fue: {miliseconds} segundos</p>
