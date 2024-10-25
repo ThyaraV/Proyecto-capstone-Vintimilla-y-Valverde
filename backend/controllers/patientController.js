@@ -5,7 +5,9 @@ import Patient from "../models/patientModel.js";
 // @route GET /api/patients
 // @access Private/Admin
 const getPatients = asyncHandler(async (req, res) => {
-  const patients = await Patient.find({}).populate("doctor", "user");
+  const patients = await Patient.find({})
+    .populate("user", "name") // Asegúrate de que estás populando el campo 'user' y específicamente el 'name'
+    .populate("doctor", "user"); // Popula el doctor relacionado con el paciente
   res.json(patients);
 });
 
@@ -13,10 +15,9 @@ const getPatients = asyncHandler(async (req, res) => {
 // @route GET /api/patients/:id
 // @access Private/Admin
 const getPatientById = asyncHandler(async (req, res) => {
-  const patient = await Patient.findById(req.params.id).populate(
-    "doctor",
-    "user"
-  );
+  const patient = await Patient.findById(req.params.id)
+    .populate("user", "name") // Popula el campo 'user' y específicamente el 'name'
+    .populate("doctor", "user");
 
   if (patient) {
     res.json(patient);

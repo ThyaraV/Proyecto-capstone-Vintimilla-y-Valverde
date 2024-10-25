@@ -2,6 +2,8 @@ import asyncHandler from "../middleware/asyncHandler.js";
 import User from "../models/userModel.js";
 import generateToken from "../utils/generateToken.js";
 import * as faceapi from "face-api.js";
+import Doctor from "../models/doctorModel.js";
+import Patient from "../models/patientModel.js";
 
 //@desc Auth user and get token
 //@route POST /api/users/login
@@ -258,18 +260,30 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
   if (user) {
-    const { name, lastName, cardId, email, phoneNumber, password, faceDescriptor } = req.body;
+    const {
+      name,
+      lastName,
+      cardId,
+      email,
+      phoneNumber,
+      password,
+      faceDescriptor,
+    } = req.body;
 
     // Validación de cédula
     if (cardId && !validateCedula(cardId)) {
       res.status(400);
-      throw new Error('Cédula inválida. Asegúrate de que tenga 10 dígitos y sea coherente.');
+      throw new Error(
+        "Cédula inválida. Asegúrate de que tenga 10 dígitos y sea coherente."
+      );
     }
 
     // Validación de email
     if (email && !validateEmail(email)) {
       res.status(400);
-      throw new Error('Correo electrónico inválido. Asegúrate de que sea un formato válido.');
+      throw new Error(
+        "Correo electrónico inválido. Asegúrate de que sea un formato válido."
+      );
     }
 
     // Actualización de los campos en el perfil
@@ -295,8 +309,11 @@ const updateUserProfile = asyncHandler(async (req, res) => {
           throw new Error("Invalid faceDescriptor format");
         }
       }
-      
-      if (Array.isArray(parsedDescriptor) && parsedDescriptor.every((num) => typeof num === "number")) {
+
+      if (
+        Array.isArray(parsedDescriptor) &&
+        parsedDescriptor.every((num) => typeof num === "number")
+      ) {
         user.faceData = parsedDescriptor;
       } else {
         res.status(400);
@@ -317,7 +334,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(404);
-    throw new Error('User not found');
+    throw new Error("User not found");
   }
 });
 
@@ -389,13 +406,48 @@ const enableUser = asyncHandler(async (req, res) => {
 //@access Private/Admin
 const updateUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
+
   if (user) {
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
-    user.isAdmin = Boolean(req.body.isAdmin);
+    user.isAdmin = req.body.role === "doctor"; // isAdmin es true si el rol es doctor
+
+    // Si el rol cambia a doctor, agregarlo a la colección de doctores
+    if (req.body.role === "doctor") {
+      const doctorExists = await Doctor.findOne({ user: user._id });
+      if (!doctorExists) {
+        await Doctor.create({ user: user._id, especialidad: "General" });
+      }
+
+      // Si era paciente, eliminarlo de la colección de pacientes
+      await Patient.deleteOne({ user: user._id });
+    }
+
+    // Si el rol cambia a paciente, agregarlo a la colección de pacientes
+    if (req.body.role === "patient") {
+      const patientExists = await Patient.findOne({ user: user._id });
+      if (!patientExists) {
+        await Patient.create({
+          user: user._id,
+          school: "N/A", // Datos de ejemplo
+          birthdate: new Date(),
+          gender: "N/A",
+          educationalLevel: "N/A",
+          familyRepresentative: "N/A",
+          address: "N/A",
+          maritalStatus: "N/A",
+          profession: "N/A",
+          cognitiveStage: "N/A",
+          referredTo: "N/A",
+          doctor: req.body.doctorId,
+        });
+      }
+
+      // Si era doctor, eliminarlo de la colección de doctores
+      await Doctor.deleteOne({ user: user._id });
+    }
 
     const updatedUser = await user.save();
-
     res.status(200).json({
       _id: updatedUser._id,
       name: updatedUser.name,
@@ -439,5 +491,5 @@ export {
   getFaceData,
   searchUsers,
   disableUser,
-  enableUser
+  enableUser,
 };

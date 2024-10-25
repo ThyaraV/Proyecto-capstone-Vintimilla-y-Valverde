@@ -12,9 +12,26 @@ export const chatApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: { content },
       }),
+      invalidatesTags: ["Chat", "Message"],
+    }),
+    createChat: builder.mutation({
+      query: ({ participantId }) => ({
+        url: `/api/chats`,
+        method: "POST",
+        body: { participantId },
+      }),
       invalidatesTags: ["Chat"],
+    }),
+    getMessages: builder.query({
+      query: (chatId) => `/api/chats/${chatId}/messages`,
+      providesTags: ["Message"],
     }),
   }),
 });
 
-export const { useGetChatsQuery, useSendMessageMutation } = chatApiSlice;
+export const {
+  useGetChatsQuery,
+  useSendMessageMutation,
+  useCreateChatMutation,
+  useGetMessagesQuery, // Asegúrate de exportarlo aquí
+} = chatApiSlice;
