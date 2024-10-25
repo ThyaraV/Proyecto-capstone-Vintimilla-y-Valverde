@@ -3,21 +3,24 @@ import { useDrag, useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useNavigate } from 'react-router-dom'; 
 
-const categoriesLevel1 = [
+const categoriesLevel2 = [
   { id: 1, name: 'Colores' },
-  { id: 2, name: 'Formas' }
+  { id: 2, name: 'Formas' },
+  { id: 3, name: 'Frutas' }
 ];
 
-const wordsLevel1 = [
+const wordsLevel2 = [
   { id: 1, text: 'Rojo', category: 'Colores', style: { backgroundColor: 'red' } },
   { id: 2, text: 'Círculo', category: 'Formas', style: { borderRadius: '50%', width: '100px', height: '100px', backgroundColor: 'gray' } },
   { id: 3, text: 'Azul', category: 'Colores', style: { backgroundColor: 'blue' } },
   { id: 4, text: 'Cuadrado', category: 'Formas', style: { width: '100px', height: '100px', backgroundColor: 'gray' } },
   { id: 5, text: 'Amarillo', category: 'Colores', style: { backgroundColor: 'yellow' } },
-  { id: 6, text: 'Triángulo', category: 'Formas', style: { width: '0', height: '0', borderLeft: '50px solid transparent', borderRight: '50px solid transparent', borderBottom: '100px solid gray' } }
+  { id: 6, text: 'Triángulo', category: 'Formas', style: { width: '0', height: '0', borderLeft: '50px solid transparent', borderRight: '50px solid transparent', borderBottom: '100px solid gray' } },
+  { id: 7, text: 'Manzana', category: 'Frutas', style: { backgroundColor: 'green' } },
+  { id: 8, text: 'Naranja', category: 'Frutas', style: { backgroundColor: 'orange' } }
 ];
 
-const ActivityScreenLevel1 = () => {
+const ActivityScreenLevel2 = () => {
   const [assignedCategories, setAssignedCategories] = useState({});
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
@@ -48,15 +51,14 @@ const ActivityScreenLevel1 = () => {
   const checkAnswers = () => {
     let correctCount = 0;
 
-    wordsLevel1.forEach((word) => {
-      // Verificamos si la categoría asignada coincide con la categoría correcta de la palabra
+    wordsLevel2.forEach((word) => {
       if (assignedCategories[word.id] && assignedCategories[word.id] === word.category) {
         correctCount += 1;
       }
     });
 
-    // Ajustamos el puntaje para que cada respuesta correcta valga 0.83 puntos
-    const score = (correctCount * (5 / wordsLevel1.length)).toFixed(2);
+    // Ajustamos el puntaje para que cada respuesta correcta valga 5 / total palabras
+    const score = (correctCount * (5 / wordsLevel2.length)).toFixed(2);
 
     setCorrectAnswers(score); // Actualizamos el puntaje basado en la cantidad correcta
 
@@ -66,8 +68,8 @@ const ActivityScreenLevel1 = () => {
 
   const saveActivity = async (score) => {
     const activityData = {
-      name: 'Clasificación de palabras - Nivel 1',
-      description: 'Actividad para clasificar palabras en categorías. Nivel 1 con Colores y Formas.',
+      name: 'Clasificación de palabras - Nivel 2',
+      description: 'Actividad para clasificar palabras en categorías. Nivel 2 con Colores, Formas y Frutas.',
       type: 'clasificacion_palabras',
       scoreObtained: score,
       timeUsed: timer,
@@ -94,24 +96,24 @@ const ActivityScreenLevel1 = () => {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="word-classification">
-        <h1>Clasificación de Palabras - Nivel 1</h1>
+        <h1>Clasificación de Palabras - Nivel 2</h1>
         <p>Tiempo: {timer} segundos</p>
 
         <div className="categories-container">
-          {categoriesLevel1.map((category) => (
+          {categoriesLevel2.map((category) => (
             <Category
               key={category.id}
               category={category}
               assignedWords={Object.keys(assignedCategories)
                 .filter((wordId) => assignedCategories[wordId] === category.name)
-                .map((wordId) => wordsLevel1.find((word) => word.id === parseInt(wordId)))}
+                .map((wordId) => wordsLevel2.find((word) => word.id === parseInt(wordId)))}
               onDrop={(word) => handleDrop(word, category)}
             />
           ))}
         </div>
 
         <div className="words-container">
-          {wordsLevel1.filter(word => !Object.keys(assignedCategories).includes(word.id.toString())).map((word) => (
+          {wordsLevel2.filter(word => !Object.keys(assignedCategories).includes(word.id.toString())).map((word) => (
             <Word key={word.id} word={word} />
           ))}
         </div>
@@ -150,9 +152,9 @@ const Word = ({ word }) => {
       style={{
         ...word.style,
         opacity: isDragging ? 0.5 : 1,
-        width: '100px',  // Ajuste para hacer más grandes las formas y los colores
-        height: word.style.borderRadius ? '100px' : '50px', // Mayor tamaño para las formas
-        fontSize: '20px',  // Ajuste de tamaño de letra para que no se salga
+        width: '100px', 
+        height: word.style.borderRadius ? '100px' : '50px', 
+        fontSize: '20px', 
         textAlign: 'center',
         display: 'flex',
         justifyContent: 'center',
@@ -194,7 +196,7 @@ const Category = ({ category, assignedWords, onDrop }) => {
             className="word"
             style={{
               ...word.style,
-              width: '100px',  // Mantener el tamaño cuando la palabra se asigna a la categoría
+              width: '100px',
               height: word.style.borderRadius ? '100px' : '50px',
               fontSize: '20px',
               textAlign: 'center',
@@ -212,4 +214,4 @@ const Category = ({ category, assignedWords, onDrop }) => {
   );
 };
 
-export default ActivityScreenLevel1;
+export default ActivityScreenLevel2;

@@ -42,6 +42,12 @@ import Activity1L2Screen from './screens/Activity1L2Screen.jsx';
 import Activity1L3Screen from './screens/Activity1L3Screen.jsx';
 import Activity2L2Screen from './screens/Activity2L2Screen.jsx';
 import Activity2L3Screen from './screens/Activity2L3Screen.jsx';
+import Activity3L2Screen from './screens/Activity3L2Screen.jsx';
+import Activity3L3Screen from './screens/Activity3L3Screen.jsx';
+import Activity5L2Screen from './screens/Activity5L2Screen.jsx';
+import Activity5L3Screen from './screens/Activity5L3Screen.jsx';
+import Activity6L2Screen from './screens/Activity6L2Screen.jsx';
+import Activity6L3Screen from './screens/Activity6L3Screen.jsx';
 
 
 const router = createBrowserRouter(
@@ -68,9 +74,19 @@ const router = createBrowserRouter(
         <Route path="/activitiesL2" element={<ActivitiesL2Screen />} />
         <Route path="/activity/level2/1" element={<Activity1L2Screen />} />
         <Route path="/activity/level2/2" element={<Activity2L2Screen />} />
+        <Route path="/activity/level2/3" element={<Activity3L2Screen />} />
+        <Route path="/activity/level2/5" element={<Activity5L2Screen />} />
+        <Route path="/activity/level2/6" element={<Activity6L2Screen />} />
+
         <Route path="/activitiesL3" element={<ActivitiesL3Screen />} />
         <Route path="/activity/level3/1" element={<Activity1L3Screen />} />
         <Route path="/activity/level3/2" element={<Activity2L3Screen />} />
+        <Route path="/activity/level3/3" element={<Activity3L3Screen />} />
+        <Route path="/activity/level3/5" element={<Activity5L3Screen />} />
+        <Route path="/activity/level3/6" element={<Activity6L3Screen />} />
+
+
+
 
       </Route>
 

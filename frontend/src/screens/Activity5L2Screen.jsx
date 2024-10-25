@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Función para barajar opciones
 const shuffleOptions = (options, correctOption) => {
   const shuffledOptions = [...options];
   if (!shuffledOptions.includes(correctOption)) {
@@ -10,20 +9,20 @@ const shuffleOptions = (options, correctOption) => {
   return shuffledOptions.sort(() => Math.random() - 0.5);
 };
 
-const proverbsLevel1 = [
-  { id: 1, phrase: "A buen entendedor...", options: ["más vale tarde que nunca", "el que mucho abarca poco aprieta"], correctOption: "pocas palabras bastan" },
-  { id: 2, phrase: "Al mal tiempo...", options: ["quien mal anda mal acaba", "más vale prevenir que lamentar"], correctOption: "buena cara" },
-  { id: 3, phrase: "Más vale pájaro en mano...", options: ["que nada", "que mil sueños"], correctOption: "que cien volando" },
-  { id: 4, phrase: "No por mucho madrugar...", options: ["se llega primero", "se consigue lo que se quiere"], correctOption: "amanece más temprano" },
-  { id: 5, phrase: "El que mucho abarca...", options: ["todo lo pierde", "nada sostiene"], correctOption: "poco aprieta" },
-  { id: 6, phrase: "Ojos que no ven...", options: ["no hay mal que por bien no venga", "al mal tiempo buena cara"], correctOption: "corazón que no siente" },
-  { id: 7, phrase: "Perro que ladra...", options: ["poco aprieta", "corre más"], correctOption: "no muerde" },
-  { id: 8, phrase: "No hay mal...", options: ["que dure cien años", "que sea eterno"], correctOption: "que por bien no venga" },
-  { id: 9, phrase: "Más vale tarde...", options: ["que pronto", "que rápido"], correctOption: "que nunca" },
-  { id: 10, phrase: "El que ríe último...", options: ["no ríe más", "pierde"], correctOption: "ríe mejor" }
+const proverbsLevel2 = [
+  { id: 1, phrase: "A quien madruga...", options: ["se le da bien", "consigue lo que quiere", "tiene todo"], correctOption: "Dios le ayuda" },
+  { id: 2, phrase: "Ojos que no ven...", options: ["al mal tiempo buena cara", "no hay mal que por bien no venga", "el que mucho abarca poco aprieta"], correctOption: "corazón que no siente" },
+  { id: 3, phrase: "Más vale tarde...", options: ["que nunca", "que pronto", "que rápido"], correctOption: "que nunca" },
+  { id: 4, phrase: "Perro que ladra...", options: ["no corre más", "se cansa", "todo lo ve"], correctOption: "no muerde" },
+  { id: 5, phrase: "A caballo regalado...", options: ["se le mira el diente", "se lo lleva la corriente", "se guarda"], correctOption: "no se le mira el diente" },
+  { id: 6, phrase: "No por mucho madrugar...", options: ["se consigue todo", "se tiene éxito", "se llega primero"], correctOption: "amanece más temprano" },
+  { id: 7, phrase: "Quien mucho abarca...", options: ["todo lo puede", "todo lo pierde", "se cansa"], correctOption: "poco aprieta" },
+  { id: 8, phrase: "En boca cerrada...", options: ["se guarda todo", "entra el silencio", "no escucha nadie"], correctOption: "no entran moscas" },
+  { id: 9, phrase: "Cría fama...", options: ["y todos te siguen", "y el resto te conoce", "y vives en paz"], correctOption: "y échate a dormir" },
+  { id: 10, phrase: "Al mal tiempo...", options: ["no por mucho madrugar", "quien mucho abarca", "más vale tarde que nunca"], correctOption: "buena cara" }
 ];
 
-const ActivityScreenLevel1 = () => {
+const ActivityScreenLevel2 = () => {
   const [currentProverbIndex, setCurrentProverbIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState("");
   const [shuffledOptions, setShuffledOptions] = useState([]);
@@ -53,7 +52,7 @@ const ActivityScreenLevel1 = () => {
   }, [gameFinished, navigate]);
 
   useEffect(() => {
-    const currentProverb = proverbsLevel1[currentProverbIndex];
+    const currentProverb = proverbsLevel2[currentProverbIndex];
     setShuffledOptions(shuffleOptions(currentProverb.options, currentProverb.correctOption));
   }, [currentProverbIndex]);
 
@@ -62,7 +61,7 @@ const ActivityScreenLevel1 = () => {
   };
 
   const handleSubmitAnswer = () => {
-    const currentProverb = proverbsLevel1[currentProverbIndex];
+    const currentProverb = proverbsLevel2[currentProverbIndex];
     if (selectedOption === currentProverb.correctOption) {
       setScore((prevScore) => prevScore + 0.5);
       setMessage("¡Correcto! Has ganado 0.5 puntos.");
@@ -71,7 +70,7 @@ const ActivityScreenLevel1 = () => {
     }
 
     setTimeout(() => {
-      if (currentProverbIndex + 1 < proverbsLevel1.length) {
+      if (currentProverbIndex + 1 < proverbsLevel2.length) {
         setCurrentProverbIndex((prevIndex) => prevIndex + 1);
         setSelectedOption("");
         setMessage(""); // Limpia el mensaje para el próximo refrán
@@ -84,12 +83,12 @@ const ActivityScreenLevel1 = () => {
 
   const saveActivity = async (finalScore) => {
     const activityData = {
-      name: 'Forma las frases correctas - Nivel 1',
+      name: 'Forma las frases correctas - Nivel 2',
       description: 'Actividad para completar refranes seleccionando la opción correcta.',
       type: 'completa_refranes',
       scoreObtained: finalScore,
       timeUsed: timer,
-      difficultyLevel: 1,
+      difficultyLevel: 2,
       patientId: 'somePatientId',
     };
 
@@ -112,12 +111,12 @@ const ActivityScreenLevel1 = () => {
 
   return (
     <div className="phrase-game">
-      <h1>Completa los Refranes - Nivel 1</h1>
+      <h1>Completa los Refranes - Nivel 2</h1>
       {!gameFinished ? (
         <>
           <p>Puntaje: {score}</p>
           <p>Tiempo: {timer} segundos</p>
-          <div className="phrase-box">{proverbsLevel1[currentProverbIndex].phrase}...</div>
+          <div className="phrase-box">{proverbsLevel2[currentProverbIndex].phrase}...</div>
           <div className="options-container">
             {shuffledOptions.map((option, index) => (
               <button
@@ -137,7 +136,7 @@ const ActivityScreenLevel1 = () => {
       ) : (
         <div className="results">
           <h2>¡Juego Terminado!</h2>
-          <p>Respuestas correctas: {score} / 5</p>
+          <p>Respuestas correctas: {score} de {proverbsLevel2.length}</p>
           <p>Tiempo total: {timer} segundos</p>
         </div>
       )}
@@ -145,5 +144,4 @@ const ActivityScreenLevel1 = () => {
   );
 };
 
-export default ActivityScreenLevel1;
-
+export default ActivityScreenLevel2;

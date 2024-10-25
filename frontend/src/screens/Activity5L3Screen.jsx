@@ -10,20 +10,20 @@ const shuffleOptions = (options, correctOption) => {
   return shuffledOptions.sort(() => Math.random() - 0.5);
 };
 
-const proverbsLevel1 = [
-  { id: 1, phrase: "A buen entendedor...", options: ["más vale tarde que nunca", "el que mucho abarca poco aprieta"], correctOption: "pocas palabras bastan" },
-  { id: 2, phrase: "Al mal tiempo...", options: ["quien mal anda mal acaba", "más vale prevenir que lamentar"], correctOption: "buena cara" },
-  { id: 3, phrase: "Más vale pájaro en mano...", options: ["que nada", "que mil sueños"], correctOption: "que cien volando" },
-  { id: 4, phrase: "No por mucho madrugar...", options: ["se llega primero", "se consigue lo que se quiere"], correctOption: "amanece más temprano" },
-  { id: 5, phrase: "El que mucho abarca...", options: ["todo lo pierde", "nada sostiene"], correctOption: "poco aprieta" },
-  { id: 6, phrase: "Ojos que no ven...", options: ["no hay mal que por bien no venga", "al mal tiempo buena cara"], correctOption: "corazón que no siente" },
-  { id: 7, phrase: "Perro que ladra...", options: ["poco aprieta", "corre más"], correctOption: "no muerde" },
-  { id: 8, phrase: "No hay mal...", options: ["que dure cien años", "que sea eterno"], correctOption: "que por bien no venga" },
-  { id: 9, phrase: "Más vale tarde...", options: ["que pronto", "que rápido"], correctOption: "que nunca" },
-  { id: 10, phrase: "El que ríe último...", options: ["no ríe más", "pierde"], correctOption: "ríe mejor" }
+const proverbsLevel3 = [
+  { id: 1, phrase: "El que la sigue...", options: ["se cansa al final", "tarde o temprano falla", "no siempre gana", "se agota"], correctOption: "la consigue" },
+  { id: 2, phrase: "Del árbol caído...", options: ["todos lo ven", "nadie lo recoge", "nadie lo corta", "todos huyen"], correctOption: "todos hacen leña" },
+  { id: 3, phrase: "A buen hambre...", options: ["todo sabe bien", "todo se come", "no se discute nada", "lo que sea es bueno"], correctOption: "no hay mal pan" },
+  { id: 4, phrase: "Más vale prevenir...", options: ["que curar", "que lamentar", "que correr riesgos", "que no hacer nada"], correctOption: "que lamentar" },
+  { id: 5, phrase: "Quien mucho duerme...", options: ["poco sueña", "todo lo pierde", "nada consigue", "se cansa menos"], correctOption: "mucho pierde" },
+  { id: 6, phrase: "En casa del herrero...", options: ["nadie trabaja", "todo es de hierro", "no hay herramientas", "el tiempo se pierde"], correctOption: "cuchillo de palo" },
+  { id: 7, phrase: "Cría fama...", options: ["y échate a correr", "y ya no importa", "y vives tranquilo", "y el resto te sigue"], correctOption: "y échate a dormir" },
+  { id: 8, phrase: "Dime con quién andas...", options: ["y te diré qué haces", "y sabrás lo que vales", "y te diré quién eres", "y serás lo que sigas"], correctOption: "y te diré quién eres" },
+  { id: 9, phrase: "El que no corre...", options: ["se cansa", "nunca llega", "nunca termina", "se pierde"], correctOption: "vuela" },
+  { id: 10, phrase: "A palabras necias...", options: ["nadie las escucha", "nunca responden", "no se contestan", "todos las evitan"], correctOption: "oídos sordos" }
 ];
 
-const ActivityScreenLevel1 = () => {
+const ActivityScreenLevel3 = () => {
   const [currentProverbIndex, setCurrentProverbIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState("");
   const [shuffledOptions, setShuffledOptions] = useState([]);
@@ -53,7 +53,7 @@ const ActivityScreenLevel1 = () => {
   }, [gameFinished, navigate]);
 
   useEffect(() => {
-    const currentProverb = proverbsLevel1[currentProverbIndex];
+    const currentProverb = proverbsLevel3[currentProverbIndex];
     setShuffledOptions(shuffleOptions(currentProverb.options, currentProverb.correctOption));
   }, [currentProverbIndex]);
 
@@ -62,7 +62,7 @@ const ActivityScreenLevel1 = () => {
   };
 
   const handleSubmitAnswer = () => {
-    const currentProverb = proverbsLevel1[currentProverbIndex];
+    const currentProverb = proverbsLevel3[currentProverbIndex];
     if (selectedOption === currentProverb.correctOption) {
       setScore((prevScore) => prevScore + 0.5);
       setMessage("¡Correcto! Has ganado 0.5 puntos.");
@@ -71,7 +71,7 @@ const ActivityScreenLevel1 = () => {
     }
 
     setTimeout(() => {
-      if (currentProverbIndex + 1 < proverbsLevel1.length) {
+      if (currentProverbIndex + 1 < proverbsLevel3.length) {
         setCurrentProverbIndex((prevIndex) => prevIndex + 1);
         setSelectedOption("");
         setMessage(""); // Limpia el mensaje para el próximo refrán
@@ -84,12 +84,12 @@ const ActivityScreenLevel1 = () => {
 
   const saveActivity = async (finalScore) => {
     const activityData = {
-      name: 'Forma las frases correctas - Nivel 1',
+      name: 'Forma las frases correctas - Nivel 3',
       description: 'Actividad para completar refranes seleccionando la opción correcta.',
       type: 'completa_refranes',
       scoreObtained: finalScore,
       timeUsed: timer,
-      difficultyLevel: 1,
+      difficultyLevel: 3,
       patientId: 'somePatientId',
     };
 
@@ -112,12 +112,12 @@ const ActivityScreenLevel1 = () => {
 
   return (
     <div className="phrase-game">
-      <h1>Completa los Refranes - Nivel 1</h1>
+      <h1>Completa los Refranes - Nivel 3</h1>
       {!gameFinished ? (
         <>
           <p>Puntaje: {score}</p>
           <p>Tiempo: {timer} segundos</p>
-          <div className="phrase-box">{proverbsLevel1[currentProverbIndex].phrase}...</div>
+          <div className="phrase-box">{proverbsLevel3[currentProverbIndex].phrase}...</div>
           <div className="options-container">
             {shuffledOptions.map((option, index) => (
               <button
@@ -137,7 +137,7 @@ const ActivityScreenLevel1 = () => {
       ) : (
         <div className="results">
           <h2>¡Juego Terminado!</h2>
-          <p>Respuestas correctas: {score} / 5</p>
+          <p>Respuestas correctas: {score} de {proverbsLevel3.length}</p>
           <p>Tiempo total: {timer} segundos</p>
         </div>
       )}
@@ -145,5 +145,4 @@ const ActivityScreenLevel1 = () => {
   );
 };
 
-export default ActivityScreenLevel1;
-
+export default ActivityScreenLevel3;

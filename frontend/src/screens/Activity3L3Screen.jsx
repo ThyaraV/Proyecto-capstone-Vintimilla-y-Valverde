@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const generateEquation = (type) => {
-  const num1 = Math.floor(Math.random() * 50);  // Números pequeños para nivel 1
-  const num2 = Math.floor(Math.random() * 50);
+  const num1 = Math.floor(Math.random() * 500)+500;  // Números más grandes para nivel 3
+  const num2 = Math.floor(Math.random() * 500)+500;
 
   if (type === 'sum') {
     return { equation: `${num1} + ${num2}`, correctAnswer: num1 + num2, num1, num2, operator: '+' };
@@ -12,7 +12,7 @@ const generateEquation = (type) => {
   }
 };
 
-const ActivityScreen3 = () => {
+const Activity3L3Screen = () => {
   const [equations, setEquations] = useState([]);
   const [currentEquationIndex, setCurrentEquationIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
@@ -27,6 +27,11 @@ const ActivityScreen3 = () => {
     const generatedEquations = [
       generateEquation('sum'),
       generateEquation('sum'),
+      generateEquation('sum'),
+      generateEquation('sum'),
+      generateEquation('sum'),
+      generateEquation('sub'),
+      generateEquation('sub'),
       generateEquation('sub'),
       generateEquation('sub'),
       generateEquation('sub'),
@@ -84,13 +89,13 @@ const ActivityScreen3 = () => {
 
   const saveActivity = async (finalScore) => {
     const activityData = {
-      name: 'Sumas y Restas',
-      description: 'Actividad de sumas y restas básica con puntajes.',
+      name: 'Sumas y Restas - Nivel 3',
+      description: 'Actividad de sumas y restas avanzada con puntajes.',
       type: 'sumas_restas',
       scoreObtained: finalScore,
       timeUsed: timer,
-      difficultyLevel: 1,
-      observations: 'El paciente completó la actividad de sumas y restas en nivel básico.',
+      difficultyLevel: 3,
+      observations: 'El paciente completó la actividad de sumas y restas en nivel avanzado.',
       progress: 'mejorando',
       patientId: 'somePatientId',
     };
@@ -114,7 +119,7 @@ const ActivityScreen3 = () => {
 
   return (
     <div className="game-screen">
-      <h1>Juego de Sumas y Restas - Nivel 1</h1>
+      <h1>Juego de Sumas y Restas - Nivel 3</h1>
       <p style={{ fontWeight: 'bold' }}>Puntaje: {score}</p>
       <p style={{ fontWeight: 'bold' }}>Tiempo: {timer} segundos</p>
 
@@ -156,4 +161,4 @@ const ActivityScreen3 = () => {
   );
 };
 
-export default ActivityScreen3;
+export default Activity3L3Screen;
