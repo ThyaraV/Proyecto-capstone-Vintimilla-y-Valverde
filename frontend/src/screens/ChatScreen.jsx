@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import io from "socket.io-client";
 import { toast } from "react-toastify";
@@ -12,7 +12,6 @@ import { useGetPatientsQuery } from "../slices/patientApiSlice";
 import { useGetDoctorsQuery } from "../slices/doctorApiSlice";
 
 const ENDPOINT = "http://localhost:5000"; // Reemplaza con tu endpoint si es necesario
-let socket;
 
 const ChatScreen = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -35,25 +34,42 @@ const ChatScreen = () => {
   const [messages, setMessages] = useState([]);
   const [socketConnected, setSocketConnected] = useState(false);
 
-  // Conectar a Socket.IO
+  const socketRef = useRef();
+
+  // Referencia para mantener el valor más reciente de selectedChat
+  const selectedChatRef = useRef(selectedChat);
+
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
+  // Conectar a Socket.IO una sola vez
   useEffect(() => {
     if (userInfo) {
-      socket = io(ENDPOINT);
-      socket.emit("setup", userInfo);
-      socket.on("connected", () => setSocketConnected(true));
+      socketRef.current = io(ENDPOINT);
+
+      socketRef.current.emit("setup", userInfo);
+      socketRef.current.on("connected", () => setSocketConnected(true));
 
       // Escuchar mensajes nuevos desde el servidor
-      socket.on("messageReceived", (newMessageReceived) => {
-        if (selectedChat && newMessageReceived.chat === selectedChat._id) {
+      socketRef.current.on("messageReceived", (newMessageReceived) => {
+        const currentSelectedChat = selectedChatRef.current;
+        if (
+          currentSelectedChat &&
+          newMessageReceived.chat._id === currentSelectedChat._id
+        ) {
           setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
+        } else {
+          // Opcional: Mostrar notificación de mensaje nuevo en otro chat
+          toast.info("Nuevo mensaje en otro chat");
         }
       });
 
       return () => {
-        socket.disconnect();
+        socketRef.current.disconnect();
       };
     }
-  }, [userInfo, selectedChat]);
+  }, [userInfo]);
 
   // Obtener mensajes del chat seleccionado
   const {
@@ -72,9 +88,8 @@ const ChatScreen = () => {
 
   // Unirse a un chat cuando es seleccionado
   useEffect(() => {
-    if (selectedChat && selectedChat._id && socketConnected) {
-      socket.emit("joinChat", selectedChat._id);
-      refetchMessages(); // Refrescar mensajes
+    if (socketConnected && selectedChat) {
+      socketRef.current.emit("joinChat", selectedChat._id);
     }
   }, [selectedChat, socketConnected]);
 
@@ -91,9 +106,12 @@ const ChatScreen = () => {
 
     try {
       const messageData = { chatId: selectedChat._id, content: newMessage };
-      await sendMessage(messageData).unwrap(); // Guardar mensaje en la base de datos
+      const sentMessage = await sendMessage(messageData).unwrap(); // Guardar mensaje en la base de datos
+
+      // Emitir el mensaje a través de Socket.IO
+      socketRef.current.emit("sendMessage", sentMessage);
+
       setNewMessage("");
-      toast.success("Mensaje enviado");
     } catch (error) {
       toast.error("Error al enviar el mensaje");
     }
