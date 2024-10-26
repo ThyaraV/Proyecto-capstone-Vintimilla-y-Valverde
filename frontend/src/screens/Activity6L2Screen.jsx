@@ -10,14 +10,14 @@ const categoriesLevel2 = [
 ];
 
 const wordsLevel2 = [
-  { id: 1, text: 'Rojo', category: 'Colores', style: { backgroundColor: 'red' } },
-  { id: 2, text: 'Círculo', category: 'Formas', style: { borderRadius: '50%', width: '100px', height: '100px', backgroundColor: 'gray' } },
-  { id: 3, text: 'Azul', category: 'Colores', style: { backgroundColor: 'blue' } },
-  { id: 4, text: 'Cuadrado', category: 'Formas', style: { width: '100px', height: '100px', backgroundColor: 'gray' } },
-  { id: 5, text: 'Amarillo', category: 'Colores', style: { backgroundColor: 'yellow' } },
-  { id: 6, text: 'Triángulo', category: 'Formas', style: { width: '0', height: '0', borderLeft: '50px solid transparent', borderRight: '50px solid transparent', borderBottom: '100px solid gray' } },
-  { id: 7, text: 'Manzana', category: 'Frutas', style: { backgroundColor: 'green' } },
-  { id: 8, text: 'Naranja', category: 'Frutas', style: { backgroundColor: 'orange' } }
+  { id: 1, text: 'Verde', category: 'Colores', style: { backgroundColor: 'green' } },
+  { id: 2, text: 'Óvalo', category: 'Formas', style: { borderRadius: '50%', width: '150px', height: '100px', backgroundColor: 'gray' } },
+  { id: 3, text: 'Naranja', category: 'Colores', style: { backgroundColor: 'orange' } },
+  { id: 4, text: 'Rectángulo', category: 'Formas', style: { width: '150px', height: '100px', backgroundColor: 'gray' } },
+  { id: 5, text: 'Manzana', category: 'Frutas', style: { backgroundColor: 'red' } },
+  { id: 6, text: 'Pera', category: 'Frutas', style: { backgroundColor: 'green' } },
+  { id: 7, text: 'Plátano', category: 'Frutas', style: { backgroundColor: 'yellow' } },
+  { id: 8, text: 'Uva', category: 'Frutas', style: { backgroundColor: 'purple' } }
 ];
 
 const ActivityScreenLevel2 = () => {
@@ -57,13 +57,10 @@ const ActivityScreenLevel2 = () => {
       }
     });
 
-    // Ajustamos el puntaje para que cada respuesta correcta valga 5 / total palabras
     const score = (correctCount * (5 / wordsLevel2.length)).toFixed(2);
-
-    setCorrectAnswers(score); // Actualizamos el puntaje basado en la cantidad correcta
-
+    setCorrectAnswers(score);
     setGameFinished(true);
-    saveActivity(score); // Guardamos la actividad con el puntaje correcto
+    saveActivity(score);
   };
 
   const saveActivity = async (score) => {
