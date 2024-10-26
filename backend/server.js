@@ -2,28 +2,31 @@ import path from "path";
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-dotenv.config();
+import { createServer } from "http"; // Importar el servidor HTTP
+import { Server } from "socket.io"; // Importar Socket.IO
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import userRoutes from "./routes/userRoutes.js";
 import activitiesRoutes from "./routes/activitiesRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import doctorRoutes from "./routes/doctorRoutes.js";
 import patientRoutes from "./routes/patientRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js"; // Importar rutas del chat
 
 import connectDB from "./config/db.js";
-import chatRoutes from "./routes/chatRoutes.js"; // Import chat routes
+
+dotenv.config();
 
 const port = process.env.PORT || 5000;
 
-connectDB(); // Connect to MongoDB
+connectDB(); // Conectar a la base de datos MongoDB
 
 const app = express();
 
-// Body parser middleware
+// Middleware para procesar JSON y formularios
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Cookie parser middleware
+// Middleware para manejar cookies
 app.use(cookieParser());
 
 // Definir las rutas
@@ -32,16 +35,59 @@ app.use("/api/activities", activitiesRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/patients", patientRoutes);
-app.use("/api/chats", chatRoutes);
+app.use("/api/chats", chatRoutes); // Agregar rutas del chat
 
+// Configurar ruta para archivos estáticos (subidas)
 const __dirname = path.resolve();
 app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
 
+// Ruta de inicio de la API
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
+// Middlewares para manejar errores
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(port, () => console.log(`Server running on port ${port}`));
+// Crear el servidor HTTP y configurar Socket.IO
+const httpServer = createServer(app); // Crear el servidor HTTP
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*", // Cambia el origen según sea necesario
+    methods: ["GET", "POST"],
+  },
+});
+
+// Middleware para compartir el objeto `io` con los controladores
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
+// Configurar eventos de Socket.IO
+io.on("connection", (socket) => {
+  console.log("Nueva conexión de socket establecida");
+
+  // Unirse a un chat
+  socket.on("joinChat", (chatId) => {
+    socket.join(chatId);
+    console.log(`Usuario se ha unido al chat: ${chatId}`);
+  });
+
+  // Manejar el envío de mensajes
+  socket.on("sendMessage", (messageData) => {
+    const { chatId, message } = messageData;
+    io.to(chatId).emit("newMessage", message); // Emitir el mensaje a todos los participantes del chat
+  });
+
+  // Desconexión del socket
+  socket.on("disconnect", () => {
+    console.log("Usuario desconectado del socket");
+  });
+});
+
+// Iniciar el servidor en el puerto especificado
+httpServer.listen(port, () => {
+  console.log(`Servidor corriendo en el puerto ${port}`);
+});
