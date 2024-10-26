@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
 
 // Importa las imágenes
@@ -12,23 +10,26 @@ const differences = [
   { id: 2, name: 'Gato', x: 67, y: 40, width: 50, height: 80 },
   { id: 3, name: 'Cola gallo', x: 103, y: 320, width: 50, height: 50 },
   { id: 4, name: 'Cerca', x: 120, y: 100, width: 50, height: 60 },
-  { id: 5, name: 'Ramas de un árbol', x: 365, y: 34, width: 75, height: 75},
+  { id: 5, name: 'Ramas de un árbol', x: 365, y: 34, width: 75, height: 75 },
   { id: 6, name: 'Cuello ganzo', x: 265, y: 210, width: 65, height: 65 },
   { id: 7, name: 'Cesped', x: 95, y: 450, width: 60, height: 60 },
-  { id: 8, name: 'Flores de arbusto', x: 400, y: 210, width: 80, height: 180 }, // Nueva diferencia
-  { id: 9, name: 'Patas del ganzo', x: 250, y: 400, width: 150, height: 60 }, // Nueva diferencia
-  { id: 10, name: 'flor', x: 210, y: 450, width: 60, height: 60 } // Nueva diferencia
+  { id: 8, name: 'Flores de arbusto', x: 400, y: 210, width: 80, height: 180 },
+  { id: 9, name: 'Patas del ganzo', x: 250, y: 400, width: 150, height: 60 },
+  { id: 10, name: 'Flor', x: 210, y: 450, width: 60, height: 60 }
 ];
 
 const ActivityScreen4 = () => {
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
+  const [points, setPoints] = useState(0);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
   const [gameFinished, setGameFinished] = useState(false);
+  const [showDialog, setShowDialog] = useState(false); // Controla la visibilidad del dialog box
   const [timer, setTimer] = useState(0);
+  const [differencesFound, setDifferencesFound] = useState(0);
   const navigate = useNavigate();
 
-  // Temporizador
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -39,57 +40,66 @@ const ActivityScreen4 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
-  // Navegar a /activities después de 6 segundos
   useEffect(() => {
     if (gameFinished) {
       const timeout = setTimeout(() => {
         navigate('/activities');
-      }, 6000); // Redirige después de 6 segundos
-
-      return () => clearTimeout(timeout); // Limpiar el temporizador si se desmonta el componente
+      }, 6000);
+      return () => clearTimeout(timeout);
     }
   }, [gameFinished, navigate]);
 
-  // Selección de diferencias
-  const handleOptionClick = (id) => {
-    if (selectedOptions.length >= 10 && !selectedOptions.includes(id)) {
-      toast.warning('Ya has seleccionado las 10 opciones');
-      return;
-    }
+  const handleImageClick = (e) => {
+    const rect = e.target.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-    if (!selectedOptions.includes(id)) {
-      setSelectedOptions([...selectedOptions, id]); // Añadir diferencia seleccionada
-      toast.success('Has seleccionado una diferencia');
-    }
-  };
+    let clickedOnDifference = false;
 
-  // Enviar respuestas
-  const handleSubmit = () => {
-    if (selectedOptions.length !== 10) {
-      toast.error('Debes seleccionar las 10 opciones antes de enviar');
-      return;
-    }
-
-    let correct = 0;
-    let incorrect = 0;
-
-    selectedOptions.forEach((id) => {
-      const option = differences.find((diff) => diff.id === id);
-      if (option) {
-        correct += 1;
-      } else {
-        incorrect += 1;
+    differences.forEach((difference) => {
+      if (
+        x >= difference.x &&
+        x <= difference.x + difference.width &&
+        y >= difference.y &&
+        y <= difference.y + difference.height
+      ) {
+        clickedOnDifference = true;
+        if (!selectedOptions.includes(difference.id)) {
+          setSelectedOptions([...selectedOptions, difference.id]);
+          setCorrectAnswers((prev) => prev + 1);
+          setPoints((prev) => prev + 5);
+          setDifferencesFound((prev) => prev + 1);
+          setFeedbackMessage(`¡Correcto! Has encontrado una diferencia. Diferencias encontradas: ${differencesFound + 1} de 10`);
+        }
       }
     });
 
-    setCorrectAnswers(correct);
-    setIncorrectAnswers(incorrect);
-    setGameFinished(true);
-
-    saveActivity(correct, incorrect);
+    if (!clickedOnDifference) {
+      setIncorrectAnswers((prev) => prev + 1);
+      setPoints((prev) => prev - 2);
+      setFeedbackMessage('¡Incorrecto! Esa no es una diferencia.');
+    }
   };
 
-  // Guardar la actividad
+  const handleSubmit = () => {
+    if (selectedOptions.length < 10) {
+      setShowDialog(true); // Muestra el diálogo si no se han encontrado las 10 diferencias
+    } else {
+      setGameFinished(true);
+      saveActivity(correctAnswers, incorrectAnswers);
+    }
+  };
+
+  const handleContinuePlaying = () => {
+    setShowDialog(false); // Cierra el diálogo para continuar buscando
+  };
+
+  const handleEndGame = () => {
+    setShowDialog(false);
+    setGameFinished(true);
+    saveActivity(correctAnswers, incorrectAnswers);
+  };
+
   const saveActivity = async (correct, incorrect) => {
     const activityData = {
       name: 'Encuentra diferencias',
@@ -98,7 +108,7 @@ const ActivityScreen4 = () => {
       correctAnswers: correct,
       incorrectAnswers: incorrect,
       timeUsed: timer,
-      scoreObtained: correct, // Se guarda la cantidad de respuestas correctas como puntaje
+      scoreObtained: points,
       patientId: 'somePatientId',
     };
 
@@ -111,13 +121,11 @@ const ActivityScreen4 = () => {
         body: JSON.stringify(activityData),
       });
 
-      if (response.ok) {
-        toast.success('Actividad guardada correctamente');
-      } else {
-        toast.error('Error al guardar la actividad');
+      if (!response.ok) {
+        setFeedbackMessage('Error al guardar la actividad');
       }
     } catch (error) {
-      toast.error('Hubo un problema al guardar la actividad');
+      setFeedbackMessage('Hubo un problema al guardar la actividad');
     }
   };
 
@@ -125,8 +133,11 @@ const ActivityScreen4 = () => {
     <div className="find-differences-game">
       <h1>Encuentra las 10 diferencias</h1>
       <p>Tiempo: {timer} segundos</p>
+      <p>Puntaje: {points}</p>
+      <p>Diferencias encontradas: {differencesFound} de 10</p>
+      <p>{feedbackMessage}</p>
 
-      <div className="images-container" style={{ position: 'relative' }}>
+      <div className="images-container" style={{ position: 'relative' }} onClick={handleImageClick}>
         <img src={Image1} alt="Imagen 1" style={{ width: '464px', height: '534px' }} />
         <div style={{ position: 'relative', display: 'inline-block' }}>
           <img
@@ -134,23 +145,6 @@ const ActivityScreen4 = () => {
             alt="Imagen 2"
             style={{ width: '464px', height: '534px', cursor: 'pointer' }}
           />
-          {/* Botones transparentes */}
-          {differences.map((difference) => (
-            <button
-              key={difference.id}
-              onClick={() => handleOptionClick(difference.id)}
-              style={{
-                position: 'absolute',
-                top: `${difference.y}px`,
-                left: `${difference.x}px`,
-                width: `${difference.width}px`,
-                height: `${difference.height}px`,
-                backgroundColor: 'transparent',
-                border: '2px solid rgba(255, 255, 255, 0.5)', // Líneas para ver la ubicación, puedes quitarlas
-                cursor: 'pointer',
-              }}
-            />
-          ))}
         </div>
       </div>
 
@@ -163,12 +157,21 @@ const ActivityScreen4 = () => {
           <p>Correctas: {correctAnswers}</p>
           <p>Incorrectas: {incorrectAnswers}</p>
           <p>Tiempo total: {timer} segundos</p>
+          <p>Puntaje final: {points}</p>
         </div>
       )}
 
-      <ToastContainer />
+      {showDialog && (
+        <div className="dialog-box">
+          <p>Has encontrado {differencesFound} de 10 diferencias.</p>
+          <p>¿Quieres terminar el juego o continuar buscando?</p>
+          <button onClick={handleEndGame}>Terminar</button>
+          <button onClick={handleContinuePlaying}>Continuar Jugando</button>
+        </div>
+      )}
     </div>
   );
 };
 
 export default ActivityScreen4;
+
