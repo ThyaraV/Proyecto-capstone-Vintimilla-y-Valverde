@@ -2,15 +2,15 @@ import path from "path";
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import { createServer } from "http"; // Importar el servidor HTTP
-import { Server } from "socket.io"; // Importar Socket.IO
+import { createServer } from "http";
+import { Server } from "socket.io";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import userRoutes from "./routes/userRoutes.js";
 import activitiesRoutes from "./routes/activitiesRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import doctorRoutes from "./routes/doctorRoutes.js";
 import patientRoutes from "./routes/patientRoutes.js";
-import chatRoutes from "./routes/chatRoutes.js"; // Importar rutas del chat
+import chatRoutes from "./routes/chatRoutes.js";
 
 import connectDB from "./config/db.js";
 
@@ -35,7 +35,7 @@ app.use("/api/activities", activitiesRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/patients", patientRoutes);
-app.use("/api/chats", chatRoutes); // Agregar rutas del chat
+app.use("/api/chats", chatRoutes);
 
 // Configurar ruta para archivos estáticos (subidas)
 const __dirname = path.resolve();
@@ -51,7 +51,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Crear el servidor HTTP y configurar Socket.IO
-const httpServer = createServer(app); // Crear el servidor HTTP
+const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
     origin: "*", // Cambia el origen según sea necesario
@@ -59,26 +59,29 @@ const io = new Server(httpServer, {
   },
 });
 
-// Middleware para compartir el objeto `io` con los controladores
-app.use((req, res, next) => {
-  req.io = io;
-  next();
-});
-
 // Configurar eventos de Socket.IO
 io.on("connection", (socket) => {
   console.log("Nueva conexión de socket establecida");
 
-  // Unirse a un chat
+  // Unirse al espacio personal del usuario
+  socket.on("setup", (userData) => {
+    socket.join(userData._id);
+    socket.emit("connected");
+    console.log(`Usuario ${userData.name} conectado con ID: ${userData._id}`);
+  });
+
+  // Unirse a un chat específico
   socket.on("joinChat", (chatId) => {
     socket.join(chatId);
     console.log(`Usuario se ha unido al chat: ${chatId}`);
   });
 
   // Manejar el envío de mensajes
-  socket.on("sendMessage", (messageData) => {
-    const { chatId, message } = messageData;
-    io.to(chatId).emit("newMessage", message); // Emitir el mensaje a todos los participantes del chat
+  socket.on("sendMessage", (message) => {
+    const chatId = message.chat._id || message.chat;
+
+    // Emitir el mensaje a todos los usuarios en el chat excepto al remitente
+    socket.to(chatId).emit("messageReceived", message);
   });
 
   // Desconexión del socket
