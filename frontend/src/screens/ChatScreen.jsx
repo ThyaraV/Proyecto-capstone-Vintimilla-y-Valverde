@@ -21,47 +21,48 @@ const ChatScreen = () => {
     isLoading: loadingChats,
     refetch: refetchChats,
   } = useGetChatsQuery();
+
   const { data: patients = [], isLoading: loadingPatients } =
     useGetPatientsQuery();
   const { data: doctors = [], isLoading: loadingDoctors } =
     useGetDoctorsQuery();
 
   const [sendMessage] = useSendMessageMutation();
-  const [createChat] = useCreateChatMutation(); // Para crear un nuevo chat
+  const [createChat] = useCreateChatMutation();
 
   const [selectedChat, setSelectedChat] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [socketConnected, setSocketConnected] = useState(false);
+  const [newMessageNotifications, setNewMessageNotifications] = useState([]);
 
   const socketRef = useRef();
 
-  // Referencia para mantener el valor más reciente de selectedChat
-  const selectedChatRef = useRef(selectedChat);
-
-  useEffect(() => {
-    selectedChatRef.current = selectedChat;
-  }, [selectedChat]);
-
-  // Conectar a Socket.IO una sola vez
+  // Conectar a Socket.IO
   useEffect(() => {
     if (userInfo) {
       socketRef.current = io(ENDPOINT);
-
       socketRef.current.emit("setup", userInfo);
       socketRef.current.on("connected", () => setSocketConnected(true));
 
-      // Escuchar mensajes nuevos desde el servidor
+      // Escuchar mensajes nuevos
       socketRef.current.on("messageReceived", (newMessageReceived) => {
-        const currentSelectedChat = selectedChatRef.current;
-        if (
-          currentSelectedChat &&
-          newMessageReceived.chat._id === currentSelectedChat._id
-        ) {
-          setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
-        } else {
-          // Opcional: Mostrar notificación de mensaje nuevo en otro chat
+        const chatId = newMessageReceived.chat._id || newMessageReceived.chat;
+        const senderId =
+          newMessageReceived.sender._id || newMessageReceived.sender;
+
+        if (senderId === userInfo._id) {
+          // Ignorar mensajes enviados por el usuario actual
+          return;
+        }
+
+        if (!selectedChat || selectedChat._id !== chatId) {
+          // Si el mensaje es para otro chat
+          setNewMessageNotifications((prev) => [...new Set([...prev, chatId])]);
           toast.info("Nuevo mensaje en otro chat");
+        } else {
+          // Mensaje para el chat seleccionado
+          setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
         }
       });
 
@@ -72,24 +73,25 @@ const ChatScreen = () => {
   }, [userInfo]);
 
   // Obtener mensajes del chat seleccionado
-  const {
-    data: chatMessages = [],
-    isLoading: loadingMessages,
-    refetch: refetchMessages,
-  } = useGetMessagesQuery(selectedChat?._id, {
-    skip: !selectedChat,
-  });
+  const { data: chatMessages = [], refetch: refetchMessages } =
+    useGetMessagesQuery(selectedChat?._id, {
+      skip: !selectedChat,
+    });
 
   useEffect(() => {
-    if (chatMessages) {
-      setMessages(chatMessages);
-    }
+    if (chatMessages) setMessages(chatMessages);
   }, [chatMessages]);
 
-  // Unirse a un chat cuando es seleccionado
+  // Unirse al chat seleccionado
   useEffect(() => {
     if (socketConnected && selectedChat) {
       socketRef.current.emit("joinChat", selectedChat._id);
+      refetchMessages();
+
+      // Eliminar notificación de este chat
+      setNewMessageNotifications((prev) =>
+        prev.filter((chatId) => chatId !== selectedChat._id)
+      );
     }
   }, [selectedChat, socketConnected]);
 
@@ -106,12 +108,14 @@ const ChatScreen = () => {
 
     try {
       const messageData = { chatId: selectedChat._id, content: newMessage };
-      const sentMessage = await sendMessage(messageData).unwrap(); // Guardar mensaje en la base de datos
+      const sentMessage = await sendMessage(messageData).unwrap();
+      setNewMessage("");
 
       // Emitir el mensaje a través de Socket.IO
       socketRef.current.emit("sendMessage", sentMessage);
 
-      setNewMessage("");
+      // Actualizar mensajes en el chat actual
+      setMessages((prevMessages) => [...prevMessages, sentMessage]);
     } catch (error) {
       toast.error("Error al enviar el mensaje");
     }
@@ -124,16 +128,15 @@ const ChatScreen = () => {
     }
 
     try {
-      const chat = await createChat({ participantId }).unwrap(); // Crear un nuevo chat
+      const chat = await createChat({ participantId }).unwrap();
       setSelectedChat(chat);
-      refetchChats(); // Refrescar la lista de chats
+      refetchChats();
       toast.success("Chat iniciado con éxito");
     } catch (error) {
       toast.error("Error al iniciar el chat");
     }
   };
 
-  // Validar la lista de pacientes y médicos para el rol de administrador o médico
   const renderParticipantsDropdown = () => {
     if (loadingPatients || loadingDoctors) {
       return <p>Cargando participantes...</p>;
@@ -175,27 +178,34 @@ const ChatScreen = () => {
         {loadingChats ? (
           <p>Cargando chats...</p>
         ) : chats.length > 0 ? (
-          chats.map((chat) => (
-            <div
-              key={chat?._id}
-              onClick={() => setSelectedChat(chat)}
-              style={{
-                ...styles.chatItem,
-                backgroundColor:
-                  selectedChat?._id === chat?._id ? "#f0f0f0" : "#fff",
-              }}
-            >
-              {chat.participants
-                ?.filter((p) => p._id !== userInfo?._id)
-                .map((p) => p.name)
-                .join(", ") || "Sin participantes"}
-            </div>
-          ))
+          chats.map((chat) => {
+            const chatId = chat._id;
+            const isSelected = selectedChat?._id === chatId;
+            const hasNewMessage = newMessageNotifications.includes(chatId);
+            return (
+              <div
+                key={chatId}
+                onClick={() => setSelectedChat(chat)}
+                style={{
+                  ...styles.chatItem,
+                  backgroundColor: isSelected
+                    ? "#f0f0f0"
+                    : hasNewMessage
+                    ? "#d1e7ff"
+                    : "#fff",
+                }}
+              >
+                {chat.participants
+                  ?.filter((p) => p._id !== userInfo?._id)
+                  .map((p) => p.name)
+                  .join(", ") || "Sin participantes"}
+                {hasNewMessage && <span style={styles.notificationDot}></span>}
+              </div>
+            );
+          })
         ) : (
           <p>No hay chats disponibles</p>
         )}
-
-        {/* Mostrar la lista de participantes (pacientes y médicos) para el admin y el doctor */}
         {userInfo &&
           (userInfo.isAdmin || userInfo.isDoctor) &&
           renderParticipantsDropdown()}
@@ -213,14 +223,12 @@ const ChatScreen = () => {
             </h2>
             <div className="messages" style={styles.messages}>
               {messages.length > 0 ? (
-                messages
-                  .filter((msg) => msg != null) // Filtrar mensajes nulos
-                  .map((msg) => (
-                    <div key={msg?._id} style={styles.message}>
-                      <strong>{msg?.sender?.name || "Sin nombre"}: </strong>{" "}
-                      {msg?.content || ""}
-                    </div>
-                  ))
+                messages.map((msg) => (
+                  <div key={msg?._id} style={styles.message}>
+                    <strong>{msg?.sender?.name || "Sin nombre"}: </strong>
+                    {msg?.content || ""}
+                  </div>
+                ))
               ) : (
                 <p>No hay mensajes aún</p>
               )}
@@ -261,6 +269,7 @@ const styles = {
     padding: "0.5rem",
     cursor: "pointer",
     borderBottom: "1px solid #ddd",
+    position: "relative",
   },
   chatBox: {
     flex: 1,
@@ -299,6 +308,15 @@ const styles = {
     borderRadius: "5px",
     border: "none",
     cursor: "pointer",
+  },
+  notificationDot: {
+    position: "absolute",
+    top: "8px",
+    right: "8px",
+    width: "8px",
+    height: "8px",
+    borderRadius: "50%",
+    backgroundColor: "#ff4d4d",
   },
 };
 

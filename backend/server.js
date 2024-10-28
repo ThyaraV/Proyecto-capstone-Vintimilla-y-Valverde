@@ -51,7 +51,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Crear el servidor HTTP y configurar Socket.IO
-const httpServer = createServer(app); // Crear el servidor HTTP
+const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
     origin: "*", // Cambia el origen según sea necesario
@@ -63,22 +63,25 @@ const io = new Server(httpServer, {
 io.on("connection", (socket) => {
   console.log("Nueva conexión de socket establecida");
 
-  // Unirse a un chat
+  // Unirse al espacio personal del usuario
   socket.on("setup", (userData) => {
     socket.join(userData._id);
     socket.emit("connected");
     console.log(`Usuario ${userData.name} conectado con ID: ${userData._id}`);
   });
 
+  // Unirse a un chat específico
   socket.on("joinChat", (chatId) => {
     socket.join(chatId);
     console.log(`Usuario se ha unido al chat: ${chatId}`);
   });
 
-  // Manejar el envío de mensajes desde el cliente
+  // Manejar el envío de mensajes
   socket.on("sendMessage", (message) => {
-    const chatId = message.chat._id;
-    io.to(chatId).emit("messageReceived", message); // Emitir el mensaje a todos los participantes del chat
+    const chatId = message.chat._id || message.chat;
+
+    // Emitir el mensaje a todos los usuarios en el chat excepto al remitente
+    socket.to(chatId).emit("messageReceived", message);
   });
 
   // Desconexión del socket
