@@ -37,6 +37,7 @@
     "socket.io-client": "^4.8.0"
   },
   "devDependencies": {
+    "@craco/craco": "^7.1.0",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",

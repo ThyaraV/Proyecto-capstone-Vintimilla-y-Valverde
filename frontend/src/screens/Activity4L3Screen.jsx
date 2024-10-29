@@ -4,20 +4,12 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
 
 // Importa las imágenes
-import Image1 from '../images/imagen1.png'; 
-import Image2 from '../images/imagen2.png'; 
+import Image1 from '../images/monalisa1.png'; 
+import Image2 from '../images/monalisa2.png'; 
 
 const differences = [
-  { id: 1, name: 'Ala gallo', x: 150, y: 290, width: 70, height: 70 },
-  { id: 2, name: 'Gato', x: 67, y: 40, width: 50, height: 80 },
-  { id: 3, name: 'Cola gallo', x: 103, y: 320, width: 50, height: 50 },
-  { id: 4, name: 'Cerca', x: 120, y: 100, width: 50, height: 60 },
-  { id: 5, name: 'Ramas de un árbol', x: 365, y: 34, width: 75, height: 75},
-  { id: 6, name: 'Cuello ganzo', x: 265, y: 210, width: 65, height: 65 },
-  { id: 7, name: 'Cesped', x: 95, y: 450, width: 60, height: 60 },
-  { id: 8, name: 'Flores de arbusto', x: 400, y: 210, width: 80, height: 180 }, // Nueva diferencia
-  { id: 9, name: 'Patas del ganzo', x: 250, y: 400, width: 150, height: 60 }, // Nueva diferencia
-  { id: 10, name: 'flor', x: 210, y: 450, width: 60, height: 60 } // Nueva diferencia
+  { id: 1, name: 'dedo', x: 215, y: 390, width: 70, height: 60 },
+  { id: 2, name: 'arboles', x: 68, y: 150, width: 85, height: 85 },
 ];
 
 const ActivityScreen4 = () => {
