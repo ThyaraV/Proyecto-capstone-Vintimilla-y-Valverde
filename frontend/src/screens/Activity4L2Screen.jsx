@@ -25,7 +25,7 @@ const ActivityScreen4 = () => {
   const [points, setPoints] = useState(0);
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [gameFinished, setGameFinished] = useState(false);
-  const [showDialog, setShowDialog] = useState(false); // Controla la visibilidad del dialog box
+  const [showDialog, setShowDialog] = useState(false);
   const [timer, setTimer] = useState(0);
   const [differencesFound, setDifferencesFound] = useState(0);
   const navigate = useNavigate();
@@ -83,7 +83,7 @@ const ActivityScreen4 = () => {
 
   const handleSubmit = () => {
     if (selectedOptions.length < 10) {
-      setShowDialog(true); // Muestra el diálogo si no se han encontrado las 10 diferencias
+      setShowDialog(true);
     } else {
       setGameFinished(true);
       saveActivity(correctAnswers, incorrectAnswers);
@@ -91,7 +91,7 @@ const ActivityScreen4 = () => {
   };
 
   const handleContinuePlaying = () => {
-    setShowDialog(false); // Cierra el diálogo para continuar buscando
+    setShowDialog(false);
   };
 
   const handleEndGame = () => {
@@ -162,11 +162,13 @@ const ActivityScreen4 = () => {
       )}
 
       {showDialog && (
-        <div className="dialog-box">
-          <p>Has encontrado {differencesFound} de 10 diferencias.</p>
-          <p>¿Quieres terminar el juego o continuar buscando?</p>
-          <button onClick={handleEndGame}>Terminar</button>
-          <button onClick={handleContinuePlaying}>Continuar Jugando</button>
+        <div className="dialog-box-overlay">
+          <div className="dialog-box">
+            <p>Has encontrado {differencesFound} de 10 diferencias.</p>
+            <p>¿Quieres terminar el juego o continuar buscando?</p>
+            <button onClick={handleEndGame}>Terminar</button>
+            <button onClick={handleContinuePlaying}>Continuar Jugando</button>
+          </div>
         </div>
       )}
     </div>
@@ -174,4 +176,3 @@ const ActivityScreen4 = () => {
 };
 
 export default ActivityScreen4;
-

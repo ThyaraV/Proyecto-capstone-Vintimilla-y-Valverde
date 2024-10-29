@@ -1,76 +1,82 @@
 import React, { useState, useEffect } from 'react';
+import Fuse from 'fuse.js';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
 
-const validFruits = ['papaya', 'plátano', 'paraguayo', 'piña', 'pera'];
-const validAnimals = ['tigre', 'tiburón', 'tapir', 'toro', 'tarántula'];
-const validCitiesC = ['caracas', 'cali', 'cuenca', 'córdoba', 'cartagena'];
+const fuseOptions = { includeScore: true, threshold: 0.4 };
+const validColors = ['rojo', 'azul', 'verde', 'amarillo', 'morado'];
+const validProfessions = ['doctor', 'ingeniero', 'arquitecto', 'profesor', 'científico'];
+const validVehicles = ['coche', 'camioneta', 'bicicleta', 'motocicleta', 'avión'];
+
+const colorFuse = new Fuse(validColors, fuseOptions);
+const professionFuse = new Fuse(validProfessions, fuseOptions);
+const vehicleFuse = new Fuse(validVehicles, fuseOptions);
 
 const instructionsLevel2 = [
-  {
-    id: 1,
-    type: 'input',
-    prompt: 'Escribe el nombre de una ciudad que comience con la letra C',
-    validator: (response) => validCitiesC.includes(response.trim().toLowerCase())
+  { 
+    id: 1, 
+    type: 'input', 
+    prompt: 'Escribe una profesión que termine en la letra O', 
+    validator: (response) => professionFuse.search(response.trim().toLowerCase()).length > 0 
   },
-  {
-    id: 2,
-    type: 'input',
-    prompt: 'Escribe una palabra que termine en "ción"',
-    validator: (response) => response.trim().toLowerCase().endsWith('ción')
+  { 
+    id: 2, 
+    type: 'input', 
+    prompt: 'Escribe un color que empiece con la letra A', 
+    validator: (response) => colorFuse.search(response.trim().toLowerCase()).length > 0 
   },
-  {
-    id: 3,
-    type: 'multiple',
-    prompt: '¿Cuál de estas opciones es un vegetal?',
-    options: ['Tomate', 'Cuchara', 'Mesa', 'León'],
-    correctAnswer: 'Tomate'
+  { 
+    id: 3, 
+    type: 'multiple', 
+    prompt: '¿Cuál de estos elementos puede encontrarse en el espacio?', 
+    options: ['Asteroide', 'Montaña', 'Perro'], 
+    correctAnswer: 'Asteroide' 
   },
-  {
-    id: 4,
-    type: 'input',
-    prompt: 'Escribe el nombre de un animal que comience con la letra T',
-    validator: (response) => validAnimals.includes(response.trim().toLowerCase())
+  { 
+    id: 4, 
+    type: 'multiple', 
+    prompt: '¿Cuál de estos es un animal que puede volar?', 
+    options: ['Águila', 'Pez', 'Gato'], 
+    correctAnswer: 'Águila' 
   },
-  {
-    id: 5,
-    type: 'input',
-    prompt: 'Escribe el nombre de una fruta que comience con la letra P',
-    validator: (response) => validFruits.includes(response.trim().toLowerCase())
+  { 
+    id: 5, 
+    type: 'input', 
+    prompt: 'Escribe una fruta que tenga un color amarillo', 
+    validator: (response) => ['piña', 'plátano'].includes(response.trim().toLowerCase())
   },
-  {
-    id: 6,
-    type: 'multiple',
-    prompt: '¿Cuál de estas es una estación del año?',
-    options: ['Verano', 'Abril', 'Casa', 'Fruta'],
-    correctAnswer: 'Verano'
+  { 
+    id: 6, 
+    type: 'input', 
+    prompt: 'Escribe un vehículo que tenga dos ruedas', 
+    validator: (response) => vehicleFuse.search(response.trim().toLowerCase()).some(result => ['bicicleta', 'motocicleta'].includes(result.item)) 
   },
-  {
-    id: 7,
-    type: 'input',
-    prompt: 'Escribe una palabra que contenga la letra "z"',
-    validator: (response) => response.trim().toLowerCase().includes('z')
+  { 
+    id: 7, 
+    type: 'multiple', 
+    prompt: '¿Cuál de estos animales es un mamífero?', 
+    options: ['Delfín', 'Loro', 'Sardina'], 
+    correctAnswer: 'Delfín' 
   },
-  {
-    id: 8,
-    type: 'multiple',
-    prompt: '¿Cuál de estas es una bebida?',
-    options: ['Agua', 'Tijeras', 'Celular', 'Gato'],
-    correctAnswer: 'Agua'
+  { 
+    id: 8, 
+    type: 'multiple', 
+    prompt: '¿Cuál de estas es una estación del año?', 
+    options: ['Primavera', 'Enero', 'Coche'], 
+    correctAnswer: 'Primavera' 
   },
-  {
-    id: 9,
-    type: 'input',
-    prompt: 'Escribe un objeto que encuentres en una oficina',
-    validator: (response) => ['computadora', 'escritorio', 'silla', 'teléfono'].includes(response.trim().toLowerCase())
+  { 
+    id: 9, 
+    type: 'input', 
+    prompt: 'Escribe un objeto que se encuentre en la cocina y contenga la letra "t"', 
+    validator: (response) => response.includes('t') 
   },
-  {
-    id: 10,
-    type: 'multiple',
-    prompt: '¿Cuál de estas es una prenda de vestir?',
-    options: ['Camiseta', 'Pared', 'Avión', 'Pelota'],
-    correctAnswer: 'Camiseta'
+  { 
+    id: 10, 
+    type: 'input', 
+    prompt: 'Escribe un país de América del Sur que empiece con la letra C', 
+    validator: (response) => ['chile', 'colombia'].includes(response.trim().toLowerCase()) 
   }
 ];
 
@@ -82,7 +88,7 @@ const ActivityScreenLevel2 = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo(0, 0); 
   }, []);
 
   useEffect(() => {
@@ -96,7 +102,7 @@ const ActivityScreenLevel2 = () => {
   useEffect(() => {
     if (gameFinished) {
       const timeout = setTimeout(() => {
-        navigate('/activities');
+        navigate('/activities'); 
       }, 6000);
       return () => clearTimeout(timeout);
     }
@@ -108,14 +114,17 @@ const ActivityScreenLevel2 = () => {
 
   const handleSubmit = () => {
     let finalScore = 0;
+
     instructionsLevel2.forEach((instruction) => {
-      const userResponse = responses[instruction.id] || '';
+      const userResponse = responses[instruction.id] || ''; 
+
       if (instruction.type === 'input' && instruction.validator(userResponse)) {
         finalScore += 0.50;
-      } else if (instruction.type === 'multiple' && userResponse === instruction.correctAnswer) {
+      } else if (instruction.type === 'multiple' && userResponse.toLowerCase() === instruction.correctAnswer.toLowerCase()) {
         finalScore += 0.50;
       }
     });
+
     setScore(finalScore);
     setGameFinished(true);
     toast.success('Juego terminado. ¡Revisa tus resultados!');
@@ -125,11 +134,14 @@ const ActivityScreenLevel2 = () => {
   const saveActivity = async (finalScore, timeUsed) => {
     const activityData = {
       name: 'Seguir Instrucciones - Nivel 2',
-      description: 'Juego de seguir instrucciones de mayor complejidad.',
+      description: 'Juego de seguir instrucciones con respuestas mixtas - Nivel 2.',
       type: 'seguir_instrucciones',
       scoreObtained: finalScore,
       timeUsed: parseFloat(timeUsed),
-      patientId: 'somePatientId'
+      difficultyLevel: 2,
+      observations: 'El usuario completó la actividad satisfactoriamente.',
+      progress: 'mejorando',
+      patientId: 'somePatientId' 
     };
 
     try {
@@ -155,6 +167,7 @@ const ActivityScreenLevel2 = () => {
     <div className="follow-instructions-container">
       <h1>Juego de Seguir Instrucciones - Nivel 2</h1>
       <p className="timer-text">Tiempo: {timer.toFixed(2)} segundos</p>
+
       <div className="instructions-container">
         {instructionsLevel2.map((instruction) => (
           <div key={instruction.id} className="instruction">
@@ -185,6 +198,7 @@ const ActivityScreenLevel2 = () => {
           </div>
         ))}
       </div>
+
       {!gameFinished ? (
         <button onClick={handleSubmit} className="submit-button">
           Enviar Respuestas
@@ -196,6 +210,7 @@ const ActivityScreenLevel2 = () => {
           <p>Tiempo total: {timer.toFixed(2)} segundos</p>
         </div>
       )}
+
       <ToastContainer />
     </div>
   );

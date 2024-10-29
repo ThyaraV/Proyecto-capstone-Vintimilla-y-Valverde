@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import Fuse from 'fuse.js';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
 
 // Listas de validaciones específicas
 const validFruitsP = ['piña', 'pera', 'papaya', 'plátano', 'paraguayo'];
-const validAnimalsT = ['tiburón', 'tortuga', 'tapir', 'ternero','toro', 'tarantula'];
+const validAnimalsT = ['tiburón', 'tortuga', 'tapir', 'ternero', 'toro', 'tarantula'];
 const validCitiesM = ['madrid', 'manta', 'montevideo', 'miami', 'monpiche', 'muisne', 'manabi'];
 
+// Configuración de Fuse.js para coincidencias aproximadas
+const fuseOptions = { includeScore: true, threshold: 0.4 };
+
+// Instancias de Fuse para cada lista
+const fruitFuse = new Fuse(validFruitsP, fuseOptions);
+const animalFuse = new Fuse(validAnimalsT, fuseOptions);
+const cityFuse = new Fuse(validCitiesM, fuseOptions);
+
+// Instrucciones del juego
 const instructions = [
   { 
     id: 1, 
@@ -19,7 +29,7 @@ const instructions = [
     id: 2, 
     type: 'input', 
     prompt: 'Escribe una ciudad que empiece con la letra M', 
-    validator: (response) => validCitiesM.includes(response.trim().toLowerCase()) 
+    validator: (response) => cityFuse.search(response.trim().toLowerCase()).length > 0 
   },
   { 
     id: 3, 
@@ -59,7 +69,7 @@ const instructions = [
     id: 8, 
     type: 'input', 
     prompt: 'Escribe un animal que comience con la letra T', 
-    validator: (response) => validAnimalsT.includes(response.trim().toLowerCase()) 
+    validator: (response) => animalFuse.search(response.trim().toLowerCase()).length > 0 
   },
   { 
     id: 9, 
@@ -72,7 +82,7 @@ const instructions = [
     id: 10, 
     type: 'input', 
     prompt: 'Escribe una fruta que empiece con la letra P', 
-    validator: (response) => validFruitsP.includes(response.trim().toLowerCase()) 
+    validator: (response) => fruitFuse.search(response.trim().toLowerCase()).length > 0 
   }
 ];
 
@@ -83,12 +93,10 @@ const ActivityScreen9 = () => {
   const [timer, setTimer] = useState(0);
   const navigate = useNavigate();
 
-  // Mover la página directamente al inicio sin animación
   useEffect(() => {
-    window.scrollTo(0, 0); // Colocar la página en la parte superior al cargar
+    window.scrollTo(0, 0); 
   }, []);
 
-  // Temporizador
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -97,11 +105,10 @@ const ActivityScreen9 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
-  // Redirigir después de 6 segundos de haber finalizado el juego
   useEffect(() => {
     if (gameFinished) {
       const timeout = setTimeout(() => {
-        navigate('/activities'); // Navegar a /activities después de 6 segundos
+        navigate('/activities'); 
       }, 6000);
       return () => clearTimeout(timeout);
     }
@@ -115,11 +122,11 @@ const ActivityScreen9 = () => {
     let finalScore = 0;
 
     instructions.forEach((instruction) => {
-      const userResponse = responses[instruction.id] || ''; // Asegura que no sea undefined
+      const userResponse = responses[instruction.id] || ''; 
 
       if (instruction.type === 'input' && instruction.validator(userResponse)) {
         finalScore += 0.50;
-      } else if (instruction.type === 'multiple' && userResponse === instruction.correctAnswer) {
+      } else if (instruction.type === 'multiple' && userResponse.toLowerCase() === instruction.correctAnswer.toLowerCase()) {
         finalScore += 0.50;
       }
     });
@@ -140,7 +147,7 @@ const ActivityScreen9 = () => {
       difficultyLevel: 1,
       observations: 'El usuario completó la actividad satisfactoriamente.',
       progress: 'mejorando',
-      patientId: 'somePatientId' // Reemplazar con el ID real del paciente
+      patientId: 'somePatientId' 
     };
 
     try {
@@ -218,3 +225,4 @@ const ActivityScreen9 = () => {
 };
 
 export default ActivityScreen9;
+
