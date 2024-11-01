@@ -1,0 +1,26 @@
+/* ActivitiesScreen.css */
+
+.activity-row {
+    display: flex;
+    align-items: center;
+  }
+  
+  .activity-name {
+    min-width: 150px;
+  }
+  
+  .activity-levels {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  .activity-level {
+    /* Puedes ajustar el ancho de los niveles para que quepan en la línea */
+    flex: 1;
+    max-width: 200px; /* Ajusta según necesites */
+  }
+  
+  .activity-level + .activity-level {
+    margin-left: 15px;
+  }
+  
