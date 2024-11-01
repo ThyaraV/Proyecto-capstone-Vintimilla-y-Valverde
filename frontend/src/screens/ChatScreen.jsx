@@ -10,6 +10,7 @@ import {
 } from "../slices/chatApiSlice";
 import { useGetPatientsQuery } from "../slices/patientApiSlice";
 import { useGetDoctorsQuery } from "../slices/doctorApiSlice";
+import '../assets/styles/chatScreen.css'; 
 
 const ENDPOINT = "http://localhost:5000"; // Reemplaza con tu endpoint si es necesario
 
@@ -22,10 +23,8 @@ const ChatScreen = () => {
     refetch: refetchChats,
   } = useGetChatsQuery();
 
-  const { data: patients = [], isLoading: loadingPatients } =
-    useGetPatientsQuery();
-  const { data: doctors = [], isLoading: loadingDoctors } =
-    useGetDoctorsQuery();
+  const { data: patients = [], isLoading: loadingPatients } = useGetPatientsQuery();
+  const { data: doctors = [], isLoading: loadingDoctors } = useGetDoctorsQuery();
 
   const [sendMessage] = useSendMessageMutation();
   const [createChat] = useCreateChatMutation();
@@ -34,11 +33,18 @@ const ChatScreen = () => {
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [socketConnected, setSocketConnected] = useState(false);
-  const [newMessageNotifications, setNewMessageNotifications] = useState([]);
+  // Cambiamos newMessageNotifications a un objeto para almacenar contadores por chat
+  const [newMessageNotifications, setNewMessageNotifications] = useState({});
 
   const socketRef = useRef();
+  const selectedChatRef = useRef(selectedChat);
 
-  // Conectar a Socket.IO
+  // Actualizamos la referencia de selectedChat cuando cambia
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
+  // Conectar a Socket.IO una sola vez
   useEffect(() => {
     if (userInfo) {
       socketRef.current = io(ENDPOINT);
@@ -48,21 +54,24 @@ const ChatScreen = () => {
       // Escuchar mensajes nuevos
       socketRef.current.on("messageReceived", (newMessageReceived) => {
         const chatId = newMessageReceived.chat._id || newMessageReceived.chat;
-        const senderId =
-          newMessageReceived.sender._id || newMessageReceived.sender;
+        const senderId = newMessageReceived.sender._id || newMessageReceived.sender;
 
         if (senderId === userInfo._id) {
           // Ignorar mensajes enviados por el usuario actual
           return;
         }
 
-        if (!selectedChat || selectedChat._id !== chatId) {
-          // Si el mensaje es para otro chat
-          setNewMessageNotifications((prev) => [...new Set([...prev, chatId])]);
-          toast.info("Nuevo mensaje en otro chat");
-        } else {
-          // Mensaje para el chat seleccionado
+        if (selectedChatRef.current && selectedChatRef.current._id === chatId) {
+          // Si el mensaje es para el chat seleccionado, actualizar los mensajes automáticamente
           setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
+        } else {
+          // Si el mensaje es para otro chat, incrementar el contador de mensajes no leídos
+          setNewMessageNotifications((prev) => ({
+            ...prev,
+            [chatId]: (prev[chatId] || 0) + 1
+          }));
+          // Puedes mostrar una notificación si lo deseas
+          // toast.info("Nuevo mensaje en otro chat");
         }
       });
 
@@ -73,10 +82,10 @@ const ChatScreen = () => {
   }, [userInfo]);
 
   // Obtener mensajes del chat seleccionado
-  const { data: chatMessages = [], refetch: refetchMessages } =
-    useGetMessagesQuery(selectedChat?._id, {
-      skip: !selectedChat,
-    });
+  const { data: chatMessages = [], refetch: refetchMessages } = useGetMessagesQuery(
+    selectedChat?._id,
+    { skip: !selectedChat }
+  );
 
   useEffect(() => {
     if (chatMessages) setMessages(chatMessages);
@@ -88,10 +97,11 @@ const ChatScreen = () => {
       socketRef.current.emit("joinChat", selectedChat._id);
       refetchMessages();
 
-      // Eliminar notificación de este chat
-      setNewMessageNotifications((prev) =>
-        prev.filter((chatId) => chatId !== selectedChat._id)
-      );
+      // Eliminar el contador de mensajes no leídos para este chat
+      setNewMessageNotifications((prev) => {
+        const { [selectedChat._id]: _, ...rest } = prev;
+        return rest;
+      });
     }
   }, [selectedChat, socketConnected]);
 
@@ -172,8 +182,8 @@ const ChatScreen = () => {
   };
 
   return (
-    <div className="chat-container" style={styles.container}>
-      <div className="sidebar" style={styles.sidebar}>
+    <div className="chat-container">
+      <div className="sidebar">
         <h2>Chats</h2>
         {loadingChats ? (
           <p>Cargando chats...</p>
@@ -181,25 +191,22 @@ const ChatScreen = () => {
           chats.map((chat) => {
             const chatId = chat._id;
             const isSelected = selectedChat?._id === chatId;
-            const hasNewMessage = newMessageNotifications.includes(chatId);
+            const newMessagesCount = newMessageNotifications[chatId] || 0;
             return (
               <div
                 key={chatId}
                 onClick={() => setSelectedChat(chat)}
-                style={{
-                  ...styles.chatItem,
-                  backgroundColor: isSelected
-                    ? "#f0f0f0"
-                    : hasNewMessage
-                    ? "#d1e7ff"
-                    : "#fff",
-                }}
+                className={`chat-item ${
+                  isSelected ? "selected-chat" : newMessagesCount > 0 ? "new-message" : ""
+                }`}
               >
                 {chat.participants
                   ?.filter((p) => p._id !== userInfo?._id)
                   .map((p) => p.name)
                   .join(", ") || "Sin participantes"}
-                {hasNewMessage && <span style={styles.notificationDot}></span>}
+                {newMessagesCount > 0 && (
+                  <span className="notification-badge">{newMessagesCount}</span>
+                )}
               </div>
             );
           })
@@ -211,37 +218,44 @@ const ChatScreen = () => {
           renderParticipantsDropdown()}
       </div>
 
-      <div className="chat-box" style={styles.chatBox}>
+      <div className="chat-box">
         {selectedChat ? (
           <>
-            <h2 style={styles.chatHeader}>
+            <h2 className="chat-header">
               Chat con{" "}
               {selectedChat.participants
                 ?.filter((p) => p._id !== userInfo?._id)
                 .map((p) => p.name)
                 .join(", ") || "Sin participantes"}
             </h2>
-            <div className="messages" style={styles.messages}>
+            <div className="messages">
               {messages.length > 0 ? (
-                messages.map((msg) => (
-                  <div key={msg?._id} style={styles.message}>
-                    <strong>{msg?.sender?.name || "Sin nombre"}: </strong>
-                    {msg?.content || ""}
-                  </div>
-                ))
+                messages.map((msg) => {
+                  const isSentByUser = msg.sender?._id === userInfo?._id;
+                  return (
+                    <div
+                      key={msg._id}
+                      className={`message ${
+                        isSentByUser ? "sent-message" : "received-message"
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  );
+                })
               ) : (
                 <p>No hay mensajes aún</p>
               )}
             </div>
-            <div style={styles.messageInputContainer}>
+            <div className="message-input-container">
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Escribe un mensaje..."
-                style={styles.messageInput}
+                className="message-input"
               />
-              <button onClick={handleSendMessage} style={styles.sendButton}>
+              <button onClick={handleSendMessage} className="send-button">
                 Enviar
               </button>
             </div>
@@ -252,72 +266,6 @@ const ChatScreen = () => {
       </div>
     </div>
   );
-};
-
-// Estilos CSS en JS
-const styles = {
-  container: {
-    display: "flex",
-    height: "100vh",
-  },
-  sidebar: {
-    width: "25%",
-    borderRight: "1px solid #ddd",
-    padding: "1rem",
-  },
-  chatItem: {
-    padding: "0.5rem",
-    cursor: "pointer",
-    borderBottom: "1px solid #ddd",
-    position: "relative",
-  },
-  chatBox: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    padding: "1rem",
-  },
-  chatHeader: {
-    borderBottom: "1px solid #ddd",
-    paddingBottom: "0.5rem",
-    marginBottom: "1rem",
-  },
-  messages: {
-    flex: 1,
-    overflowY: "auto",
-    marginBottom: "1rem",
-  },
-  message: {
-    padding: "0.5rem",
-    borderBottom: "1px solid #eee",
-  },
-  messageInputContainer: {
-    display: "flex",
-  },
-  messageInput: {
-    flex: 1,
-    padding: "0.5rem",
-    borderRadius: "5px",
-    border: "1px solid #ddd",
-    marginRight: "0.5rem",
-  },
-  sendButton: {
-    padding: "0.5rem 1rem",
-    backgroundColor: "#007bff",
-    color: "#fff",
-    borderRadius: "5px",
-    border: "none",
-    cursor: "pointer",
-  },
-  notificationDot: {
-    position: "absolute",
-    top: "8px",
-    right: "8px",
-    width: "8px",
-    height: "8px",
-    borderRadius: "50%",
-    backgroundColor: "#ff4d4d",
-  },
 };
 
 export default ChatScreen;

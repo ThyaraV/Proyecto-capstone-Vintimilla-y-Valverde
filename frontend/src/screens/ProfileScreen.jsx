@@ -179,7 +179,12 @@ const ProfileScreen = () => {
               type="text"
               placeholder="Ingrese su cédula"
               value={cardId}
-              onChange={(e) => setCardId(e.target.value)}
+              readOnly
+              style={{
+                backgroundColor: "#f0f0f0", // Color de fondo gris claro
+                color: "#6c757d", // Color de texto gris oscuro
+                cursor: "not-allowed" // Cambiar el cursor para indicar que no es editable
+              }}
             ></Form.Control>
           </Form.Group>
 
@@ -189,7 +194,12 @@ const ProfileScreen = () => {
               type="email"
               placeholder="Ingrese su email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              readOnly
+              style={{
+                backgroundColor: "#f0f0f0",
+                color: "#6c757d",
+                cursor: "not-allowed"
+              }}
             ></Form.Control>
           </Form.Group>
 

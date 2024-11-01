@@ -1,0 +1,120 @@
+.chat-container {
+    display: flex;
+    height: 100vh;
+  }
+  
+  .sidebar {
+    width: 25%;
+    border-right: 1px solid #ddd;
+    padding: 1rem;
+    background-color: #eaf2fa;
+  }
+  
+  .chat-item {
+    padding: 0.5rem;
+    cursor: pointer;
+    border-bottom: 1px solid #ddd;
+    position: relative;
+    transition: background-color 0.2s;
+  }
+  
+  .chat-item:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .chat-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    background-color: #fff5eb;
+  }
+  
+  .chat-header {
+    border-bottom: 1px solid #000000;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .message {
+    max-width: 70%;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    color: #333;
+    word-wrap: break-word;
+  }
+  
+  .received-message {
+    background-color: #86befd;
+    align-self: flex-start;
+    border-radius: 15px 15px 15px 0px;
+  }
+  
+  .sent-message {
+    background-color: #eedc78;
+    align-self: flex-end;
+    border-radius: 15px 15px 0px 15px;
+  }
+  
+  .message-input-container {
+    display: flex;
+    border-top: 1px solid #f1eded;
+    padding-top: 10px;
+  }
+  
+  .message-input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 15px;
+    border: 1px solid #ddd;
+    outline: none;
+  }
+  
+  .send-button {
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: background-color 0.2s;
+  }
+  
+  .send-button:hover {
+    background-color: #0056b3;
+  }
+  
+  .notification-dot {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #ff4d4d;
+  }
+  
+  .notification-badge {
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 4px 8px;
+    font-size: 12px;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+  }
+  
