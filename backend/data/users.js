@@ -5,7 +5,7 @@ const users = [
     {
         name: 'Admin User',
         lastName: 'AdminLastName',
-        cardId: '0000001',
+        cardId: '2350713661',
         email: 'admin@email.com',
         phoneNumber: '123-456-7890',
         password: bcrypt.hashSync('123456', 10),
@@ -15,7 +15,7 @@ const users = [
     {
         name: 'John Doe',
         lastName: 'Doe',
-        cardId: '0000002',
+        cardId: '1307957918',
         email: 'john@email.com',
         phoneNumber: '098-765-4321',
         password: bcrypt.hashSync('123456', 10),
@@ -25,7 +25,7 @@ const users = [
     {
         name: 'Jane Doe',
         lastName: 'Doe',
-        cardId: '0000003',
+        cardId: '1709069189',
         email: 'jane@email.com',
         phoneNumber: '123-123-1234',
         password: bcrypt.hashSync('123456', 10),

@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Form, Button, Row, Col } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
-import FormContainer from "../components/FormContainer.jsx";
-import Loader from "../components/Loader.jsx";
 import { useRegisterMutation } from "../slices/usersApiSlice.js";
 import { setCredentials } from "../slices/authSlice.js";
 import { toast } from "react-toastify";
+import "../assets/styles/Login.css"; // Reutiliza el mismo archivo de estilos de Login
 
 const RegisterScreen = () => {
   const [name, setName] = useState("");
@@ -16,7 +14,7 @@ const RegisterScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("patient"); // Nuevo estado para el rol
+  const [role, setRole] = useState("patient");
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -34,54 +32,76 @@ const RegisterScreen = () => {
   }, [userInfo, redirect, navigate]);
 
   const validateCedula = (cedula) => {
-    // Verificar que sea una cadena de exactamente 10 dígitos
     if (!/^\d{10}$/.test(cedula)) {
       return false;
     }
-
-    // Extraer el último dígito como verificador
     const verificador = parseInt(cedula[9], 10);
-
-    // Extraer los dos primeros dígitos para verificar la provincia
     const provincia = parseInt(cedula.substring(0, 2), 10);
-    if (provincia < 0 || provincia > 24) {
-      return false; // Provincia inválida
-    }
-
-    // Coeficientes
+    if (provincia < 0 || provincia > 24) return false;
     const coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2];
     let suma = 0;
-
-    // Sumar los resultados de la multiplicación de los dígitos por los coeficientes
     for (let i = 0; i < 9; i++) {
       let digito = parseInt(cedula[i], 10) * coeficientes[i];
-      if (digito >= 10) {
-        digito -= 9; // Restar 9 si el resultado es mayor o igual que 10
-      }
-      suma += digito; // Sumar al total
+      if (digito >= 10) digito -= 9;
+      suma += digito;
     }
-
-    // Aplicar el módulo 10
     const modulo = suma % 10;
     const resultadoFinal = modulo === 0 ? 0 : 10 - modulo;
-
-    // Comparar el resultado con el dígito verificador
     return resultadoFinal === verificador;
   };
 
-  const validateEmail = (email) => {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email);
-  };
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const submitHandler = async (e) => {
     e.preventDefault();
 
+    // Verificar si todos los campos están vacíos
+    if (
+      !name &&
+      !lastName &&
+      !cardId &&
+      !email &&
+      !phoneNumber &&
+      !password &&
+      !confirmPassword
+    ) {
+      toast.error("No se ha ingresado ningún campo.");
+      return;
+    }
+
+    // Validación de campos vacíos individuales
+    if (!name) {
+      toast.error("El campo 'Nombre' es obligatorio.");
+      return;
+    }
+    if (!lastName) {
+      toast.error("El campo 'Apellido' es obligatorio.");
+      return;
+    }
+    if (!cardId) {
+      toast.error("El campo 'Cédula' es obligatorio.");
+      return;
+    }
+    if (!email) {
+      toast.error("El campo 'Email' es obligatorio.");
+      return;
+    }
+    if (!phoneNumber) {
+      toast.error("El campo 'Teléfono' es obligatorio.");
+      return;
+    }
+    if (!password) {
+      toast.error("El campo 'Contraseña' es obligatorio.");
+      return;
+    }
+    if (!confirmPassword) {
+      toast.error("El campo 'Confirmar Contraseña' es obligatorio.");
+      return;
+    }
+
     // Validar la cédula
     if (!validateCedula(cardId)) {
-      toast.error(
-        "Cédula inválida. Asegúrate de que tenga 10 dígitos y sea coherente."
-      );
+      toast.error("Cédula inválida. Asegúrate de que tenga 10 dígitos y sea coherente.");
       return;
     }
 
@@ -91,136 +111,145 @@ const RegisterScreen = () => {
       return;
     }
 
-    // Validar contraseñas
+    // Validar que las contraseñas coincidan
     if (password !== confirmPassword) {
       toast.error("Las contraseñas no coinciden");
       return;
-    } else {
-      try {
-        const res = await register({
-          name,
-          lastName,
-          cardId,
-          email,
-          phoneNumber,
-          password,
-          role, // Enviar el rol
-          isAdmin: role === "doctor", // Asignar isAdmin si es doctor
-        }).unwrap();
-        dispatch(setCredentials({ ...res }));
-        navigate(redirect);
-      } catch (err) {
-        toast.error(err?.data?.message || err.error);
-      }
+    }
+
+    try {
+      const res = await register({
+        name,
+        lastName,
+        cardId,
+        email,
+        phoneNumber,
+        password,
+        role,
+        isAdmin: role === "doctor",
+      }).unwrap();
+      dispatch(setCredentials({ ...res }));
+      navigate(redirect);
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
     }
   };
 
   return (
-    <FormContainer>
-      <h1>Registrarse</h1>
-      <Form onSubmit={submitHandler}>
-        <Form.Group controlId="name" className="my-3">
-          <Form.Label>Nombre</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Ingrese su nombre"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </Form.Group>
+    <div className="login-page">
+      <div className="form-wrapper">
+        <div className="form-inner">
+          <h2 id="form-title">Registrarse</h2>
+          <form className="form-space" onSubmit={submitHandler}>
+            <label className="input-label">
+              Nombre <span className="required-asterisk">*</span>
+            </label>
+            <input
+              className="input-field"
+              placeholder="Ingrese su nombre"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
 
-        <Form.Group controlId="lastName" className="my-3">
-          <Form.Label>Apellido</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Ingrese su apellido"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-          />
-        </Form.Group>
+            <label className="input-label">
+              Apellido <span className="required-asterisk">*</span>
+            </label>
+            <input
+              className="input-field"
+              placeholder="Ingrese su apellido"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+            />
 
-        <Form.Group controlId="cedula" className="my-3">
-          <Form.Label>Cédula</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Ingrese su cédula"
-            value={cardId}
-            onChange={(e) => setCardId(e.target.value)}
-          />
-        </Form.Group>
+            <label className="input-label">
+              Cédula <span className="required-asterisk">*</span>
+            </label>
+            <input
+              className="input-field"
+              placeholder="Ingrese su cédula"
+              type="text"
+              value={cardId}
+              onChange={(e) => setCardId(e.target.value)}
+            />
 
-        <Form.Group controlId="email" className="my-3">
-          <Form.Label>Email</Form.Label>
-          <Form.Control
-            type="email"
-            placeholder="Ingrese su email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </Form.Group>
+            <label className="input-label">
+              Email <span className="required-asterisk">*</span>
+            </label>
+            <input
+              className="input-field"
+              placeholder="Ingrese su email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
 
-        <Form.Group controlId="telefono" className="my-3">
-          <Form.Label>Teléfono</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Ingrese su número de teléfono"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-          />
-        </Form.Group>
+            <label className="input-label">
+              Teléfono <span className="required-asterisk">*</span>
+            </label>
+            <input
+              className="input-field"
+              placeholder="Ingrese su número de teléfono"
+              type="text"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+            />
 
-        <Form.Group controlId="role" className="my-3">
-          <Form.Label>Rol</Form.Label>
-          <Form.Control
-            as="select"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-          >
-            <option value="doctor">Doctor</option>
-            <option value="patient">Paciente</option>
-          </Form.Control>
-        </Form.Group>
+            <label className="input-label">
+              Rol <span className="required-asterisk">*</span>
+            </label>
+            <select
+              className="input-field"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="doctor">Doctor</option>
+              <option value="patient">Paciente</option>
+            </select>
 
-        <Form.Group controlId="password" className="my-3">
-          <Form.Label>Contraseña</Form.Label>
-          <Form.Control
-            type="password"
-            placeholder="Ingrese una contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </Form.Group>
+            <label className="input-label">
+              Contraseña <span className="required-asterisk">*</span>
+            </label>
+            <input
+              className="input-field"
+              placeholder="Ingrese una contraseña"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
 
-        <Form.Group controlId="confirmPassword" className="my-3">
-          <Form.Label>Confirmar contraseña</Form.Label>
-          <Form.Control
-            type="password"
-            placeholder="Ingrese nuevamente la contraseña"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-        </Form.Group>
+            <label className="input-label">
+              Confirmar Contraseña <span className="required-asterisk">*</span>
+            </label>
+            <input
+              className="input-field"
+              placeholder="Confirme su contraseña"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
 
-        <Button
-          type="submit"
-          variant="primary"
-          className="mt-2"
-          disabled={isLoading}
-        >
-          Registrarse
-        </Button>
-        {isLoading && <Loader />}
-      </Form>
+            <button
+              className="primary-button"
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading ? "Registrando..." : "Registrarse"}
+            </button>
 
-      <Row className="py-3">
-        <Col>
-          ¿Ya tienes una cuenta? {""}
-          <Link to={redirect ? `/login?redirect=${redirect}` : "/login"}>
-            Iniciar sesión
-          </Link>
-        </Col>
-      </Row>
-    </FormContainer>
+            <div className="text-center" style={{ marginTop: '1rem' }}>
+              <Link
+                to={redirect ? `/login?redirect=${redirect}` : "/login"}
+                className="link"
+              >
+                ¿Ya tienes una cuenta? Iniciar sesión
+              </Link>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 };
 

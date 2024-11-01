@@ -1,0 +1,229 @@
+/* Estilos para el contenedor principal */
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    background-color: #ffffff; /* Fondo blanco para la página */
+    min-height: 100vh; /* Asegura que ocupe toda la altura de la ventana */
+}
+
+/* Contenedor del formulario con bordes animados */
+.form-wrapper {
+    position: relative; /* Para posicionar correctamente el pseudo-elemento */
+    padding: 15px; /* Espacio para el borde animado */
+    border-radius: 1rem; /* Bordes redondeados */
+    background: linear-gradient(270deg, #ff0080, #ff8c00, #40e0d0, #ff0080); /* Gradiente animado */
+    background-size: 800% 800%;
+    animation: borderAnimation 8s ease infinite;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); /* Sombra para profundidad */
+    z-index: 0; /* Para que el contenido interior esté por encima */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 30rem; /* Ajusta el ancho según tus necesidades */
+    height: auto; /* Deja que el contenido determine la altura */
+}
+
+/* Animación de los bordes */
+@keyframes borderAnimation {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Contenedor interior del formulario */
+.form-inner {
+    background-color: #ffffff; /* Fondo blanco */
+    padding: 3rem; /* Espaciado interno */
+    border-radius: 0.75rem; /* Bordes redondeados */
+    position: relative;
+    z-index: 1; /* Por encima del contenedor exterior */
+    width: 28rem; /* Ancho del contenedor interno */
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2); /* Sombra adicional opcional */
+}
+
+/* Título del formulario */
+#form-title {
+    text-align: center;
+    font-size: 2.25rem; /* Tamaño de fuente aumentado */
+    line-height: 2.5rem; /* Ajuste para alineación */
+    font-weight: 700; /* Negrita */
+    margin-bottom: 2.5rem; /* Espacio debajo del título */
+    color: #1f2937; /* Color de texto gris oscuro */
+}
+
+/* Espaciado entre elementos del formulario */
+.form-space {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* Mayor espacio entre elementos */
+}
+
+/* Estilos de los inputs */
+.input-field {
+    width: 100%;
+    height: 3.5rem; /* Incrementamos la altura */
+    border: 1px solid #1f2937; /* Borde gris oscuro */
+    padding-left: 1rem; /* Espaciado interno */
+    padding-right: 1rem;
+    border-radius: 0.5rem; /* Bordes redondeados */
+    box-sizing: border-box;
+    font-size: 1.1rem; /* Tamaño de fuente mayor */
+}
+
+/* Estilos del botón principal */
+.primary-button {
+    width: 100%;
+    height: 3.5rem; /* Incrementamos la altura */
+    background-color: #3b82f6; /* Azul */
+    color: white; /* Texto blanco */
+    font-weight: 700; /* Negrita */
+    border-radius: 0.5rem; /* Bordes redondeados */
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 1.1rem; /* Tamaño de fuente mayor */
+}
+
+.primary-button:hover {
+    background-color: #2563eb; /* Azul más oscuro al pasar el cursor */
+}
+
+.primary-button:disabled {
+    background-color: #93c5fd; /* Azul claro cuando está deshabilitado */
+    cursor: not-allowed;
+}
+
+/* Estilos de los botones secundarios */
+.secondary-button {
+    width: 100%;
+    height: 3.5rem; /* Incrementamos la altura */
+    background-color: #10b981; /* Verde */
+    color: white; /* Texto blanco */
+    font-weight: 700; /* Negrita */
+    border-radius: 0.5rem; /* Bordes redondeados */
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 1.1rem; /* Tamaño de fuente mayor */
+}
+
+.secondary-button:hover {
+    background-color: #059669; /* Verde más oscuro al pasar el cursor */
+}
+
+.secondary-button.yellow {
+    background-color: #f59e0b; /* Amarillo */
+}
+
+.secondary-button.yellow:hover {
+    background-color: #d97706; /* Amarillo más oscuro al pasar el cursor */
+}
+
+.secondary-button.purple {
+    background-color: #8b5cf6; /* Púrpura */
+}
+
+.secondary-button.purple:hover {
+    background-color: #7c3aed; /* Púrpura más oscuro al pasar el cursor */
+}
+
+/* Estilos del enlace */
+.link {
+    color: #3b82f6; /* Azul */
+    font-size: 1rem; /* Tamaño de fuente ajustado */
+    line-height: 1.5rem;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+}
+
+.link:hover {
+    color: #1d4ed8; /* Azul más oscuro al pasar el cursor */
+}
+
+/* Estilos para mensajes y alertas */
+.alert-info,
+.alert-error,
+.alert-success {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 1rem; /* Tamaño de fuente ajustado */
+}
+
+.alert-info {
+    color: #3b82f6; /* Azul */
+}
+
+.alert-error {
+    color: #ef4444; /* Rojo */
+}
+
+.alert-success {
+    color: #10b981; /* Verde */
+}
+
+/* Estilos para el video y canvas */
+.video-container {
+    position: relative;
+    margin-top: 1.5rem;
+}
+
+.video-container video,
+.video-container canvas {
+    border-radius: 0.625rem; /* Bordes redondeados */
+    width: 320px;
+    height: 240px;
+}
+
+.video-container canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Estilos para mensajes de carga */
+.loader {
+    text-align: center;
+    color: #6b7280; /* Gris medio */
+    margin-top: 1.5rem;
+    font-size: 1rem; /* Tamaño de fuente ajustado */
+}
+
+/* Reseteo de estilos para botones */
+button {
+    font: inherit;
+}
+
+/* Reseteo de estilos para inputs */
+input {
+    font: inherit;
+    margin: 0;
+}
+
+/* Reseteo de estilos para enlaces */
+a {
+    text-decoration: none;
+}
+
+/* Estilos para las etiquetas de campo */
+.input-label {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1f2937;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+/* Asterisco rojo para indicar campos obligatorios */
+.required-asterisk {
+    color: #ef4444; /* Rojo */
+    font-weight: bold;
+}
