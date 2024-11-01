@@ -1,0 +1,36 @@
+.table-container {
+    padding: 20px;
+  }
+  
+  .assigned-patients-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .assigned-patients-table th,
+  .assigned-patients-table td {
+    border: 1px solid #b5b5b5;
+    padding: 10px;
+    text-align: center;
+  }
+  
+  .assigned-patients-table th {
+    background-color: #e6e6fa;
+  }
+  
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  
+  .report-link {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  .report-link:hover {
+    text-decoration: underline;
+  }
+  
