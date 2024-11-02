@@ -11,7 +11,7 @@ export const doctorApiSlice = apiSlice.injectEndpoints({
     getDoctorWithPatients: builder.query({
       query: () => "/api/doctors/withPatients",
       providesTags: ["Doctor"],
-      refetchOnMountOrArgChange: true,
+      refetchOnMountOrArgChange: true, // Esto asegura que los datos se actualicen al montar el componente
     }),
     addPatientToDoctor: builder.mutation({
       query: ({ doctorId, patientId }) => ({
@@ -29,6 +29,3 @@ export const {
   useAddPatientToDoctorMutation,
   useGetDoctorWithPatientsQuery,
 } = doctorApiSlice;
-
-// Exportar la acción de invalidación manual
-export const invalidateDoctorWithPatients = doctorApiSlice.util.invalidateTags(["Doctor"]);
