@@ -14,7 +14,6 @@ const RegisterScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("patient");
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -30,6 +29,12 @@ const RegisterScreen = () => {
       navigate(redirect);
     }
   }, [userInfo, redirect, navigate]);
+
+  // Ocultar el navbar en la pantalla de registro
+  useEffect(() => {
+    document.body.classList.add("no-navbar");
+    return () => document.body.classList.remove("no-navbar");
+  }, []);
 
   const validateCedula = (cedula) => {
     if (!/^\d{10}$/.test(cedula)) {
@@ -55,7 +60,6 @@ const RegisterScreen = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    // Verificar si todos los campos están vacíos
     if (
       !name &&
       !lastName &&
@@ -69,7 +73,6 @@ const RegisterScreen = () => {
       return;
     }
 
-    // Validación de campos vacíos individuales
     if (!name) {
       toast.error("El campo 'Nombre' es obligatorio.");
       return;
@@ -99,19 +102,16 @@ const RegisterScreen = () => {
       return;
     }
 
-    // Validar la cédula
     if (!validateCedula(cardId)) {
       toast.error("Cédula inválida. Asegúrate de que tenga 10 dígitos y sea coherente.");
       return;
     }
 
-    // Validar email
     if (!validateEmail(email)) {
       toast.error("Por favor, ingresa un correo electrónico válido.");
       return;
     }
 
-    // Validar que las contraseñas coincidan
     if (password !== confirmPassword) {
       toast.error("Las contraseñas no coinciden");
       return;
@@ -125,8 +125,8 @@ const RegisterScreen = () => {
         email,
         phoneNumber,
         password,
-        role,
-        isAdmin: role === "doctor",
+        role: "patient",
+        isAdmin: false,
       }).unwrap();
       dispatch(setCredentials({ ...res }));
       navigate(redirect);
@@ -197,18 +197,6 @@ const RegisterScreen = () => {
             />
 
             <label className="input-label">
-              Rol <span className="required-asterisk">*</span>
-            </label>
-            <select
-              className="input-field"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            >
-              <option value="doctor">Doctor</option>
-              <option value="patient">Paciente</option>
-            </select>
-
-            <label className="input-label">
               Contraseña <span className="required-asterisk">*</span>
             </label>
             <input
@@ -238,7 +226,7 @@ const RegisterScreen = () => {
               {isLoading ? "Registrando..." : "Registrarse"}
             </button>
 
-            <div className="text-center" style={{ marginTop: '1rem' }}>
+            <div className="text-center" style={{ marginTop: "1rem" }}>
               <Link
                 to={redirect ? `/login?redirect=${redirect}` : "/login"}
                 className="link"
@@ -249,6 +237,14 @@ const RegisterScreen = () => {
           </form>
         </div>
       </div>
+
+      <style>
+        {`
+          .no-navbar header {
+              display: none;
+          }
+        `}
+      </style>
     </div>
   );
 };
