@@ -3,35 +3,36 @@ import { useSelector } from 'react-redux';
 import { useGetDoctorWithPatientsQuery } from '../../slices/doctorApiSlice';
 import { Link } from 'react-router-dom';
 import '../../assets/styles/HomeMedicoScreen.css';
+import Loader from '../../components/Loader.jsx';
 
 const HomeScreenMedico = () => {
   const [localPatients, setLocalPatients] = useState([]); // Estado local para manejar los pacientes
-  const [isFetching, setIsFetching] = useState(true); // Controla si estamos esperando datos nuevos
+  const [isFetchingData, setIsFetchingData] = useState(true); // Controla el estado de carga de los datos
   const { data: patients, isLoading, error, refetch } = useGetDoctorWithPatientsQuery();
   const userInfo = useSelector((state) => state.auth.userInfo);
 
-  // Limpiar el estado local cuando el usuario cambia o el componente se monta
+  // Efecto para limpiar el estado y activar la carga cuando el usuario cambia
   useEffect(() => {
-    setLocalPatients([]); // Limpiar los pacientes inmediatamente
-    setIsFetching(true);  // Activar el estado de carga manualmente
+    setLocalPatients([]); // Limpiar los datos actuales
+    setIsFetchingData(true); // Mostrar el Loader mientras se obtienen nuevos datos
     if (userInfo) {
-      refetch(); // Volver a obtener los datos cuando haya un cambio en el usuario
+      refetch(); // Refetch para obtener los datos del nuevo usuario
     }
   }, [userInfo, refetch]);
 
-  // Actualizar el estado local una vez que los nuevos datos están disponibles y cargados
+  // Actualizar el estado local y desactivar el Loader solo cuando los nuevos datos están listos
   useEffect(() => {
     if (!isLoading && patients) {
-      setLocalPatients(patients); // Actualizar el estado local con los datos nuevos
-      setIsFetching(false); // Desactivar el estado de carga cuando los datos están listos
+      setLocalPatients(patients); // Actualizar con los datos correctos
+      setIsFetchingData(false); // Ocultar el Loader una vez los datos estén listos
     }
   }, [isLoading, patients]);
 
   return (
     <div className="table-container">
       <h2>Pacientes Asignados</h2>
-      {isLoading || isFetching ? (
-        <p>Cargando pacientes...</p> // Mostrar mensaje de carga hasta que se obtengan los datos correctos
+      {isFetchingData ? (
+        <Loader /> // Mostrar Loader hasta que los datos correctos estén listos
       ) : error ? (
         <p>Error al cargar los pacientes: {error?.data?.message || "Ocurrió un problema inesperado"}</p>
       ) : localPatients && localPatients.length > 0 ? (
