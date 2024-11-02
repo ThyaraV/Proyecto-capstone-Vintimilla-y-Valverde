@@ -19,7 +19,7 @@ const users = [
         email: 'john@email.com',
         phoneNumber: '098-765-4321',
         password: bcrypt.hashSync('123456', 10),
-        isAdmin: false,
+        isAdmin: true,
         role: 'User',
     },
     {
@@ -29,7 +29,7 @@ const users = [
         email: 'jane@email.com',
         phoneNumber: '123-123-1234',
         password: bcrypt.hashSync('123456', 10),
-        isAdmin: false,
+        isAdmin: true,
         role: 'User',
     }
 ];

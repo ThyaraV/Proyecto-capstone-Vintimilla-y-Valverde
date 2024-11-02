@@ -1,20 +1,10 @@
-import React, { useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { useGetPatientsQuery } from '../../slices/patientApiSlice';
+import React from 'react';
+import { useGetDoctorWithPatientsQuery } from '../../slices/doctorApiSlice';
 import { Link } from 'react-router-dom';
-import '../../assets/styles/HomeMedicoScreen.css'; // Asegúrate de tener estilos específicos para la tabla aquí
+import '../../assets/styles/HomeMedicoScreen.css';
 
 const HomeScreenMedico = () => {
-  const { userInfo } = useSelector((state) => state.auth); // Obtenemos la información del usuario médico
-
-  const { data: patients = [], isLoading, error } = useGetPatientsQuery();
-
-  // Filtramos los pacientes asignados al médico que ha iniciado sesión
-  const assignedPatients = patients.filter((patient) => {
-    // Verificamos si patient.doctor es un objeto y extraemos su _id
-    const doctorId = patient.doctor?._id || patient.doctor;
-    return doctorId === userInfo._id;
-  });
+  const { data: patients, isLoading, error } = useGetDoctorWithPatientsQuery();
 
   return (
     <div className="table-container">
@@ -22,24 +12,27 @@ const HomeScreenMedico = () => {
       {isLoading ? (
         <p>Cargando pacientes...</p>
       ) : error ? (
-        <p>Error al cargar los pacientes.</p>
-      ) : assignedPatients.length > 0 ? (
+        <p>Error al cargar los pacientes: {error?.data?.message || "Ocurrió un problema inesperado"}</p>
+      ) : patients.length > 0 ? (
         <table className="assigned-patients-table">
           <thead>
             <tr>
-              <th>Paciente</th>
-              <th>Etapa</th>
-              <th>Datos del paciente</th>
+              <th>Nombre</th>
+              <th>Apellido</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Estado</th>
+              <th>Reporte</th>
             </tr>
           </thead>
           <tbody>
-            {assignedPatients.map((patient) => (
+            {patients.map((patient) => (
               <tr key={patient._id}>
-                <td>
-                  <img src={patient.user?.avatar} alt="avatar" className="avatar" />
-                  {patient.user?.name || "Nombre no disponible"}
-                </td>
-                <td>{patient.stage || "No especificado"}</td>
+                <td>{patient.user?.name || "No disponible"}</td>
+                <td>{patient.user?.lastName || "No disponible"}</td>
+                <td>{patient.user?.email || "No disponible"}</td>
+                <td>{patient.user?.phoneNumber || "No disponible"}</td>
+                <td>{patient.user?.isActive ? "Activo" : "Inactivo"}</td>
                 <td>
                   <Link to={`/patient/${patient._id}/report`} className="report-link">
                     Ver reporte
@@ -57,4 +50,3 @@ const HomeScreenMedico = () => {
 };
 
 export default HomeScreenMedico;
-
