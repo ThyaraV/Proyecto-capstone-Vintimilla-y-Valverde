@@ -116,7 +116,7 @@ const router = createBrowserRouter(
 
       <Route path="" element={<AdminRoute />}>
         {/* Rutas privadas para los médicos */}
-        <Route index={true} path="/" element={<HomeScreenMedico />} />
+        <Route index={true} path="/admin/withPatients" element={<HomeScreenMedico />} />
         <Route path="/admin/userlist" element={<UserListScreen />} />
         <Route path="/admin/user/:id/edit" element={<UserEditScreen />} />
         <Route path="/admin/activities" element={<ActivitiesListScreen />} />

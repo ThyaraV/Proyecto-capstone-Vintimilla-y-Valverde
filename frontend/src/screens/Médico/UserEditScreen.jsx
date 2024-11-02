@@ -8,16 +8,16 @@ import { toast } from "react-toastify";
 import {
   useUpdateUserMutation,
   useGetUserDetailsQuery,
-} from "../../slices/usersApiSlice";
-import { useGetDoctorsQuery } from "../../slices/doctorApiSlice"; // Importa la consulta para obtener los doctores
+} from "../../slices/usersApiSlice"; // Asegúrate de que estos hooks están correctamente importados
+import { useGetDoctorsQuery, useAddPatientToDoctorMutation } from "../../slices/doctorApiSlice"; // Importa los hooks necesarios del doctorApiSlice
 
 const UserEditScreen = () => {
   const { id: userId } = useParams();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("patient"); // El rol será paciente por defecto
-  const [doctorId, setDoctorId] = useState(""); // Para almacenar el doctor asignado si es paciente
+  const [role, setRole] = useState("patient");
+  const [doctorId, setDoctorId] = useState("");
 
   const {
     data: user,
@@ -25,13 +25,15 @@ const UserEditScreen = () => {
     refetch,
     error,
   } = useGetUserDetailsQuery(userId);
+
   const {
     data: doctors,
     isLoading: loadingDoctors,
     error: errorDoctors,
-  } = useGetDoctorsQuery(); // Obtener los doctores
+  } = useGetDoctorsQuery();
 
   const [updateUser, { isLoading: loadingUpdate }] = useUpdateUserMutation();
+  const [addPatientToDoctor] = useAddPatientToDoctorMutation();
 
   const navigate = useNavigate();
 
@@ -39,8 +41,8 @@ const UserEditScreen = () => {
     if (user) {
       setName(user.name);
       setEmail(user.email);
-      setRole(user.isAdmin ? "doctor" : "patient"); // Si esAdmin es true, asignamos doctor, sino paciente
-      setDoctorId(user.doctor || ""); // Si el usuario es paciente, preselecciona el doctor responsable
+      setRole(user.isAdmin ? "doctor" : "patient");
+      setDoctorId(user.doctor || "");
     }
   }, [user]);
 
@@ -52,9 +54,14 @@ const UserEditScreen = () => {
         name,
         email,
         role,
-        isAdmin: role === "doctor", // Asignamos true a isAdmin si es doctor
-        doctorId: role === "patient" ? doctorId : null, // Solo envía doctorId si el rol es paciente
-      });
+        isAdmin: role === "doctor",
+        doctorId: role === "patient" ? doctorId : null,
+      }).unwrap();
+
+      if (role === "patient" && doctorId) {
+        await addPatientToDoctor({ doctorId, patientId: userId });
+      }
+
       toast.success("Usuario actualizado correctamente");
       refetch();
       navigate("/admin/userlist");
@@ -109,7 +116,6 @@ const UserEditScreen = () => {
               </Form.Control>
             </Form.Group>
 
-            {/* Solo muestra el dropdown de doctores si el rol seleccionado es 'patient' */}
             {role === "patient" && (
               <Form.Group controlId="doctor" className="my-2">
                 <Form.Label>Doctor Responsable</Form.Label>

@@ -1,45 +1,59 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useGetPatientsQuery } from '../../slices/patientApiSlice';
+import { useGetDoctorWithPatientsQuery } from '../../slices/doctorApiSlice';
 import { Link } from 'react-router-dom';
-import '../../assets/styles/HomeMedicoScreen.css'; // Asegúrate de tener estilos específicos para la tabla aquí
+import '../../assets/styles/HomeMedicoScreen.css';
 
 const HomeScreenMedico = () => {
-  const { userInfo } = useSelector((state) => state.auth); // Obtenemos la información del usuario médico
+  const [localPatients, setLocalPatients] = useState([]); // Estado local para manejar los pacientes
+  const [isFetching, setIsFetching] = useState(true); // Controla si estamos esperando datos nuevos
+  const { data: patients, isLoading, error, refetch } = useGetDoctorWithPatientsQuery();
+  const userInfo = useSelector((state) => state.auth.userInfo);
 
-  const { data: patients = [], isLoading, error } = useGetPatientsQuery();
+  // Limpiar el estado local cuando el usuario cambia o el componente se monta
+  useEffect(() => {
+    setLocalPatients([]); // Limpiar los pacientes inmediatamente
+    setIsFetching(true);  // Activar el estado de carga manualmente
+    if (userInfo) {
+      refetch(); // Volver a obtener los datos cuando haya un cambio en el usuario
+    }
+  }, [userInfo, refetch]);
 
-  // Filtramos los pacientes asignados al médico que ha iniciado sesión
-  const assignedPatients = patients.filter((patient) => {
-    // Verificamos si patient.doctor es un objeto y extraemos su _id
-    const doctorId = patient.doctor?._id || patient.doctor;
-    return doctorId === userInfo._id;
-  });
+  // Actualizar el estado local una vez que los nuevos datos están disponibles y cargados
+  useEffect(() => {
+    if (!isLoading && patients) {
+      setLocalPatients(patients); // Actualizar el estado local con los datos nuevos
+      setIsFetching(false); // Desactivar el estado de carga cuando los datos están listos
+    }
+  }, [isLoading, patients]);
 
   return (
     <div className="table-container">
       <h2>Pacientes Asignados</h2>
-      {isLoading ? (
-        <p>Cargando pacientes...</p>
+      {isLoading || isFetching ? (
+        <p>Cargando pacientes...</p> // Mostrar mensaje de carga hasta que se obtengan los datos correctos
       ) : error ? (
-        <p>Error al cargar los pacientes.</p>
-      ) : assignedPatients.length > 0 ? (
+        <p>Error al cargar los pacientes: {error?.data?.message || "Ocurrió un problema inesperado"}</p>
+      ) : localPatients && localPatients.length > 0 ? (
         <table className="assigned-patients-table">
           <thead>
             <tr>
-              <th>Paciente</th>
-              <th>Etapa</th>
-              <th>Datos del paciente</th>
+              <th>Nombre</th>
+              <th>Apellido</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Estado</th>
+              <th>Reporte</th>
             </tr>
           </thead>
           <tbody>
-            {assignedPatients.map((patient) => (
+            {localPatients.map((patient) => (
               <tr key={patient._id}>
-                <td>
-                  <img src={patient.user?.avatar} alt="avatar" className="avatar" />
-                  {patient.user?.name || "Nombre no disponible"}
-                </td>
-                <td>{patient.stage || "No especificado"}</td>
+                <td>{patient.user?.name || "No disponible"}</td>
+                <td>{patient.user?.lastName || "No disponible"}</td>
+                <td>{patient.user?.email || "No disponible"}</td>
+                <td>{patient.user?.phoneNumber || "No disponible"}</td>
+                <td>{patient.user?.isActive ? "Activo" : "Inactivo"}</td>
                 <td>
                   <Link to={`/patient/${patient._id}/report`} className="report-link">
                     Ver reporte
@@ -57,4 +71,3 @@ const HomeScreenMedico = () => {
 };
 
 export default HomeScreenMedico;
-
