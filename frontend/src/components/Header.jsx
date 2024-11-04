@@ -59,8 +59,8 @@ const Header = () => {
               <button className="menu-item" onClick={() => { navigateTo('/profile'); setIsMenuOpen(false); }}>
                 Public profile
               </button>
-              <button className="menu-item" onClick={() => { navigateTo('/account'); setIsMenuOpen(false); }}>
-                Account
+              <button className="menu-item" onClick={() => { navigateTo('/admin/configuration'); setIsMenuOpen(false); }}>
+                Configuration
               </button>
               <button className="menu-item" onClick={() => { navigateTo('/appearance'); setIsMenuOpen(false); }}>
                 Appearance

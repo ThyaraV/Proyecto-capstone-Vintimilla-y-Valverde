@@ -51,6 +51,8 @@ import Activity6L3Screen from './screens/Activity6L3Screen.jsx';
 import Activity7L3Screen from './screens/Activity7L3Screen.jsx';
 import Activity8L3Screen from './screens/Activity8L3Screen.jsx';
 import Activity9L3Screen from './screens/Activity9L3Screen.jsx';
+import Configuration from './screens/Médico/Configuration.jsx';
+
 
 const HomeScreenSelector = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -121,6 +123,8 @@ const router = createBrowserRouter(
         <Route path="/admin/user/:id/edit" element={<UserEditScreen />} />
         <Route path="/admin/activities" element={<ActivitiesListScreen />} />
         <Route path="/admin/activities/:id/edit" element={<ActivityEditScreen />} />
+        <Route path="/admin/configuration" element={<Configuration />} />
+
       </Route>
     </Route>
   )
