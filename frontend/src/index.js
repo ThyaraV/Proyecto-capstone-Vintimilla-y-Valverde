@@ -129,6 +129,7 @@ const router = createBrowserRouter(
         <Route path="/moca/register/:id" element={<MocaRegisterResults />} />
         <Route path="/moca/history/:id" element={<MocaHistory />} />
         <Route path="/moca/start/:id" element={<MocaStart />} />
+        
         <Route
           index={true}
           path="/admin/withPatients"
