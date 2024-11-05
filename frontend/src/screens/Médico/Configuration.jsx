@@ -12,7 +12,7 @@ const Configuration = () => {
     if (tab === 'tratamientos') {
       navigate('/tratamientos');
     } else if (tab === 'actividades') {
-      navigate('/activities');
+      navigate('/admin/UsersActivities');
     } else if (tab === 'informacion_paciente') {
       navigate('/informacion_paciente');
     }
