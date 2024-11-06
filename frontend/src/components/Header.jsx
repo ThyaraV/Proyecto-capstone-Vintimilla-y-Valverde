@@ -87,9 +87,14 @@ const Header = () => {
               <Nav.Link onClick={() => navigateTo('/activities')}>
                 <FaListUl /> Actividades
               </Nav.Link>
-              <Nav.Link onClick={() => navigateTo('/activitiesL2')}>
-                <FaListUl /> Actividades 2
-              </Nav.Link>
+              
+              {/* Verifica si `userInfo` está definido antes de acceder a `userInfo._id` */}
+              {userInfo && userInfo._id && (
+                <Nav.Link onClick={() => navigateTo(`/api/assignments/${userInfo._id}/activities`)}>
+                  <FaListUl /> Actividades 2
+                </Nav.Link>
+              )}
+
               <Nav.Link onClick={() => navigateTo('/activitiesL3')}>
                 <FaListUl /> Actividades 3
               </Nav.Link>

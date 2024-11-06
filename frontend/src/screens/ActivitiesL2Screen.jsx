@@ -1,29 +1,44 @@
-import { Row, Col } from 'react-bootstrap';
-import Activity2 from '../components/Activity2.jsx'; // Componente de actividad
-import Loader from '../components/Loader.jsx';
-import { useGetActivitiesQuery } from '../slices/activitiesSlice.js'; // Para obtener actividades
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useGetAssignedActivitiesQuery } from '../slices/treatmentSlice.js';
+import Loader from '../components/Loader';
+import '../assets/styles/PatientActivities.css';
 
-const ActivitiesL2Screen = () => {
-  const { data: activities, isLoading } = useGetActivitiesQuery(); // Consultar actividades
+const PatientActivitiesScreen = () => {
+  const { patientId } = useParams(); // Obtener el ID del paciente desde la URL
+  const { data: activities, isLoading, error } = useGetAssignedActivitiesQuery(patientId); // Consultar las actividades asignadas
+  const [filteredActivities, setFilteredActivities] = useState([]);
+
+  // Filtrar actividades asignadas para el paciente
+  useEffect(() => {
+    if (activities) {
+      setFilteredActivities(activities);
+    }
+  }, [activities]);
 
   return (
-    <>
+    <div className="patient-activities-container">
+      <h2>Mis Actividades Asignadas</h2>
       {isLoading ? (
         <Loader />
+      ) : error ? (
+        <p>Error al cargar las actividades: {error?.data?.message || "Ocurrió un problema inesperado"}</p>
+      ) : filteredActivities && filteredActivities.length > 0 ? (
+        <div className="activity-list">
+          {filteredActivities.map((activity) => (
+            <div key={activity._id} className="activity-item">
+              <h3>{activity.name}</h3>
+              <p>{activity.description}</p>
+              <p><strong>Nivel de Dificultad:</strong> {activity.difficultyLevel}</p>
+              <p><strong>Progreso:</strong> {activity.progress || "No iniciado"}</p>
+            </div>
+          ))}
+        </div>
       ) : (
-        <>
-          <h1>Actividades</h1>
-          <Row className="justify-content-center">
-            {activities.slice(10, 20).map((activity) => ( // Cambiamos el slice
-              <Col key={activity._id} sm={12} md={6} lg={4} xl={3} className="mb-4 d-flex justify-content-center">
-                <Activity2 activity={activity} /> {/* Renderiza cada actividad */}
-              </Col>
-            ))}
-          </Row>
-        </>
+        <p>No tienes actividades asignadas en este momento.</p>
       )}
-    </>
+    </div>
   );
 };
 
-export default ActivitiesL2Screen;
+export default PatientActivitiesScreen;
