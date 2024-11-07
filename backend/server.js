@@ -11,6 +11,7 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import doctorRoutes from "./routes/doctorRoutes.js";
 import patientRoutes from "./routes/patientRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
+import treatmentRoutes from "./routes/treatmentRoutes.js"
 
 import connectDB from "./config/db.js";
 
@@ -36,6 +37,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/chats", chatRoutes);
+app.use('/api/assignments', treatmentRoutes);
 
 // Configurar ruta para archivos estáticos (subidas)
 const __dirname = path.resolve();

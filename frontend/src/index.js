@@ -125,7 +125,7 @@ const router = createBrowserRouter(
         <Route path="/admin/user/:id/edit" element={<UserEditScreen />} />
         <Route path="/admin/activities" element={<ActivitiesListScreen />} />
         <Route path="/admin/UsersActivities" element={<UsersActivities />} />
-        <Route path="/admin/:id/UserActivity" element={<UserActivity />} />
+        <Route path="/admin/:patientId/UserActivity" element={<UserActivity />} />
         <Route path="/admin/activities/:id/edit" element={<ActivityEditScreen />} />
         <Route path="/admin/configuration" element={<Configuration />} />
 

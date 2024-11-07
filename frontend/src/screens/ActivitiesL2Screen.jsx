@@ -9,7 +9,10 @@ const PatientActivitiesScreen = () => {
   const { data: activities, isLoading, error } = useGetAssignedActivitiesQuery(patientId); // Consultar las actividades asignadas
   const [filteredActivities, setFilteredActivities] = useState([]);
 
-  // Filtrar actividades asignadas para el paciente
+  useEffect(() => {
+    console.log("Patient ID from URL:", patientId); // Verificar que el ID es el de paciente
+  }, [patientId]);
+
   useEffect(() => {
     if (activities) {
       setFilteredActivities(activities);
