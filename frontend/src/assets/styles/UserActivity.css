@@ -76,4 +76,51 @@
     background-color: #ccc;
     cursor: not-allowed;
   }
+
+  .user-activity-container {
+    margin: 20px auto;
+    max-width: 1200px;
+    padding: 20px;
+  }
+  
+  .activity-card {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+    transition: transform 0.3s ease;
+  }
+  
+  .activity-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .activity-checkbox {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    transform: scale(1.5);
+    cursor: pointer;
+  }
+  
+  .activity-card.selected {
+    border: 2px solid #007bff;
+  }
+  
+  .assign-button {
+    display: block;
+    margin: 0 auto;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .assign-button:hover {
+    background-color: #0056b3;
+  }
   

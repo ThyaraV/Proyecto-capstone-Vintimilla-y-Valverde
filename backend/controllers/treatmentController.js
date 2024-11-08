@@ -82,12 +82,66 @@ const updateAssignmentResults = asyncHandler(async (req, res) => {
 // @route   GET /api/assignments/:patientId/activities
 // @access  Privado/Paciente
 const getAssignedActivities = asyncHandler(async (req, res) => {
-  const { patientId } = req.params;
+  try {
+    // Obtener el userId del usuario autenticado
+    const userId = req.user._id;
 
-  const assignments = await Assignment.find({ patient: patientId }).populate('activity');
-  const activities = assignments.map((assignment) => assignment.activity);
+    console.log("User ID autenticado:", userId);
 
-  res.status(200).json(activities);
+    // Buscar el paciente asociado al userId
+    const patient = await Patient.findOne({ user: userId });
+
+    if (!patient) {
+      console.log("Paciente no encontrado para el User ID proporcionado");
+      res.status(404);
+      throw new Error('Paciente no encontrado para el usuario proporcionado');
+    }
+
+    console.log("Patient ID encontrado:", patient._id);
+
+    // Buscar las asignaciones del paciente
+    const assignments = await Assignment.find({ patient: patient._id })
+      .populate('activity')
+      .populate('doctor', 'name email'); // Opcional: poblar información del doctor
+
+    console.log(`Número de asignaciones encontradas: ${assignments.length}`);
+
+    // Mapear las actividades asignadas
+    const activities = assignments.map((assignment) => ({
+      assignmentId: assignment._id,
+      activity: assignment.activity,
+      doctor: assignment.doctor, // Opcional: detalles del doctor
+      scoreObtained: assignment.scoreObtained,
+      timeUsed: assignment.timeUsed,
+      progress: assignment.progress,
+      observations: assignment.observations,
+      completionDate: assignment.completionDate,
+    }));
+
+    console.log("Actividades asignadas:", activities);
+
+    res.status(200).json(activities);
+  } catch (error) {
+    console.error("Error en getAssignedActivities:", error);
+    res.status(500).json({ message: 'Error al obtener las actividades asignadas' });
+  }
 });
 
-export { assignActivityToPatient, updateAssignmentResults, getAssignedActivities};
+const deleteAssignedActivity = asyncHandler(async (req, res) => {
+  const { assignmentId } = req.params;
+
+  // Verificar si la asignación existe
+  const assignment = await Assignment.findById(assignmentId);
+
+  if (!assignment) {
+    res.status(404);
+    throw new Error('Asignación no encontrada');
+  }
+
+  // Eliminar la asignación
+  await assignment.remove();
+
+  res.status(200).json({ message: 'Asignación eliminada correctamente' });
+});
+
+export { assignActivityToPatient, updateAssignmentResults, getAssignedActivities,deleteAssignedActivity};

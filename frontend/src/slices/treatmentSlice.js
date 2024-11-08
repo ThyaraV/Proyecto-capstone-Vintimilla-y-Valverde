@@ -13,9 +13,21 @@ export const activityApiSlice = apiSlice.injectEndpoints({
       }),
     }),
     getAssignedActivities: builder.query({
-        query: (patientId) => `/api/assignments/${patientId}/activities`,
+      query: (patientId) => `/api/assignments/${patientId}/activities`,
+    }),
+    deleteAssignedActivity: builder.mutation({
+      query: (assignmentId) => ({
+        url: `/api/assignments/${assignmentId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['AssignedActivities'], // Invalida la cache para que los datos se actualicen
     }),
   }),
 });
 
-export const { useGetActivitiesQuery, useAssignActivityToPatientMutation, useGetAssignedActivitiesQuery} = activityApiSlice;
+export const {
+  useGetActivitiesQuery,
+  useAssignActivityToPatientMutation,
+  useGetAssignedActivitiesQuery,
+  useDeleteAssignedActivityMutation,
+} = activityApiSlice;
