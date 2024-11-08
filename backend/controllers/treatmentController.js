@@ -127,7 +127,7 @@ const getAssignedActivities = asyncHandler(async (req, res) => {
   }
 });
 
-const deleteAssignedActivity = asyncHandler(async (req, res) => {
+const unassignActivityFromPatient = asyncHandler(async (req, res) => {
   const { assignmentId } = req.params;
 
   // Verificar si la asignación existe
@@ -138,10 +138,11 @@ const deleteAssignedActivity = asyncHandler(async (req, res) => {
     throw new Error('Asignación no encontrada');
   }
 
-  // Eliminar la asignación
-  await assignment.remove();
+  // Desasignar la actividad estableciendo el estado a false
+  assignment.assigned = false;
+  await assignment.save();
 
-  res.status(200).json({ message: 'Asignación eliminada correctamente' });
+  res.status(200).json({ message: 'Actividad desasignada correctamente' });
 });
 
-export { assignActivityToPatient, updateAssignmentResults, getAssignedActivities,deleteAssignedActivity};
+export { assignActivityToPatient, updateAssignmentResults, getAssignedActivities,unassignActivityFromPatient};

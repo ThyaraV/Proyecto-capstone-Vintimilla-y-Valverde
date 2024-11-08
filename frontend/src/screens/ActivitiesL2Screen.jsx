@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { useGetAssignedActivitiesQuery } from '../slices/treatmentSlice.js';
@@ -9,15 +9,30 @@ import Activity3 from '../components/Activity3';
 import '../assets/styles/ActivitiesScreen.css';
 
 const UserActivity = () => {
-  const { data: activities, isLoading } = useGetAssignedActivitiesQuery();
+  const { data: activities, isLoading, refetch } = useGetAssignedActivitiesQuery();
   const userInfo = useSelector((state) => state.auth.userInfo);
+  const [uniqueActivities, setUniqueActivities] = useState([]);
 
-  // Log para verificar los datos obtenidos
+  // Filtrar y eliminar duplicados al cargar las actividades
   useEffect(() => {
     if (activities) {
-      console.log("Actividades asignadas:", activities);
+      // Usar un mapa para eliminar duplicados basados en el ID de la actividad
+      const filteredActivities = activities.reduce((acc, current) => {
+        const existingActivity = acc.find(item => item.activity._id === current.activity._id);
+        if (!existingActivity) {
+          acc.push(current);
+        }
+        return acc;
+      }, []);
+      setUniqueActivities(filteredActivities);
     }
   }, [activities]);
+
+  useEffect(() => {
+    if (activities) {
+      console.log("Actividades asignadas (sin duplicados):", uniqueActivities);
+    }
+  }, [uniqueActivities]);
 
   return (
     <div className="user-activity-container">
@@ -26,9 +41,9 @@ const UserActivity = () => {
         <Loader />
       ) : (
         <>
-          {activities && activities.length > 0 ? (
+          {uniqueActivities && uniqueActivities.length > 0 ? (
             <Row className="activity-levels">
-              {activities.map(({ activity }) => (
+              {uniqueActivities.map(({ activity }) => (
                 <Col key={activity._id} xs={12} md={6} lg={4} className="mb-4">
                   {activity.difficultyLevel === 1 && (
                     <Activity 

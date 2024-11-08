@@ -1,6 +1,6 @@
 import { apiSlice } from './apiSlice';
 
-export const activityApiSlice = apiSlice.injectEndpoints({
+export const treatmentApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getActivities: builder.query({
       query: () => '/api/activities',
@@ -11,16 +11,18 @@ export const activityApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: { patientId, doctorId, activityId },
       }),
+      invalidatesTags: ['AssignedActivities'],
     }),
     getAssignedActivities: builder.query({
       query: (patientId) => `/api/assignments/${patientId}/activities`,
+      providesTags: ['AssignedActivities'],
     }),
     deleteAssignedActivity: builder.mutation({
       query: (assignmentId) => ({
         url: `/api/assignments/${assignmentId}`,
-        method: 'DELETE',
+        method: 'PUT', // Ajustar si necesitas un método diferente
       }),
-      invalidatesTags: ['AssignedActivities'], // Invalida la cache para que los datos se actualicen
+      invalidatesTags: ['AssignedActivities'],
     }),
   }),
 });
@@ -30,4 +32,4 @@ export const {
   useAssignActivityToPatientMutation,
   useGetAssignedActivitiesQuery,
   useDeleteAssignedActivityMutation,
-} = activityApiSlice;
+} = treatmentApiSlice;
