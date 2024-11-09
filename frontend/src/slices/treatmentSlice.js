@@ -2,8 +2,11 @@ import { apiSlice } from './apiSlice';
 
 export const treatmentApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getActivities: builder.query({
-      query: () => '/api/activities',
+    getAssignedActivities: builder.query({
+      query: (patientId) => `/api/assignments/${patientId}/activities`,
+      providesTags: (result, error, patientId) => [
+        { type: 'AssignedActivities', id: patientId },
+      ],
     }),
     assignActivityToPatient: builder.mutation({
       query: ({ patientId, doctorId, activityId }) => ({
@@ -11,19 +14,24 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: { patientId, doctorId, activityId },
       }),
-      invalidatesTags: ['AssignedActivities'],
-    }),
-    getAssignedActivities: builder.query({
-      query: (patientId) => `/api/assignments/${patientId}/activities`,
-      providesTags: ['AssignedActivities'],
+      invalidatesTags: (result, error, { patientId }) => [
+        { type: 'AssignedActivities', id: patientId },
+      ],
     }),
     deleteAssignedActivity: builder.mutation({
-      query: (assignmentId) => ({
+      query: ({ assignmentId }) => ({
         url: `/api/assignments/${assignmentId}`,
-        method: 'PUT', // Ajustar si necesitas un método diferente
+        method: 'DELETE',
       }),
-      invalidatesTags: ['AssignedActivities'],
+      invalidatesTags: (result, error, { patientId }) => [
+        { type: 'AssignedActivities', id: patientId },
+      ],
     }),
+    getMyAssignedActivities: builder.query({
+      query: () => '/api/assignments/myactivities',
+      providesTags: ['AssignedActivities'],
+    }),
+        
   }),
 });
 
@@ -32,4 +40,5 @@ export const {
   useAssignActivityToPatientMutation,
   useGetAssignedActivitiesQuery,
   useDeleteAssignedActivityMutation,
+  useGetMyAssignedActivitiesQuery
 } = treatmentApiSlice;

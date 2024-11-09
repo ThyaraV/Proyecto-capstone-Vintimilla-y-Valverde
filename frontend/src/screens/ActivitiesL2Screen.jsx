@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
-import { useGetAssignedActivitiesQuery } from '../slices/treatmentSlice.js';
+import { useGetMyAssignedActivitiesQuery } from '../slices/treatmentSlice.js';
 import Loader from '../components/Loader';
 import Activity from '../components/Activity';
 import Activity2 from '../components/Activity2';
 import Activity3 from '../components/Activity3';
 import '../assets/styles/ActivitiesScreen.css';
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:5000');
 
 const UserActivity = () => {
-  const { data: activities, isLoading, refetch } = useGetAssignedActivitiesQuery();
-  const userInfo = useSelector((state) => state.auth.userInfo);
+  const { data: activities, isLoading } = useGetMyAssignedActivitiesQuery();
   const [uniqueActivities, setUniqueActivities] = useState([]);
 
   // Filtrar y eliminar duplicados al cargar las actividades
@@ -18,7 +19,9 @@ const UserActivity = () => {
     if (activities) {
       // Usar un mapa para eliminar duplicados basados en el ID de la actividad
       const filteredActivities = activities.reduce((acc, current) => {
-        const existingActivity = acc.find(item => item.activity._id === current.activity._id);
+        const existingActivity = acc.find(
+          (item) => item.activity._id === current.activity._id
+        );
         if (!existingActivity) {
           acc.push(current);
         }
@@ -29,8 +32,8 @@ const UserActivity = () => {
   }, [activities]);
 
   useEffect(() => {
-    if (activities) {
-      console.log("Actividades asignadas (sin duplicados):", uniqueActivities);
+    if (uniqueActivities.length > 0) {
+      console.log('Actividades asignadas (sin duplicados):', uniqueActivities);
     }
   }, [uniqueActivities]);
 
@@ -46,32 +49,32 @@ const UserActivity = () => {
               {uniqueActivities.map(({ activity }) => (
                 <Col key={activity._id} xs={12} md={6} lg={4} className="mb-4">
                   {activity.difficultyLevel === 1 && (
-                    <Activity 
+                    <Activity
                       activity={{
                         name: activity.name,
                         description: activity.description,
                         image: activity.image,
-                        type: activity.type
+                        type: activity.type,
                       }}
                     />
                   )}
                   {activity.difficultyLevel === 2 && (
-                    <Activity2 
+                    <Activity2
                       activity={{
                         name: activity.name,
                         description: activity.description,
                         image: activity.image,
-                        type: activity.type
+                        type: activity.type,
                       }}
                     />
                   )}
                   {activity.difficultyLevel === 3 && (
-                    <Activity3 
+                    <Activity3
                       activity={{
                         name: activity.name,
                         description: activity.description,
                         image: activity.image,
-                        type: activity.type
+                        type: activity.type,
                       }}
                     />
                   )}

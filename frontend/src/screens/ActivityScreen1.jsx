@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { createBoard } from '../utils/createBoard';
 import Cell from '../components/Activity 1/Cell';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ const ActivityScreen1 = () => {
   const [timer, setTimer] = useState(0);
   const miliseconds = (timer / 10).toFixed(2);
   const navigate = useNavigate();
+  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
 
   useEffect(() => {
     if (gamesToWin > 0) {
@@ -22,35 +23,44 @@ const ActivityScreen1 = () => {
 
   const saveActivity = async () => {
     try {
-      const activityData = {
-        name: 'Búsqueda de letras - Nivel Fácil',
-        description: 'Encuentra la letra correcta en un tablero pequeño.',
-        type: 'memoria',
+      if (!userInfo) {
+        toast.error('Usuario no autenticado');
+        return;
+      }
+
+      const assignmentData = {
+        activity: '672bd009a0ad0a5aca7d7d7a', // Reemplaza con el ID real de la actividad
+        completionDate: new Date(),
         scoreObtained: 100,
-        timeUsed: miliseconds,
-        difficultyLevel: 1,
-        observations: 'El paciente completó la actividad satisfactoriamente.',
+        timeUsed: parseFloat(miliseconds),
         progress: 'mejorando',
-        image: 'image_url',
-        patientId: 'somePatientId',
+        observations: 'El paciente completó la actividad satisfactoriamente.',
       };
 
-      const response = await fetch('/api/activities', {
+      console.log('Assignment Data:', assignmentData);
+
+      const token = localStorage.getItem('token');
+      console.log('Token:', token);
+
+      const response = await fetch('/api/assignments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(activityData),
+        body: JSON.stringify(assignmentData),
       });
 
-      if (response.ok) {
-        toast.success('Actividad guardada correctamente');
-        setTimeout(() => navigate('/activities'), 6000); // Redirige después de 6 segundos
-      } else {
-        toast.error('Error al guardar la actividad');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al guardar la actividad');
       }
+
+      toast.success('Actividad guardada correctamente');
+      setTimeout(() => navigate('/activities'), 6000);
     } catch (error) {
-      toast.error('Hubo un problema al guardar la actividad');
+      console.error('Error al guardar la actividad:', error);
+      toast.error(`Hubo un problema al guardar la actividad: ${error.message}`);
     }
   };
 
