@@ -85,7 +85,28 @@ const Header = () => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" className="ms-auto" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
+<<<<<<< HEAD
               {/* Enlaces del menú de navegación */}
+=======
+              {/* Menú desplegable para Actividades */}
+              <NavDropdown title="Actividades" id="activities-dropdown">
+                <NavDropdown.Item onClick={() => navigateTo('/activities')}>Actividades Nivel 1</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => navigateTo('/activitiesL2')}>Actividades Nivel 2</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => navigateTo('/activitiesL3')}>Actividades Nivel 3</NavDropdown.Item>
+              </NavDropdown>
+
+              {/* Enlace a MoCA */}
+              <Nav.Link onClick={() => navigateTo('/moca')}>
+                <FaBrain /> MoCA
+              </Nav.Link>
+
+              {/* Enlace al chat */}
+              <Nav.Link onClick={() => navigateTo('/chat')}>
+                <FaComments /> Chat
+              </Nav.Link>
+
+             {/* Enlaces del menú de navegación 
+>>>>>>> 7048597a32a521e1fdf97f7e6594c0d06829791f
               <Nav.Link onClick={() => navigateTo('/activities')}>
                 <FaListUl /> Actividades
               </Nav.Link>
