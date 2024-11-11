@@ -57,8 +57,8 @@ const Header = () => {
               <button className="menu-item" onClick={() => { navigateTo('/profile'); setIsMenuOpen(false); }}>
                 Public profile
               </button>
-              <button className="menu-item" onClick={() => { navigateTo('/account'); setIsMenuOpen(false); }}>
-                Account
+              <button className="menu-item" onClick={() => { navigateTo('/admin/configuration'); setIsMenuOpen(false); }}>
+                Configuration
               </button>
               <button className="menu-item" onClick={() => { navigateTo('/appearance'); setIsMenuOpen(false); }}>
                 Appearance
@@ -82,15 +82,9 @@ const Header = () => {
             <Nav className="ms-auto">
               {/* Menú desplegable para Actividades */}
               <NavDropdown title="Actividades" id="activities-dropdown">
-                <NavDropdown.Item onClick={() => navigateTo('/activities')}>
-                  Actividades Nivel 1
-                </NavDropdown.Item>
-                <NavDropdown.Item onClick={() => navigateTo('/activitiesL2')}>
-                  Actividades Nivel 2
-                </NavDropdown.Item>
-                <NavDropdown.Item onClick={() => navigateTo('/activitiesL3')}>
-                  Actividades Nivel 3
-                </NavDropdown.Item>
+                <NavDropdown.Item onClick={() => navigateTo('/activities')}>Actividades Nivel 1</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => navigateTo('/activitiesL2')}>Actividades Nivel 2</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => navigateTo('/activitiesL3')}>Actividades Nivel 3</NavDropdown.Item>
               </NavDropdown>
 
               {/* Enlace a MoCA */}
@@ -103,12 +97,17 @@ const Header = () => {
                 <FaComments /> Chat
               </Nav.Link>
 
-              {/* Otros enlaces y menús */}
+              {/* Verifica si `userInfo` está definido antes de acceder a `userInfo._id` */}
+              {userInfo && userInfo._id && (
+                <Nav.Link onClick={() => navigateTo(`/api/assignments/${userInfo._id}/activities`)}>
+                  <FaListUl /> Actividades 2
+                </Nav.Link>
+              )}
+
+              {/* Enlace de usuario y opciones de administración */}
               {userInfo ? (
                 <NavDropdown title={userInfo.name} id="username">
-                  <NavDropdown.Item onClick={logoutHandler}>
-                    Cerrar Sesión
-                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={logoutHandler}>Cerrar Sesión</NavDropdown.Item>
                 </NavDropdown>
               ) : (
                 <LinkContainer to="/login">
@@ -120,18 +119,10 @@ const Header = () => {
 
               {userInfo && userInfo.isAdmin && (
                 <NavDropdown title="Admin" id="adminmenu">
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist')}>
-                    Ayuda
-                  </NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/productlist')}>
-                    Configuración
-                  </NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/userlist')}>
-                    Usuarios
-                  </NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/activities')}>
-                    Actividades (Admin)
-                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist')}>Ayuda</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/productlist')}>Configuración</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/userlist')}>Usuarios</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/activities')}>Actividades (Admin)</NavDropdown.Item>
                 </NavDropdown>
               )}
             </Nav>
