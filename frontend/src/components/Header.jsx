@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
-import { FaUser, FaListUl, FaComments, FaBrain } from "react-icons/fa";
+import { FaUser, FaListUl, FaComments, FaBrain, FaBell } from "react-icons/fa"; // Importamos FaBell
 import logo from "../assets/logo.png";
 import { LinkContainer } from "react-router-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
@@ -15,6 +15,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [logoutApiCall] = useLogoutMutation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const logoutHandler = async () => {
     try {
@@ -36,6 +37,10 @@ const Header = () => {
     } else {
       navigate("/login");
     }
+  };
+  
+  const handleNotificationClick = () => {
+    setShowNotifications(!showNotifications);
   };
 
   return (
@@ -97,6 +102,16 @@ const Header = () => {
                 <FaComments /> Chat
               </Nav.Link>
 
+              {/* Icono de Notificaciones */}
+              <Nav.Link onClick={handleNotificationClick} className="notification-icon">
+                <FaBell />
+                {userInfo?.notifications?.length > 0 && (
+                  <span className="notification-badge">
+                    {userInfo.notifications.length}
+                  </span>
+                )}
+              </Nav.Link>
+
               {/* Verifica si `userInfo` está definido antes de acceder a `userInfo._id` */}
               {userInfo && userInfo._id && (
                 <Nav.Link onClick={() => navigateTo(`/api/assignments/${userInfo._id}/activities`)}>
@@ -128,8 +143,23 @@ const Header = () => {
             </Nav>
           </Navbar.Collapse>
         </Container>
-      </Navbar>
-    </header>
+        </Navbar>
+
+{/* Ventana emergente de notificaciones */}
+{showNotifications && (
+  <div className="notifications-popup">
+    {userInfo?.notifications?.length > 0 ? (
+      userInfo.notifications.map((notification, index) => (
+        <div key={index} className="notification-item">
+          {notification.message}
+        </div>
+      ))
+    ) : (
+      <div className="no-notifications">No tienes notificaciones</div>
+    )}
+  </div>
+)}
+</header>
   );
 };
 

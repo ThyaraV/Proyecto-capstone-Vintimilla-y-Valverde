@@ -26,6 +26,16 @@ import UserEditScreen from "./screens/Médico/UserEditScreen.jsx";
 import ActivitiesListScreen from "./screens/Médico/ActivitiesListScreen.jsx";
 import ActivityEditScreen from "./screens/Médico/ActivityEditScreen.jsx";
 import ActivitiesScreen from "./screens/ActivitiesScreen.jsx";
+import ActivityScreen1 from './screens/ActivityScreen1.jsx';
+import ActivityScreen2 from './screens/ActivityScreen2.jsx';
+import ActivityScreen3 from './screens/ActivityScreen3.jsx';
+import ActivityScreen4 from './screens/ActivityScreen4.jsx';
+import ActivityScreen5 from './screens/ActivityScreen5.jsx';
+import ActivityScreen6 from './screens/ActivityScreen6.jsx';
+import ActivityScreen7 from './screens/ActivityScreen7.jsx';
+import ActivityScreen8 from './screens/ActivityScreen8.jsx';
+import ActivityScreen9 from './screens/ActivityScreen9.jsx';
+import ActivityScreen10 from './screens/ActivityScreen10.jsx';
 import ActivitiesL2Screen from "./screens/ActivitiesL2Screen.jsx";
 import ActivitiesL3Screen from "./screens/ActivitiesL3Screen.jsx";
 import Activity1L2Screen from "./screens/Activity1L2Screen.jsx";
@@ -72,6 +82,18 @@ const router = createBrowserRouter(
       <Route path="" element={<PrivateRoute />}>
         <Route path="/profile" element={<ProfileScreen />} />
         <Route path="/activities" element={<ActivitiesScreen />} />
+
+         {/* Actividades de nivel 1 */}
+         <Route path="/activity/1" element={<ActivityScreen1 />} />
+        <Route path="/activity/2" element={<ActivityScreen2 />} />
+        <Route path="/activity/3" element={<ActivityScreen3 />} />
+        <Route path="/activity/4" element={<ActivityScreen4 />} />
+        <Route path="/activity/5" element={<ActivityScreen5 />} />
+        <Route path="/activity/6" element={<ActivityScreen6 />} />
+        <Route path="/activity/7" element={<ActivityScreen7 />} />
+        <Route path="/activity/8" element={<ActivityScreen8 />} />
+        <Route path="/activity/9" element={<ActivityScreen9 />} />
+        <Route path="/activity/10" element={<ActivityScreen10 />} />
 
         {/* Nivel 2 */}
         <Route path="/api/assignments/:patientId/activities" element={<ActivitiesL2Screen />} />
