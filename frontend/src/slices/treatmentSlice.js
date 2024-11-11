@@ -23,15 +23,21 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         url: `/api/assignments/${assignmentId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, { patientId }) => [
+      invalidatesTags: (result, error, { assignmentId, patientId }) => [
         { type: 'AssignedActivities', id: patientId },
       ],
-    }),
+    }),    
     getMyAssignedActivities: builder.query({
-      query: () => '/api/assignments/myactivities',
-      providesTags: ['AssignedActivities'],
-    }),
-        
+      query: (userId) => ({
+        url: '/api/assignments/myactivities',
+        method: 'GET',
+        params: { userId },
+      }),
+      providesTags: (result, error, userId) => [
+        { type: 'AssignedActivities', id: userId },
+      ],
+    }), 
+    
   }),
 });
 
@@ -40,5 +46,6 @@ export const {
   useAssignActivityToPatientMutation,
   useGetAssignedActivitiesQuery,
   useDeleteAssignedActivityMutation,
-  useGetMyAssignedActivitiesQuery
+  useGetMyAssignedActivitiesQuery,
+  useGetTreatmentsQuery
 } = treatmentApiSlice;

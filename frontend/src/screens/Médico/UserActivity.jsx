@@ -31,15 +31,19 @@ const UserActivity = () => {
   // Manejar la asignación o desasignación al marcar/desmarcar el checkbox
   const handleToggleActivity = async (activity) => {
     const isSelected = selectedActivities.includes(activity._id);
-
+  
     if (isSelected) {
       // Desasignar la actividad
-      const assignment = assignedActivitiesData.find((assignment) => assignment.activity._id === activity._id);
-
-
-      if (assignment) {
+      const assignment = assignedActivitiesData.find(
+        (assignment) => assignment.activity._id === activity._id
+      );
+  
+      if (assignment && assignment.assignmentId) {
         try {
-          await deleteAssignedActivity(assignment.assignmentId);
+          await deleteAssignedActivity({ 
+            assignmentId: assignment.assignmentId, 
+            patientId 
+          });
           setSelectedActivities((prev) => prev.filter((id) => id !== activity._id));
           alert('Actividad desasignada correctamente');
           refetch();
@@ -50,19 +54,22 @@ const UserActivity = () => {
     } else {
       // Asignar la actividad
       try {
-        await assignActivityToPatient({
+        const response = await assignActivityToPatient({
           patientId,
           doctorId: userInfo._id,
           activityId: activity._id,
         });
-        setSelectedActivities((prev) => [...prev, activity._id]);
-        alert('Actividad asignada correctamente');
-        refetch();
+        if (response?.data?.assignment?._id) {
+          setSelectedActivities((prev) => [...prev, activity._id]);
+          alert('Actividad asignada correctamente');
+          refetch();
+        }
       } catch (error) {
         console.error('Error al asignar la actividad:', error);
       }
     }
   };
+  
   // Filtrar actividades por nivel
   const filterActivitiesByLevel = (level) => activities?.filter((activity) => activity.difficultyLevel === level);
 

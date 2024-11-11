@@ -42,8 +42,11 @@ const assignActivityToPatient = asyncHandler(async (req, res) => {
 
   console.log("Asignación creada:", assignment);
 
-  io.to(`patient_${patientId}`).emit('activitiesUpdated');
-  
+  // Emite un evento al asignar/desasignar actividad
+  // Después de crear la asignación
+  io.emit(`activitiesUpdated:${patientId}`, { message: 'Actividad asignada' });
+  console.log(`Evento activitiesUpdated emitido para el paciente ${patientId}`);
+    
   res.status(201).json({
     message: 'Actividad asignada correctamente al paciente',
     assignment,
@@ -132,9 +135,11 @@ const unassignActivityFromPatient = asyncHandler(async (req, res) => {
   }
 
   await assignment.deleteOne();
-
   console.log('Asignación eliminada exitosamente');
-
+  // Después de eliminar la asignación
+  io.emit(`activitiesUpdated:${assignment.patient}`, { message: 'Actividad desasignada' });
+  console.log(`Evento activitiesUpdated emitido para el paciente ${assignment.patient}`);
+  
   res.status(200).json({ message: 'Actividad desasignada correctamente' });
 });
 

@@ -10,4 +10,5 @@ router.route('/:assignmentId').delete(protect, admin, unassignActivityFromPatien
 router.route('/:patientId/activities').get(protect, admin, getAssignedActivities);
 router.route('/myactivities').get(protect, getMyAssignedActivities);
 
+
 export default router;
