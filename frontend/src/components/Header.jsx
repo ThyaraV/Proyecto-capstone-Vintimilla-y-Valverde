@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
-import { FaUser, FaListUl, FaComments } from "react-icons/fa";
+import { FaUser, FaListUl, FaComments, FaBrain, FaBell } from "react-icons/fa"; // Importamos FaBell
 import logo from "../assets/logo.png";
 import { LinkContainer } from "react-router-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
@@ -15,6 +15,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [logoutApiCall] = useLogoutMutation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const logoutHandler = async () => {
     try {
@@ -30,7 +31,6 @@ const Header = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Verificar autenticación antes de navegar
   const navigateTo = (path) => {
     if (userInfo) {
       navigate(path);
@@ -38,12 +38,15 @@ const Header = () => {
       navigate("/login");
     }
   };
+  
+  const handleNotificationClick = () => {
+    setShowNotifications(!showNotifications);
+  };
 
   return (
     <header>
       <Navbar variant="dark" expand="lg" collapseOnSelect>
         <Container className="d-flex align-items-center">
-          {/* Menú personalizado al extremo izquierdo */}
           <div className={`menu-container ${isMenuOpen ? 'open' : ''}`}>
             <button className="btn" onClick={handleMenuToggle}>
               <span className="icon">
@@ -74,7 +77,6 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Logo de la Clínica */}
           <Navbar.Brand className="d-flex align-items-center" onClick={() => navigateTo('/')}>
             <img src={logo} alt="Seguimiento" height="40" />
             <span className="ms-2">Clínica del Cerebro</span>
@@ -83,10 +85,10 @@ const Header = () => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" className="ms-auto" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
-             {/* Enlaces del menú de navegación 
+              {/* Enlaces del menú de navegación */}
               <Nav.Link onClick={() => navigateTo('/activities')}>
                 <FaListUl /> Actividades
-              </Nav.Link>*/}
+              </Nav.Link>
               
               {/* Verifica si `userInfo` está definido antes de acceder a `userInfo._id` */}
               {userInfo && userInfo._id && (
@@ -95,20 +97,10 @@ const Header = () => {
                 </Nav.Link>
               )}
 
-              <Nav.Link onClick={() => navigateTo('/activitiesL3')}>
-                <FaListUl /> Actividades 3
-              </Nav.Link>
-
-              <Nav.Link onClick={() => navigateTo('/chat')}>
-                <FaComments /> Chat
-              </Nav.Link>
-
-              {/* Otros enlaces y menús */}
+              {/* Enlace de usuario y opciones de administración */}
               {userInfo ? (
                 <NavDropdown title={userInfo.name} id="username">
-                  <NavDropdown.Item onClick={logoutHandler}>
-                    Cerrar Sesión
-                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={logoutHandler}>Cerrar Sesión</NavDropdown.Item>
                 </NavDropdown>
               ) : (
                 <LinkContainer to="/login">
@@ -120,25 +112,32 @@ const Header = () => {
 
               {userInfo && userInfo.isAdmin && (
                 <NavDropdown title="Admin" id="adminmenu">
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist')}>
-                    Ayuda
-                  </NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/productlist')}>
-                    Configuración
-                  </NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/userlist')}>
-                    Usuarios
-                  </NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/activities')}>
-                    Actividades (Admin)
-                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist')}>Ayuda</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/productlist')}>Configuración</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/userlist')}>Usuarios</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/activities')}>Actividades (Admin)</NavDropdown.Item>
                 </NavDropdown>
               )}
             </Nav>
           </Navbar.Collapse>
         </Container>
-      </Navbar>
-    </header>
+        </Navbar>
+
+{/* Ventana emergente de notificaciones */}
+{showNotifications && (
+  <div className="notifications-popup">
+    {userInfo?.notifications?.length > 0 ? (
+      userInfo.notifications.map((notification, index) => (
+        <div key={index} className="notification-item">
+          {notification.message}
+        </div>
+      ))
+    ) : (
+      <div className="no-notifications">No tienes notificaciones</div>
+    )}
+  </div>
+)}
+</header>
   );
 };
 
