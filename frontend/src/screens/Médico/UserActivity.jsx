@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Button } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
-import {
-  useGetActivitiesQuery,
-  useGetAssignedActivitiesQuery,
-  useAssignActivityToPatientMutation,
-  useDeleteAssignedActivityMutation
-} from '../../slices/treatmentSlice';
+import { useGetActivitiesQuery, useGetAssignedActivitiesQuery, useAssignActivityToPatientMutation, useDeleteAssignedActivityMutation } from '../../slices/treatmentSlice';
 import { useSelector } from 'react-redux';
 import Loader from '../../components/Loader';
 import Activity from '../../components/Activity';
@@ -21,8 +16,8 @@ const UserActivity = () => {
   const [assignActivityToPatient] = useAssignActivityToPatientMutation();
   const [deleteAssignedActivity] = useDeleteAssignedActivityMutation();
   const [selectedActivities, setSelectedActivities] = useState([]);
-  const [initialAssignedActivities, setInitialAssignedActivities] = useState([]);
-  const [isDisabled, setIsDisabled] = useState(true);
+
+
   const userInfo = useSelector((state) => state.auth.userInfo);
 
   // Inicializar las actividades ya asignadas al paciente al cargar la página
@@ -33,20 +28,21 @@ const UserActivity = () => {
     }
   }, [assignedActivitiesData]);
 
-  // Manejar la selección de actividades (sin guardar aún)
+  // Manejar la asignación o desasignación al marcar/desmarcar el checkbox
   const handleToggleActivity = async (activity) => {
     const isSelected = selectedActivities.includes(activity._id);
-  
+
     if (isSelected) {
       // Desasignar la actividad
-      const assignment = assignedActivitiesData.find(
-        (assignment) => assignment.activity._id === activity._id
-      );
+      const assignment = assignedActivitiesData.find((assignment) => assignment.activity._id === activity._id);
+
+
       if (assignment) {
         try {
-          await deleteAssignedActivity({ assignmentId: assignment.assignmentId, patientId }).unwrap();
-          await refetch(); // Asegura que los datos se actualicen
+          await deleteAssignedActivity(assignment.assignmentId);
+          setSelectedActivities((prev) => prev.filter((id) => id !== activity._id));
           alert('Actividad desasignada correctamente');
+          refetch();
         } catch (error) {
           console.error('Error al desasignar la actividad:', error);
         }
@@ -58,57 +54,15 @@ const UserActivity = () => {
           patientId,
           doctorId: userInfo._id,
           activityId: activity._id,
-        }).unwrap();
-        await refetch();
+        });
+        setSelectedActivities((prev) => [...prev, activity._id]);
         alert('Actividad asignada correctamente');
+        refetch();
       } catch (error) {
         console.error('Error al asignar la actividad:', error);
       }
     }
   };
-  
-
-  // Guardar los cambios al hacer clic en "Guardar"
-  const handleSaveChanges = async () => {
-    try {
-      // Asignar nuevas actividades
-      const activitiesToAssign = selectedActivities.filter(
-        (id) => !initialAssignedActivities.includes(id)
-      );
-      for (const activityId of activitiesToAssign) {
-        await assignActivityToPatient({
-          patientId,
-          doctorId: userInfo._id,
-          activityId,
-        });
-      }
-
-      // Desasignar actividades no seleccionadas
-      const activitiesToUnassign = initialAssignedActivities.filter(
-        (id) => !selectedActivities.includes(id)
-      );
-      for (const activityId of activitiesToUnassign) {
-        const assignment = assignedActivitiesData.find(
-          (assignment) => assignment.activity._id === activityId
-        );
-        if (assignment) {
-          await deleteAssignedActivity(assignment.assignmentId);
-        }
-      }
-
-      alert('Cambios guardados correctamente');
-      await refetch();
-      setIsDisabled(true);
-    } catch (error) {
-      console.error('Error al guardar cambios:', error);
-    }
-  };
-
-  // Habilitar edición
-  const handleEdit = () => {
-    setIsDisabled(false);
-  };
-
   // Filtrar actividades por nivel
   const filterActivitiesByLevel = (level) => activities?.filter((activity) => activity.difficultyLevel === level);
 
@@ -128,12 +82,12 @@ const UserActivity = () => {
                   return (
                     <Col key={activity._id} xs={12} md={6} lg={4} className="mb-4">
                       <div className={`activity-card ${isChecked ? 'selected' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={selectedActivities.includes(activity._id)}
-                        onChange={() => handleToggleActivity(activity)}
-                        className="activity-checkbox"
-                      />
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleActivity(activity)}
+                          className="activity-checkbox"
+                        />
                         {level === 1 && <Activity activity={activity} />}
                         {level === 2 && <Activity2 activity={activity} />}
                         {level === 3 && <Activity3 activity={activity} />}
@@ -144,18 +98,6 @@ const UserActivity = () => {
               </Row>
             </div>
           ))}
-
-          <div className="text-center mt-4">
-            {isDisabled ? (
-              <Button variant="primary" onClick={handleEdit}>
-                Editar
-              </Button>
-            ) : (
-              <Button variant="success" onClick={handleSaveChanges}>
-                Guardar Cambios
-              </Button>
-            )}
-          </div>
         </>
       )}
     </div>

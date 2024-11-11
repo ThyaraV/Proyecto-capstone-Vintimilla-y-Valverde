@@ -97,10 +97,15 @@ const Header = () => {
                 <FaComments /> Chat
               </Nav.Link>
 
+             {/* Enlaces del menú de navegación 
+              <Nav.Link onClick={() => navigateTo('/activities')}>
+                <FaListUl /> Actividades
+              </Nav.Link>*/}
+              
               {/* Verifica si `userInfo` está definido antes de acceder a `userInfo._id` */}
               {userInfo && userInfo._id && (
                 <Nav.Link onClick={() => navigateTo(`/api/assignments/${userInfo._id}/activities`)}>
-                  <FaListUl /> Actividades 2
+                  <FaListUl /> Actividades 
                 </Nav.Link>
               )}
 
