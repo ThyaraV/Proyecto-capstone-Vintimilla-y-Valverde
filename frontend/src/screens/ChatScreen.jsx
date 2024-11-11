@@ -183,7 +183,7 @@ const ChatScreen = () => {
 
   return (
     <div className="chat-container">
-      <div className="sidebar">
+      <div className="chat-sidebar">
         <h2>Chats</h2>
         {loadingChats ? (
           <p>Cargando chats...</p>

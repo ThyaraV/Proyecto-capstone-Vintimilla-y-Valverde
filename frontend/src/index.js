@@ -77,12 +77,13 @@ const router = createBrowserRouter(
       <Route index path="/" element={<HomeScreenSelector />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<RegisterScreen />} />
-      <Route path="/chat" element={<ChatScreen />} />
+      
 
       {/* Rutas privadas para los pacientes */}
       <Route path="" element={<PrivateRoute />}>
         <Route path="/profile" element={<ProfileScreen />} />
         <Route path="/activities" element={<ActivitiesScreen />} />
+        <Route path="/chat" element={<ChatScreen />} />
 
          {/* Actividades de nivel 1 */}
          <Route path="/activity/1" element={<ActivityScreen1 />} />

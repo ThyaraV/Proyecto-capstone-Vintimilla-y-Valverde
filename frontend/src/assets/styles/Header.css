@@ -196,7 +196,7 @@
   left: -300px; /* Oculto por defecto */
   width: 300px;
   height: 100vh;
-  background-color: #023047 !important; /* Aseguramos el color de fondo con !important */
+  background-color: #1986f3 !important; /* Aseguramos el color de fondo con !important */
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -230,7 +230,7 @@
 .sidebar-menu button {
   background: none;
   border: none;
-  color: #8ecae6;
+  color: #ffffff;
   text-align: left;
   padding: 10px;
   font-size: 18px;
