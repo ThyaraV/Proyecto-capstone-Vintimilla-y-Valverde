@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
-import { FaUser, FaListUl, FaComments, FaBrain, FaBell } from "react-icons/fa"; // Importamos FaBell
+import { FaUser, FaListUl, FaComments, FaBrain, FaBars } from "react-icons/fa";
 import logo from "../assets/logo.png";
 import { LinkContainer } from "react-router-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
-import { useLogoutMutation } from "../slices/usersApiSlice.js";
-import { logout } from "../slices/authSlice.js";
+import { useLogoutMutation } from "../slices/usersApiSlice";
+import { logout } from "../slices/authSlice";
 import '../assets/styles/Header.css';
 
 const Header = () => {
@@ -15,8 +15,10 @@ const Header = () => {
   const navigate = useNavigate();
   const [logoutApiCall] = useLogoutMutation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
 
+  // Maneja el cierre de sesión
   const logoutHandler = async () => {
     try {
       await logoutApiCall().unwrap();
@@ -31,57 +33,33 @@ const Header = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  const navigateTo = (path) => {
+  const navigateTo = (path, option) => {
+    setSelectedOption(option);
     if (userInfo) {
       navigate(path);
     } else {
       navigate("/login");
     }
-  };
-  
-  const handleNotificationClick = () => {
-    setShowNotifications(!showNotifications);
+    setIsMenuOpen(false);
   };
 
   return (
     <header>
+      {/* Navbar principal */}
       <Navbar variant="dark" expand="lg" collapseOnSelect>
-        <Container className="d-flex align-items-center">
-          <div className={`menu-container ${isMenuOpen ? 'open' : ''}`}>
-            <button className="btn" onClick={handleMenuToggle}>
-              <span className="icon">
-                <svg viewBox="0 0 175 80" width="25" height="25">
-                  <rect width="80" height="15" fill="#f0f0f0" rx="10"></rect>
-                  <rect y="30" width="80" height="15" fill="#f0f0f0" rx="10"></rect>
-                  <rect y="60" width="80" height="15" fill="#f0f0f0" rx="10"></rect>
-                </svg>
-              </span>
-              <span className="text">MENU</span>
-            </button>
-            <div className="menu-content">
-              <button className="menu-item" onClick={() => { navigateTo('/profile'); setIsMenuOpen(false); }}>
-                Public profile
-              </button>
-              <button className="menu-item" onClick={() => { navigateTo('/admin/configuration'); setIsMenuOpen(false); }}>
-                Configuration
-              </button>
-              <button className="menu-item" onClick={() => { navigateTo('/appearance'); setIsMenuOpen(false); }}>
-                Appearance
-              </button>
-              <button className="menu-item" onClick={() => { navigateTo('/accessibility'); setIsMenuOpen(false); }}>
-                Accessibility
-              </button>
-              <button className="menu-item" onClick={() => { navigateTo('/notifications'); setIsMenuOpen(false); }}>
-                Notifications
-              </button>
-            </div>
-          </div>
+        <Container>
+          {/* Botón para abrir el menú lateral */}
+          <button className="menu-toggle-btn" onClick={handleMenuToggle}>
+            <FaBars size={24} />
+          </button>
 
+          {/* Marca y logo */}
           <Navbar.Brand className="d-flex align-items-center" onClick={() => navigateTo('/')}>
             <img src={logo} alt="Seguimiento" height="40" />
             <span className="ms-2">Clínica del Cerebro</span>
           </Navbar.Brand>
 
+          {/* Menú de navegación principal */}
           <Navbar.Toggle aria-controls="basic-navbar-nav" className="ms-auto" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
@@ -102,19 +80,6 @@ const Header = () => {
                 <FaComments /> Chat
               </Nav.Link>
 
-             {/* Enlaces del menú de navegación 
->>>>>>> 7048597a32a521e1fdf97f7e6594c0d06829791f
-              <Nav.Link onClick={() => navigateTo('/activities')}>
-                <FaListUl /> Actividades
-              </Nav.Link>
-              
-              {/* Verifica si `userInfo` está definido antes de acceder a `userInfo._id` */}
-              {userInfo && userInfo._id && (
-                <Nav.Link onClick={() => navigateTo(`/api/assignments/${userInfo._id}/activities`)}>
-                  <FaListUl /> Actividades 
-                </Nav.Link>
-              )}
-
               {/* Enlace de usuario y opciones de administración */}
               {userInfo ? (
                 <NavDropdown title={userInfo.name} id="username">
@@ -128,6 +93,7 @@ const Header = () => {
                 </LinkContainer>
               )}
 
+              {/* Opciones del administrador */}
               {userInfo && userInfo.isAdmin && (
                 <NavDropdown title="Admin" id="adminmenu">
                   <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist')}>Ayuda</NavDropdown.Item>
@@ -139,23 +105,30 @@ const Header = () => {
             </Nav>
           </Navbar.Collapse>
         </Container>
-        </Navbar>
+      </Navbar>
 
-{/* Ventana emergente de notificaciones */}
-{showNotifications && (
-  <div className="notifications-popup">
-    {userInfo?.notifications?.length > 0 ? (
-      userInfo.notifications.map((notification, index) => (
-        <div key={index} className="notification-item">
-          {notification.message}
-        </div>
-      ))
-    ) : (
-      <div className="no-notifications">No tienes notificaciones</div>
-    )}
-  </div>
-)}
-</header>
+      {/* Menú lateral */}
+      <div className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
+        <button className="close-btn" onClick={handleMenuToggle}>×</button>
+        <nav className="sidebar-menu">
+          <button className={selectedOption === 'profile' ? 'active' : ''} onClick={() => navigateTo('/profile', 'profile')}>
+            Perfil Público
+          </button>
+          <button className={selectedOption === 'config' ? 'active' : ''} onClick={() => navigateTo('/admin/configuration', 'config')}>
+            Configuración
+          </button>
+          <button className={selectedOption === 'appearance' ? 'active' : ''} onClick={() => navigateTo('/appearance', 'appearance')}>
+            Apariencia
+          </button>
+          <button className={selectedOption === 'accessibility' ? 'active' : ''} onClick={() => navigateTo('/accessibility', 'accessibility')}>
+            Accesibilidad
+          </button>
+          <button className={selectedOption === 'notifications' ? 'active' : ''} onClick={() => navigateTo('/notifications', 'notifications')}>
+            Notificaciones
+          </button>
+        </nav>
+      </div>
+    </header>
   );
 };
 

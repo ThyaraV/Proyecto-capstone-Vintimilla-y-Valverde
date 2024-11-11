@@ -28,16 +28,16 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
       ],
     }),    
     getMyAssignedActivities: builder.query({
-      query: (userId) => ({
-        url: '/api/assignments/myactivities',
-        method: 'GET',
-        params: { userId },
+      query: () => '/api/treatments/myactivities',
+      providesTags: ['AssignedActivities'],
+    }),
+    createTreatment: builder.mutation({
+      query: (treatmentData) => ({
+        url: '/api/assignments/create', // Asegúrate de que la URL coincide con la ruta en el backend
+        method: 'POST',
+        body: treatmentData,
       }),
-      providesTags: (result, error, userId) => [
-        { type: 'AssignedActivities', id: userId },
-      ],
-    }), 
-    
+    }),    
   }),
 });
 
@@ -47,5 +47,5 @@ export const {
   useGetAssignedActivitiesQuery,
   useDeleteAssignedActivityMutation,
   useGetMyAssignedActivitiesQuery,
-  useGetTreatmentsQuery
+  useCreateTreatmentMutation
 } = treatmentApiSlice;

@@ -10,7 +10,7 @@ const Configuration = () => {
 
   const navigateToTab = (tab) => {
     if (tab === 'tratamientos') {
-      navigate('/tratamientos');
+      navigate('/admin/treatments');
     } else if (tab === 'actividades') {
       navigate('/admin/UsersActivities');
     } else if (tab === 'informacion_paciente') {

@@ -188,3 +188,76 @@
     transform: translateY(0);
   }
 }
+
+/* Menú lateral */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -300px; /* Oculto por defecto */
+  width: 300px;
+  height: 100vh;
+  background-color: #023047 !important; /* Aseguramos el color de fondo con !important */
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+  transition: transform 0.3s ease-in-out;
+  z-index: 9999;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5); /* Sombra para resaltar el menú */
+  opacity: 1; /* Aseguramos que sea completamente opaco */
+}
+
+.sidebar.open {
+  transform: translateX(300px);
+}
+
+.close-btn {
+  align-self: flex-end;
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 24px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-menu button {
+  background: none;
+  border: none;
+  color: #8ecae6;
+  text-align: left;
+  padding: 10px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.8;
+}
+
+.sidebar-menu button:hover,
+.sidebar-menu button.active {
+  opacity: 1;
+  transform: translateX(10px);
+  color: #ffb703; /* Color al pasar el cursor */
+  font-weight: bold;
+}
+
+.menu-toggle-btn {
+  background: none; /* Fondo transparente */
+  border: none; /* Sin borde */
+  color: #ffffff; /* Color de las líneas del ícono */
+  cursor: pointer;
+  margin-right: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-toggle-btn svg {
+  fill: #ffffff; /* Aseguramos que las líneas sean blancas */
+}

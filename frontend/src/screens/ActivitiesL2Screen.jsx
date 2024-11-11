@@ -1,5 +1,3 @@
-// UserActivity.jsx
-
 import React, { useEffect, useState } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import { useGetMyAssignedActivitiesQuery } from '../slices/treatmentSlice.js';
@@ -14,15 +12,14 @@ import { useSelector } from 'react-redux';
 const UserActivity = () => {
   // Obtener la información del usuario autenticado desde el estado de Redux
   const userInfo = useSelector((state) => state.auth.userInfo);
-  const userId = userInfo?._id;
 
   // Obtener las actividades asignadas al usuario actual
   const {
     data: activities,
     isLoading,
     refetch,
-  } = useGetMyAssignedActivitiesQuery(userId, {
-    refetchOnMountOrArgChange: true, // Refresca la consulta al cambiar el argumento userId
+  } = useGetMyAssignedActivitiesQuery(undefined, {
+    refetchOnMountOrArgChange: true,
   });
 
   const [uniqueActivities, setUniqueActivities] = useState([]);
@@ -30,10 +27,10 @@ const UserActivity = () => {
   // Filtrar y eliminar duplicados al cargar las actividades
   useEffect(() => {
     if (activities) {
-      // Usar un mapa para eliminar duplicados basados en el ID de la actividad
+      // Eliminar actividades duplicadas basadas en el ID
       const filteredActivities = activities.reduce((acc, current) => {
         const existingActivity = acc.find(
-          (item) => item.activity._id === current.activity._id
+          (item) => item._id === current._id
         );
         if (!existingActivity) {
           acc.push(current);
@@ -49,8 +46,8 @@ const UserActivity = () => {
 
   // Manejar la conexión de Socket.io
   useEffect(() => {
-    if (!userId) {
-      console.warn('El userId no está definido');
+    if (!userInfo) {
+      console.warn('El usuario no está definido');
       return;
     }
 
@@ -61,8 +58,8 @@ const UserActivity = () => {
       console.log('Conectado al servidor de Socket.io con ID:', socket.id);
     });
 
-    socket.on(`activitiesUpdated:${userId}`, (data) => {
-      console.log(`Evento activitiesUpdated recibido para el usuario ${userId}`, data);
+    socket.on(`activitiesUpdated:${userInfo._id}`, (data) => {
+      console.log(`Evento activitiesUpdated recibido para el usuario ${userInfo._id}`, data);
       refetch(); // Vuelve a cargar las actividades asignadas en tiempo real
     });
 
@@ -70,12 +67,12 @@ const UserActivity = () => {
       console.log('Desconectado del servidor de Socket.io');
     });
 
-    // Limpiar el socket al desmontar el componente o cuando userId cambie
+    // Limpiar el socket al desmontar el componente o cuando userInfo cambie
     return () => {
       socket.disconnect();
       console.log('Socket desconectado en cleanup');
     };
-  }, [userId, refetch]);
+  }, [userInfo, refetch]);
 
   return (
     <div className="user-activity-container">
@@ -86,7 +83,7 @@ const UserActivity = () => {
         <>
           {uniqueActivities && uniqueActivities.length > 0 ? (
             <Row className="activity-levels">
-              {uniqueActivities.map(({ activity }) => (
+              {uniqueActivities.map((activity) => (
                 <Col key={activity._id} xs={12} md={6} lg={4} className="mb-4">
                   {activity.difficultyLevel === 1 && (
                     <Activity

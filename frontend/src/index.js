@@ -64,6 +64,7 @@ import MocaStart from "./screens/MocaStart";
 import Configuration from "./screens/Médico/Configuration.jsx";
 import UsersActivities from "./screens/Médico/UsersActivities.jsx";
 import UserActivity from "./screens/Médico/UserActivity.jsx";
+import TreatmentsScreen from "./screens/Médico/TreatmentsScreen.jsx";
 
 const HomeScreenSelector = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -128,6 +129,7 @@ const router = createBrowserRouter(
         <Route path="/moca/start/:id" element={<MocaStart />} />
         <Route path="/admin/userlist" element={<UserListScreen />} />
         <Route path="/admin/user/:id/edit" element={<UserEditScreen />} />
+        <Route path="/admin/treatments" element={<TreatmentsScreen />} />
         <Route path="/admin/activities" element={<ActivitiesListScreen />} />
         <Route path="/admin/UsersActivities" element={<UsersActivities />} />
         <Route path="/admin/:patientId/UserActivity" element={<UserActivity />} />
