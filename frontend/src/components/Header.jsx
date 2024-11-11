@@ -83,15 +83,15 @@ const Header = () => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" className="ms-auto" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
-              {/* Enlaces del menú de navegación */}
+             {/* Enlaces del menú de navegación 
               <Nav.Link onClick={() => navigateTo('/activities')}>
                 <FaListUl /> Actividades
-              </Nav.Link>
+              </Nav.Link>*/}
               
               {/* Verifica si `userInfo` está definido antes de acceder a `userInfo._id` */}
               {userInfo && userInfo._id && (
                 <Nav.Link onClick={() => navigateTo(`/api/assignments/${userInfo._id}/activities`)}>
-                  <FaListUl /> Actividades 2
+                  <FaListUl /> Actividades 
                 </Nav.Link>
               )}
 

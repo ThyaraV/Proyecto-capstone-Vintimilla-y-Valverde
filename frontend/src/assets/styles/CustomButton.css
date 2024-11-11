@@ -48,3 +48,18 @@
     box-shadow: 0 0.5em 1.5em -0.5em rgba(220, 53, 69, 0.745);
   }
   
+  .delete-button {
+    background-color: #dc3545;
+    color: #fff;
+  }
+  
+  .enable-button {
+    background-color: #28a745;
+    color: #fff;
+  }
+  
+  .edit-button {
+    background-color: #17a2b8;
+    color: #fff;
+  }
+  

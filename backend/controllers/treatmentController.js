@@ -9,58 +9,46 @@ import { io } from 'socket.io-client';
 // @route   POST /api/assignments
 // @access  Privado/Doctor
 const assignActivityToPatient = asyncHandler(async (req, res) => {
-  const {
-    doctor,
-    activity,
-    completionDate,
-    scoreObtained,
-    timeUsed,
-    progress,
-    observations,
-  } = req.body;
+  const { patientId, doctorId, activityId } = req.body;
 
-  // Obtener el usuario autenticado
-  const userId = req.user._id;
+  // Agregar logs para verificar que los datos están siendo recibidos
+  console.log("Datos recibidos en la solicitud POST:");
+  console.log("Patient ID:", patientId);
+  console.log("Doctor ID:", doctorId);
+  console.log("Activity ID:", activityId);
 
-  // Buscar el paciente asociado al usuario
-  const patientRecord = await Patient.findOne({ user: userId });
+  // Verificar que el paciente, el doctor y la actividad existen
+  const patient = await Patient.findById(patientId);
+  const activity = await Activity.findById(activityId);
 
-  if (!patientRecord) {
+  if (!patient) {
+    console.log("Paciente no encontrado");
     res.status(404);
-    throw new Error('Paciente no encontrado para el usuario autenticado');
+    throw new Error('Paciente no encontrado');
   }
 
-  // Verificar que la actividad existe
-  const activityRecord = await Activity.findById(activity);
-
-  if (!activityRecord) {
+  if (!activity) {
+    console.log("Actividad no encontrada");
     res.status(404);
     throw new Error('Actividad no encontrada');
   }
 
-  // Crear la asignación
+  // Crear la asignación de actividad para el paciente
   const assignment = await Assignment.create({
-    patient: patientRecord._id,
-    doctor: doctor || null,
-    activity,
-    assignedDate: Date.now(),
-    completionDate,
-    scoreObtained,
-    timeUsed,
-    progress,
-    observations,
+    patient: patientId,
+    doctor: doctorId,
+    activity: activityId,
   });
 
-  console.log('Asignación creada:', assignment);
+  console.log("Asignación creada:", assignment);
 
+  io.to(`patient_${patientId}`).emit('activitiesUpdated');
+  
   res.status(201).json({
     message: 'Actividad asignada correctamente al paciente',
     assignment,
   });
 });
-
-
-
 // @desc    Actualizar resultados de una actividad asignada
 // @route   PUT /api/assignments/:assignmentId/results
 // @access  Privado/Doctor o Paciente
@@ -187,8 +175,6 @@ const getMyAssignedActivities = asyncHandler(async (req, res) => {
     res.status(500).json({ message: 'Error al obtener las actividades asignadas' });
   }
 });
-
-
 
 export { assignActivityToPatient, updateAssignmentResults, 
   getAssignedActivities,unassignActivityFromPatient,getMyAssignedActivities};

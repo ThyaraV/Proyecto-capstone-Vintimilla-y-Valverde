@@ -1,47 +1,50 @@
 import React, { useState } from 'react';
 import { LinkContainer } from 'react-router-bootstrap';
-import { Table, Button } from 'react-bootstrap';
+import { Table } from 'react-bootstrap';
 import { FaEdit, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
 import Message from '../../components/Message';
 import Loader from '../../components/Loader';
 import { toast } from 'react-toastify';
 import { useGetUsersQuery, useDeleteUserMutation, useEnableUserMutation } from '../../slices/usersApiSlice';
+import CustomButton from '../../components/CustomButton.jsx';
 
 const UserListScreen = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { data: users = [], isLoading, error, refetch } = useGetUsersQuery();
   const [deleteUser, { isLoading: loadingDelete }] = useDeleteUserMutation();
-  const [enableUser] = useEnableUserMutation(); // Nueva mutación para habilitar usuarios
+  const [enableUser] = useEnableUserMutation();
 
+  // Maneja la deshabilitación de usuarios
   const deleteHandler = async (id) => {
     if (window.confirm('¿Estás seguro de que deseas deshabilitar este usuario?')) {
       try {
-        await deleteUser(id); // Cambiará el estado de isActive a false
+        await deleteUser(id);
         toast.success('Usuario deshabilitado correctamente');
         refetch();
       } catch (err) {
-        toast.error(err?.data?.message || (typeof err.error === 'object' ? JSON.stringify(err.error) : err.error));
+        toast.error(err?.data?.message || 'Ha ocurrido un error');
       }
     }
   };
 
+  // Maneja la habilitación de usuarios
   const enableUserHandler = async (id) => {
     if (window.confirm('¿Estás seguro de que deseas habilitar este usuario?')) {
       try {
-        await enableUser(id); // Cambiará el estado de isActive a true
+        await enableUser(id);
         toast.success('Usuario habilitado correctamente');
-        refetch(); // Actualiza la lista de usuarios
+        refetch();
       } catch (err) {
-        toast.error(err?.data?.message || (typeof err.error === 'object' ? JSON.stringify(err.error) : err.error));
+        toast.error(err?.data?.message || 'Ha ocurrido un error');
       }
     }
   };
 
+  // Filtra los usuarios según el término de búsqueda
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
   };
 
-  // Filtrado de usuarios
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -50,6 +53,14 @@ const UserListScreen = () => {
   return (
     <>
       <h1>Usuarios</h1>
+      <input
+        type="text"
+        placeholder="Buscar usuarios..."
+        value={searchTerm}
+        onChange={handleSearch}
+        style={{ marginBottom: '20px', padding: '10px', width: '300px', borderRadius: '5px' }}
+      />
+      
       {loadingDelete && <Loader />}
       {isLoading ? (
         <Loader />
@@ -57,13 +68,6 @@ const UserListScreen = () => {
         <Message variant='danger'>{error.message || 'Ha ocurrido un error'}</Message>
       ) : (
         <>
-          <input
-            type="text"
-            placeholder="Buscar usuarios..."
-            value={searchTerm}
-            onChange={handleSearch}
-            style={{ marginBottom: '20px', padding: '5px', width: '300px' }}
-          />
           <Table striped hover responsive className='table-sm'>
             <thead>
               <tr>
@@ -80,7 +84,9 @@ const UserListScreen = () => {
                   <tr key={user._id}>
                     <td>{user._id}</td>
                     <td>{user.name}</td>
-                    <td><a href={`mailto:${user.email}`}>{user.email}</a></td>
+                    <td>
+                      <a href={`mailto:${user.email}`}>{user.email}</a>
+                    </td>
                     <td>
                       {user.isAdmin ? (
                         <FaCheck style={{ color: 'green' }} />
@@ -90,26 +96,28 @@ const UserListScreen = () => {
                     </td>
                     <td>
                       {user.isActive ? (
-                        <Button
-                          variant='danger'
-                          className='btn-sm'
+                        <CustomButton
                           onClick={() => deleteHandler(user._id)}
-                        >
-                          Deshabilitar
-                        </Button>
+                          text='Deshabilitar'
+                          icon={<FaTrash />}
+                          className='delete-button'
+                          style={{ padding: '0.5em 0.75em', marginRight: '10px' }}
+                        />
                       ) : (
-                        <Button
-                          variant='success'
-                          className='btn-sm'
+                        <CustomButton
                           onClick={() => enableUserHandler(user._id)}
-                        >
-                          Habilitar
-                        </Button>
+                          text='Habilitar'
+                          icon={<FaCheck />}
+                          className='enable-button'
+                          style={{ padding: '0.5em 0.75em', marginRight: '10px' }}
+                        />
                       )}
                       <LinkContainer to={`/admin/user/${user._id}/edit`}>
-                        <Button variant='light' className='btn-sm mx-2'>
-                          <FaEdit />
-                        </Button>
+                        <CustomButton
+                          text=''
+                          icon={<FaEdit />}
+                          style={{ padding: '0.5em 0.75em' }}
+                        />
                       </LinkContainer>
                     </td>
                   </tr>
