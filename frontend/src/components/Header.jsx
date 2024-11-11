@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
-import { FaUser, FaListUl, FaComments } from "react-icons/fa";
+import { FaUser, FaListUl, FaComments, FaBrain } from "react-icons/fa";
 import logo from "../assets/logo.png";
 import { LinkContainer } from "react-router-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
@@ -30,7 +30,6 @@ const Header = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Verificar autenticación antes de navegar
   const navigateTo = (path) => {
     if (userInfo) {
       navigate(path);
@@ -43,7 +42,6 @@ const Header = () => {
     <header>
       <Navbar variant="dark" expand="lg" collapseOnSelect>
         <Container className="d-flex align-items-center">
-          {/* Menú personalizado al extremo izquierdo */}
           <div className={`menu-container ${isMenuOpen ? 'open' : ''}`}>
             <button className="btn" onClick={handleMenuToggle}>
               <span className="icon">
@@ -74,7 +72,6 @@ const Header = () => {
             </div>
           </div>
 
-          {/* Logo de la Clínica */}
           <Navbar.Brand className="d-flex align-items-center" onClick={() => navigateTo('/')}>
             <img src={logo} alt="Seguimiento" height="40" />
             <span className="ms-2">Clínica del Cerebro</span>
@@ -83,11 +80,23 @@ const Header = () => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" className="ms-auto" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
-              {/* Enlaces del menú de navegación */}
-              <Nav.Link onClick={() => navigateTo('/activities')}>
-                <FaListUl /> Actividades
+              {/* Menú desplegable para Actividades */}
+              <NavDropdown title="Actividades" id="activities-dropdown">
+                <NavDropdown.Item onClick={() => navigateTo('/activities')}>Actividades Nivel 1</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => navigateTo('/activitiesL2')}>Actividades Nivel 2</NavDropdown.Item>
+                <NavDropdown.Item onClick={() => navigateTo('/activitiesL3')}>Actividades Nivel 3</NavDropdown.Item>
+              </NavDropdown>
+
+              {/* Enlace a MoCA */}
+              <Nav.Link onClick={() => navigateTo('/moca')}>
+                <FaBrain /> MoCA
               </Nav.Link>
-              
+
+              {/* Enlace al chat */}
+              <Nav.Link onClick={() => navigateTo('/chat')}>
+                <FaComments /> Chat
+              </Nav.Link>
+
               {/* Verifica si `userInfo` está definido antes de acceder a `userInfo._id` */}
               {userInfo && userInfo._id && (
                 <Nav.Link onClick={() => navigateTo(`/api/assignments/${userInfo._id}/activities`)}>
@@ -95,20 +104,10 @@ const Header = () => {
                 </Nav.Link>
               )}
 
-              <Nav.Link onClick={() => navigateTo('/activitiesL3')}>
-                <FaListUl /> Actividades 3
-              </Nav.Link>
-
-              <Nav.Link onClick={() => navigateTo('/chat')}>
-                <FaComments /> Chat
-              </Nav.Link>
-
-              {/* Otros enlaces y menús */}
+              {/* Enlace de usuario y opciones de administración */}
               {userInfo ? (
                 <NavDropdown title={userInfo.name} id="username">
-                  <NavDropdown.Item onClick={logoutHandler}>
-                    Cerrar Sesión
-                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={logoutHandler}>Cerrar Sesión</NavDropdown.Item>
                 </NavDropdown>
               ) : (
                 <LinkContainer to="/login">
@@ -120,18 +119,10 @@ const Header = () => {
 
               {userInfo && userInfo.isAdmin && (
                 <NavDropdown title="Admin" id="adminmenu">
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist')}>
-                    Ayuda
-                  </NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/productlist')}>
-                    Configuración
-                  </NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/userlist')}>
-                    Usuarios
-                  </NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/activities')}>
-                    Actividades (Admin)
-                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist')}>Ayuda</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/productlist')}>Configuración</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/userlist')}>Usuarios</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/activities')}>Actividades (Admin)</NavDropdown.Item>
                 </NavDropdown>
               )}
             </Nav>
