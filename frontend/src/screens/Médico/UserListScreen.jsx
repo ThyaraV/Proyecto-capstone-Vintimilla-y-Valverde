@@ -94,29 +94,28 @@ const UserListScreen = () => {
                         <FaTimes style={{ color: 'red' }} />
                       )}
                     </td>
-                    <td>
+                    <td className="text-center">
                       {user.isActive ? (
                         <CustomButton
                           onClick={() => deleteHandler(user._id)}
                           text='Deshabilitar'
                           icon={<FaTrash />}
-                          className='delete-button'
-                          style={{ padding: '0.5em 0.75em', marginRight: '10px' }}
+                          className='action-button delete-button'
                         />
                       ) : (
                         <CustomButton
                           onClick={() => enableUserHandler(user._id)}
                           text='Habilitar'
                           icon={<FaCheck />}
-                          className='enable-button'
-                          style={{ padding: '0.5em 0.75em', marginRight: '10px' }}
+                          className='action-button enable-button'
                         />
                       )}
                       <LinkContainer to={`/admin/user/${user._id}/edit`}>
                         <CustomButton
-                          text=''
+                          onClick={() => {}}
+                          text='Editar'
                           icon={<FaEdit />}
-                          style={{ padding: '0.5em 0.75em' }}
+                          className='action-button edit-button'
                         />
                       </LinkContainer>
                     </td>
@@ -128,6 +127,7 @@ const UserListScreen = () => {
                 </tr>
               )}
             </tbody>
+
           </Table>
         </>
       )}
