@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import Loader from '../../components/Loader';
 import Message from '../../components/Message';
 import ActivitySelector from '../../components/ActivitySelector';
+import '../../assets/styles/CreateTreatmentScreen.css'; // Asegúrate de importar el CSS
 
 const CreateTreatmentScreen = () => {
   // Estados locales
@@ -107,14 +108,11 @@ const CreateTreatmentScreen = () => {
     ]);
   };
 
-
   const handleExerciseVideoChange = (index, field, value) => {
     const updatedVideos = [...exerciseVideos];
     updatedVideos[index][field] = value;
     setExerciseVideos(updatedVideos);
   };
-
-
 
   return (
     <>
@@ -149,8 +147,8 @@ const CreateTreatmentScreen = () => {
           )}
         </Form.Group>
 
-         {/* Nombre y descripción del tratamiento */}
-         <Form.Group controlId="treatmentName" className="mb-3">
+        {/* Nombre y descripción del tratamiento */}
+        <Form.Group controlId="treatmentName" className="mb-3">
           <Form.Label>Nombre del Tratamiento</Form.Label>
           <Form.Control
             type="text"
@@ -206,14 +204,55 @@ const CreateTreatmentScreen = () => {
                 className="mb-2"
                 required
               />
-              <Form.Control
-                type="text"
-                placeholder="Frecuencia"
-                value={medication.frequency}
-                onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)}
-                className="mb-2"
-                required
-              />
+
+              {/* Reemplazar el campo de texto de frecuencia con radio buttons personalizados */}
+              <Form.Group controlId={`frequency-${index}`} className="mb-2">
+                <Form.Label>Frecuencia</Form.Label>
+                <div className="custom-radio-container">
+                  <div className="custom-radio">
+                    <input
+                      type="radio"
+                      id={`radio-diaria-${index}`}
+                      name={`frequency-${index}`}
+                      value="Diaria"
+                      checked={medication.frequency === 'Diaria'}
+                      onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)}
+                      required
+                    />
+                    <label className="radio-label" htmlFor={`radio-diaria-${index}`}>
+                      <div className="radio-circle"></div>
+                      <span className="radio-text">Diaria</span>
+                    </label>
+
+                    <input
+                      type="radio"
+                      id={`radio-semanal-${index}`}
+                      name={`frequency-${index}`}
+                      value="Semanal"
+                      checked={medication.frequency === 'Semanal'}
+                      onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)}
+                    />
+                    <label className="radio-label" htmlFor={`radio-semanal-${index}`}>
+                      <div className="radio-circle"></div>
+                      <span className="radio-text">Semanal</span>
+                    </label>
+
+                    <input
+                      type="radio"
+                      id={`radio-mensual-${index}`}
+                      name={`frequency-${index}`}
+                      value="Mensual"
+                      checked={medication.frequency === 'Mensual'}
+                      onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)}
+                    />
+                    <label className="radio-label" htmlFor={`radio-mensual-${index}`}>
+                      <div className="radio-circle"></div>
+                      <span className="radio-text">Mensual</span>
+                    </label>
+                  </div>
+                </div>
+              </Form.Group>
+
               <Form.Control
                 type="date"
                 placeholder="Fecha de inicio"

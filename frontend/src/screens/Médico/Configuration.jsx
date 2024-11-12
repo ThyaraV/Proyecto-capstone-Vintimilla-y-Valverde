@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../assets/styles/Configuration.css';
 import Image1a from '../../images/tratamientos.png';
@@ -7,10 +7,24 @@ import Image3a from '../../images/infopaciente.png';
 
 const Configuration = () => {
   const navigate = useNavigate();
+  const [showTreatmentOptions, setShowTreatmentOptions] = useState(false);
+  const [selectedOption, setSelectedOption] = useState('');
+
+  // Función para manejar la selección de las opciones de tratamiento
+  const handleTreatmentOptionChange = (event) => {
+    setSelectedOption(event.target.value);
+
+    // Redirige a la página correspondiente basado en la selección
+    if (event.target.value === 'crear') {
+      navigate('/admin/treatments');
+    } else if (event.target.value === 'visualizar') {
+      navigate('/admin/treatments/list');
+    }
+  };
 
   const navigateToTab = (tab) => {
     if (tab === 'tratamientos') {
-      navigate('/admin/treatments');
+      setShowTreatmentOptions(true);
     } else if (tab === 'actividades') {
       navigate('/admin/UsersActivities');
     } else if (tab === 'informacion_paciente') {
@@ -21,6 +35,7 @@ const Configuration = () => {
   return (
     <div className="config-card-wrapper">
       <div className="config-card-container">
+        {/* Card para Tratamientos */}
         <div className="config-card" onClick={() => navigateToTab('tratamientos')}>
           <span className="config-card-overlay"></span>
           <div className="config-card-content">
@@ -29,6 +44,34 @@ const Configuration = () => {
           </div>
         </div>
 
+        {/* Mostrar opciones de radio buttons si se selecciona Tratamientos */}
+        {showTreatmentOptions && (
+          <fieldset className="treatment-options">
+            <div className="button-group">
+              <input
+                type="radio"
+                id="crear"
+                name="treatment"
+                value="crear"
+                onChange={handleTreatmentOptionChange}
+              />
+              <label htmlFor="crear">Crear Tratamiento</label>
+            </div>
+
+            <div className="button-group">
+              <input
+                type="radio"
+                id="visualizar"
+                name="treatment"
+                value="visualizar"
+                onChange={handleTreatmentOptionChange}
+              />
+              <label htmlFor="visualizar">Visualizar y Editar Tratamiento</label>
+            </div>
+          </fieldset>
+        )}
+
+        {/* Card para Actividades */}
         <div className="config-card" onClick={() => navigateToTab('actividades')}>
           <span className="config-card-overlay"></span>
           <div className="config-card-content">
@@ -37,6 +80,7 @@ const Configuration = () => {
           </div>
         </div>
 
+        {/* Card para Información del Paciente */}
         <div className="config-card" onClick={() => navigateToTab('informacion_paciente')}>
           <span className="config-card-overlay"></span>
           <div className="config-card-content">

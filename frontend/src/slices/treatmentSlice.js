@@ -1,4 +1,5 @@
 import { apiSlice } from './apiSlice';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export const treatmentApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -28,7 +29,7 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
       ],
     }),    
     getMyAssignedActivities: builder.query({
-      query: () => '/api/treatments/myactivities',
+      query: () => '/api/assignments/myactivities',
       providesTags: ['AssignedActivities'],
     }),
     createTreatment: builder.mutation({
@@ -37,7 +38,30 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: treatmentData,
       }),
-    }),    
+    }),
+    getMyTreatments: builder.query({
+      query: () => '/api/assignments/mytreatments',
+      providesTags: ['Treatments'],
+    }),
+
+    getTreatmentById: builder.query({
+      query: (treatmentId) => `/api/assignments/${treatmentId}`,
+      providesTags: (result, error, treatmentId) => [{ type: 'Treatment', id: treatmentId }],
+    }), 
+    updateTreatment: builder.mutation({
+      query: ({ treatmentId, updatedData }) => ({
+        url: `/api/assignments/${treatmentId}`,
+        method: 'PUT',
+        body: updatedData,
+      }),
+      invalidatesTags: (result, error, { treatmentId }) => [
+        { type: 'Treatment', id: treatmentId },
+        'Treatments',
+      ],
+    }),
+    getMyMedications: builder.query({
+      query: () => '/treatments/my-medications',
+    }),       
   }),
 });
 
@@ -47,5 +71,9 @@ export const {
   useGetAssignedActivitiesQuery,
   useDeleteAssignedActivityMutation,
   useGetMyAssignedActivitiesQuery,
-  useCreateTreatmentMutation
+  useCreateTreatmentMutation,
+  useGetMyTreatmentsQuery,
+  useGetTreatmentByIdQuery,
+  useUpdateTreatmentMutation,
+  useGetMyMedicationsQuery
 } = treatmentApiSlice;
