@@ -1,0 +1,101 @@
+.moca-card-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 100px);
+    padding-top: 50px;
+  }
+  
+  .moca-title {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 2em;
+    font-weight: bold;
+  }
+  
+  .moca-row {
+    display: flex;
+    width: 100%;
+  }
+  
+  .moca-patient-list {
+    padding: 20px;
+  }
+  
+  .patient-item {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .patient-item:hover {
+    background-color: #f1f1f1;
+  }
+  
+  .moca-options-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .moca-options {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .button-row {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .button-group {
+    flex-grow: 1;
+    margin: 10px 0;
+    position: relative;
+    height: 250px;
+    width: 354px;
+    color: #fff;
+    transition: 0.5s;
+    cursor: pointer;
+  }
+  
+  .button-group:hover {
+    transform: translateY(-20px);
+  }
+  
+  .button-group input[type="radio"] {
+    display: none;
+  }
+  
+  .button-group label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid #2b426d;
+    background-color: #385c7e;
+    color: white;
+    border-radius: 15px;
+    transition: all ease 0.2s;
+    text-align: center;
+    width: 200px;
+    height: 150px;
+    margin: 5px;
+    box-shadow: 0px 0px 50px -15px #000000;
+  }
+  
+  .button-group input[type="radio"]:checked + label {
+    background-color: white;
+    color: #02375a;
+    border: 1px solid #2b426d;
+  }
+  
+  .moca-card-image {
+    width: 100px;
+    height: 70px;
+    margin-bottom: 10px;
+  }
+  
