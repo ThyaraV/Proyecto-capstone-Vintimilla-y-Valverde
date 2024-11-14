@@ -1,0 +1,94 @@
+/* src/assets/styles/MedicationPopup.css */
+
+.medication-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    margin-right: -50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 400px;
+    max-width: 90%;
+  }
+  
+  .medication-overlay {
+    background-color: rgba(0, 0, 0, 0.75);
+  }
+  
+  .close-button {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #2F80ED;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .close-button:hover {
+    background-color: #1c5bbf;
+  }
+  
+  .medication-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.medication-modal {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 400px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.medication-modal h2 {
+    font-size: 1.5rem;
+    color: #2F80ED;
+    margin-bottom: 1rem;
+}
+
+.medication-modal ul {
+    list-style-type: none;
+    padding: 0;
+    font-size: 1rem;
+}
+
+.medication-modal li {
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.medication-modal li strong {
+    font-weight: 600;
+}
+
+.close-button {
+    background-color: #2F80ED;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 1rem;
+}
+
+.close-button:hover {
+    background-color: #1d4f91;
+}

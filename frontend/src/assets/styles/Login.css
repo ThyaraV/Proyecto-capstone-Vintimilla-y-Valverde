@@ -13,7 +13,7 @@
     position: relative; /* Para posicionar correctamente el pseudo-elemento */
     padding: 15px; /* Espacio para el borde animado */
     border-radius: 1rem; /* Bordes redondeados */
-    background: linear-gradient(270deg, #ff0080, #ff8c00, #40e0d0, #ff0080); /* Gradiente animado */
+    background: linear-gradient(270deg, #1986f3, #ff8c00, #6a8ef1, #fcb64c); /* Gradiente animado */
     background-size: 800% 800%;
     animation: borderAnimation 8s ease infinite;
     box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); /* Sombra para profundidad */

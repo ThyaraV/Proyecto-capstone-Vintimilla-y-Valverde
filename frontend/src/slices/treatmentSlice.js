@@ -1,8 +1,11 @@
+// src/slices/treatmentApiSlice.js
+
 import { apiSlice } from './apiSlice';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export const treatmentApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    // **Asignaciones Endpoints**
     getAssignedActivities: builder.query({
       query: (patientId) => `/api/assignments/${patientId}/activities`,
       providesTags: (result, error, patientId) => [
@@ -24,7 +27,7 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         url: `/api/assignments/${assignmentId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, { assignmentId, patientId }) => [
+      invalidatesTags: (result, error, { patientId }) => [
         { type: 'AssignedActivities', id: patientId },
       ],
     }),    
@@ -32,25 +35,27 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
       query: () => '/api/assignments/myactivities',
       providesTags: ['AssignedActivities'],
     }),
+
+    // **Tratamientos Endpoints**
     createTreatment: builder.mutation({
       query: (treatmentData) => ({
-        url: '/api/assignments/create', // Asegúrate de que la URL coincide con la ruta en el backend
+        url: '/api/treatments/create',
         method: 'POST',
         body: treatmentData,
       }),
+      invalidatesTags: ['Treatments'],
     }),
     getMyTreatments: builder.query({
-      query: () => '/api/assignments/mytreatments',
+      query: () => '/api/treatments/mytreatments',
       providesTags: ['Treatments'],
     }),
-
     getTreatmentById: builder.query({
-      query: (treatmentId) => `/api/assignments/${treatmentId}`,
+      query: (treatmentId) => `/api/treatments/${treatmentId}`,
       providesTags: (result, error, treatmentId) => [{ type: 'Treatment', id: treatmentId }],
     }), 
     updateTreatment: builder.mutation({
       query: ({ treatmentId, updatedData }) => ({
-        url: `/api/assignments/${treatmentId}`,
+        url: `/api/treatments/${treatmentId}`,
         method: 'PUT',
         body: updatedData,
       }),
@@ -59,21 +64,34 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         'Treatments',
       ],
     }),
+
+    // **Medicamentos Endpoints**
     getMyMedications: builder.query({
-      query: () => '/treatments/my-medications',
-    }),       
+      query: () => '/api/treatments/my-medications',
+      providesTags: ['Medications'],
+    }), 
+    getDueMedications: builder.query({
+      query: () => '/api/treatments/due-medications',
+      providesTags: ['Medications'],
+    }),      
   }),
 });
 
 export const {
+  // **Asignaciones Hooks**
   useGetActivitiesQuery,
-  useAssignActivityToPatientMutation,
   useGetAssignedActivitiesQuery,
+  useAssignActivityToPatientMutation,
   useDeleteAssignedActivityMutation,
   useGetMyAssignedActivitiesQuery,
+
+  // **Tratamientos Hooks**
   useCreateTreatmentMutation,
   useGetMyTreatmentsQuery,
   useGetTreatmentByIdQuery,
   useUpdateTreatmentMutation,
-  useGetMyMedicationsQuery
+
+  // **Medicamentos Hooks**
+  useGetMyMedicationsQuery,
+  useGetDueMedicationsQuery,
 } = treatmentApiSlice;

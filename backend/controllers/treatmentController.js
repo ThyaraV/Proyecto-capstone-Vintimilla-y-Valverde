@@ -275,7 +275,7 @@ const createTreatment = asyncHandler(async (req, res) => {
 const getMyTreatments = asyncHandler(async (req, res) => {
   const doctorId = req.user._id;
 
-  // Verificar que el usuario es un doctor
+  // Verificar que el usuario autenticado es un doctor
   const doctor = await Doctor.findOne({ user: doctorId });
   if (!doctor) {
     res.status(401);
@@ -284,7 +284,10 @@ const getMyTreatments = asyncHandler(async (req, res) => {
 
   // Obtener tratamientos creados por el doctor
   const treatments = await Treatment.find({ doctor: doctor._id })
-    .populate('patients', 'user')
+    .populate({
+      path: 'patients',
+      populate: { path: 'user', select: 'name lastName email' }, // Población anidada para usuarios
+    })
     .populate('activities')
     .populate('doctor', 'user');
 
@@ -295,17 +298,8 @@ const getMyTreatments = asyncHandler(async (req, res) => {
 // @route   GET /api/treatments/:treatmentId
 // @access  Privado/Doctor
 const getTreatmentById = asyncHandler(async (req, res) => {
-  const doctorId = req.user._id;
   const { treatmentId } = req.params;
 
-  // Verificar que el usuario es un doctor
-  const doctor = await Doctor.findOne({ user: doctorId });
-  if (!doctor) {
-    res.status(401);
-    throw new Error('Acceso no autorizado: No es un doctor');
-  }
-
-  // Buscar el tratamiento
   const treatment = await Treatment.findById(treatmentId)
     .populate({
       path: 'patients',
@@ -322,15 +316,14 @@ const getTreatmentById = asyncHandler(async (req, res) => {
     throw new Error('Tratamiento no encontrado');
   }
 
-  // Verificar que el tratamiento pertenece al doctor
-  if (treatment.doctor._id.toString() !== doctor._id.toString()) {
-    res.status(401);
-    throw new Error('No autorizado para ver este tratamiento');
+  // Verificar que el tratamiento tiene un doctor asignado
+  if (!treatment.doctor) {
+    res.status(400).json({ message: 'Doctor no asignado al tratamiento' });
+    return;
   }
 
   res.status(200).json(treatment);
 });
-
 // @desc    Actualizar un tratamiento existente
 // @route   PUT /api/treatments/:treatmentId
 // @access  Privado/Doctor
@@ -449,6 +442,62 @@ const getMyMedications = asyncHandler(async (req, res) => {
   res.status(200).json(medications);
 });
 
+// @desc    Obtener medicamentos que el paciente debe tomar hoy
+// @route   GET /api/treatments/due-medications
+// @access  Privado/Paciente
+const getDueMedications = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  // Obtener el paciente asociado al usuario autenticado
+  const patient = await Patient.findOne({ user: userId });
+  if (!patient) {
+    res.status(404);
+    throw new Error('Paciente no encontrado');
+  }
+
+  const today = new Date();
+  const treatments = await Treatment.find({ patients: patient._id }).populate('doctor', 'name email');
+
+  let dueMedications = [];
+
+  treatments.forEach(treatment => {
+    treatment.medications.forEach(med => {
+      if (med.startDate <= today && (!med.endDate || med.endDate >= today)) {
+        // Determinar si el medicamento está programado para hoy según su frecuencia
+        const frequency = med.frequency;
+        let isDue = false;
+
+        switch (frequency) {
+          case 'Diaria':
+            isDue = true;
+            break;
+          case 'Semanal':
+            // Verificar si hoy es el mismo día de la semana que la fecha de inicio
+            if (today.getDay() === new Date(med.startDate).getDay()) {
+              isDue = true;
+            }
+            break;
+          case 'Mensual':
+            // Verificar si hoy es el mismo día del mes que la fecha de inicio
+            if (today.getDate() === new Date(med.startDate).getDate()) {
+              isDue = true;
+            }
+            break;
+          default:
+            break;
+        }
+
+        if (isDue) {
+          dueMedications.push(med);
+        }
+      }
+    });
+  });
+
+  res.status(200).json(dueMedications);
+});
+
 export { assignActivityToPatient, updateAssignmentResults, 
   getAssignedActivities,unassignActivityFromPatient,getMyAssignedActivities, 
-  createTreatment, getMyTreatments, getTreatmentById, updateTreatment, getMyMedications};
+  createTreatment, getMyTreatments, 
+  getTreatmentById, updateTreatment, getMyMedications, getDueMedications};

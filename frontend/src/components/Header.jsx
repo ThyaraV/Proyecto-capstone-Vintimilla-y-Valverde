@@ -64,11 +64,18 @@ const Header = () => {
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
               {/* Menú desplegable para Actividades */}
-              <NavDropdown title="Actividades" id="activities-dropdown">
+              
+              {/*<NavDropdown title="Actividades" id="activities-dropdown">
+                
                 <NavDropdown.Item onClick={() => navigateTo('/activities')}>Actividades Nivel 1</NavDropdown.Item>
                 <NavDropdown.Item onClick={() => navigateTo('/activitiesL2')}>Actividades Nivel 2</NavDropdown.Item>
                 <NavDropdown.Item onClick={() => navigateTo('/activitiesL3')}>Actividades Nivel 3</NavDropdown.Item>
               </NavDropdown>
+              */}
+              {/* Enlace a MoCA */}
+              <Nav.Link onClick={() => navigateTo('/api/assignments/:patientId/activities')}>
+                <FaBrain /> Actividades
+              </Nav.Link>
 
               {/* Enlace a MoCA */}
               <Nav.Link onClick={() => navigateTo('/moca')}>

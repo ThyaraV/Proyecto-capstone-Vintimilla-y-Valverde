@@ -105,3 +105,211 @@ ul {
     z-index: 1000;
   }
   
+  /* src/assets/styles/HomeScreenPaciente.css */
+
+.home-screen-container {
+  padding: 2rem;
+  position: relative;
+}
+
+.calendar-container {
+  margin-top: 2rem;
+}
+
+.dot {
+  height: 6px;
+  width: 6px;
+  background-color: #ff6347;
+  border-radius: 50%;
+  display: block;
+  margin: 0 auto;
+  margin-top: 2px;
+}
+
+.day-details-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.day-details-modal.open {
+  display: flex;
+}
+
+.day-details-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+}
+
+.day-details-content ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.day-details-content li {
+  margin-bottom: 0.5rem;
+}
+
+.close-button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #2F80ED;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.close-button:hover {
+  background-color: #1c5bbf;
+}
+
+.message-icon-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  list-style-type: none;
+  padding: 0;
+}
+
+.message-icon-container li {
+  background: linear-gradient(var(--i), var(--j));
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.message-icon-container li:hover {
+  transform: scale(1.1);
+}
+
+.message-icon-container .icon {
+  font-size: 1.5rem;
+}
+
+.message-icon-container .title {
+  display: none;
+}
+
+.home-screen-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 2rem;
+    font-family: Arial, sans-serif;
+    color: #333;
+}
+
+.calendar-container {
+    margin-top: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+h1 {
+    font-size: 2rem;
+    color: #2F80ED;
+}
+
+.dot {
+    height: 8px;
+    width: 8px;
+    background-color: #ff6347;
+    border-radius: 50%;
+    margin: 5px auto 0;
+}
+
+.day-details-modal.open {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.day-details-content {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 80%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.day-details-content h2 {
+    font-size: 1.5rem;
+    color: #2F80ED;
+}
+
+.day-details-content ul {
+    list-style-type: none;
+    padding: 0;
+    font-size: 1rem;
+}
+
+.close-button {
+    background-color: #2F80ED;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 1rem;
+}
+
+.close-button:hover {
+    background-color: #1d4f91;
+}
+.home-screen-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* Alinear verticalmente en el centro */
+  height: 80vh; /* Ajustar la altura para centrar */
+  margin-top: 2rem;
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+
+h1 {
+  font-size: 2.5rem;
+  color: #000000;
+  margin-bottom: 2rem; /* Aumentar el margen para separar del calendario */
+}
+
+.calendar-container {
+  margin-top: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  padding: 1rem;
+  background-color: white;
+}
+
+.dot {
+  height: 8px;
+  width: 8px;
+  background-color: #ff6347;
+  border-radius: 50%;
+  margin: 5px auto 0;
+}
