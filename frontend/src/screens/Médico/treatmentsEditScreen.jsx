@@ -9,24 +9,19 @@ import Loader from '../../components/Loader';
 import Message from '../../components/Message';
 import ActivitySelector from '../../components/ActivitySelector';
 import { useParams, useNavigate } from 'react-router-dom';
+import '../../assets/styles/CreateTreatmentScreen.css';
 
 const EditTreatmentScreen = () => {
   const { treatmentId } = useParams();
   const navigate = useNavigate();
 
   // Obtener detalles del tratamiento
-  const {
-    data: treatment,
-    isLoading: loadingTreatment,
-    error: errorTreatment,
-  } = useGetTreatmentByIdQuery(treatmentId);
+  const { data: treatment, isLoading: loadingTreatment, error: errorTreatment } =
+    useGetTreatmentByIdQuery(treatmentId);
 
   // Obtener pacientes asignados al médico
-  const {
-    data: patientsData,
-    isLoading: loadingPatients,
-    error: errorPatients,
-  } = useGetDoctorWithPatientsQuery();
+  const { data: patientsData, isLoading: loadingPatients, error: errorPatients } =
+    useGetDoctorWithPatientsQuery();
 
   // Estados locales
   const [patientIds, setPatientIds] = useState([]);
@@ -43,22 +38,61 @@ const EditTreatmentScreen = () => {
   const [updateTreatment, { isLoading: loadingUpdate, error: errorUpdate }] =
     useUpdateTreatmentMutation();
 
+  // Inicializar los datos del tratamiento
   useEffect(() => {
     if (treatment) {
-      setPatientIds(treatment.patients.map((p) => p._id));
-      setTreatmentName(treatment.treatmentName);
-      setDescription(treatment.description);
-      setSelectedActivities(treatment.activities.map((a) => a._id));
-      setMedications(treatment.medications);
-      setExerciseVideos(treatment.exerciseVideos);
+      setPatientIds(treatment.patients?.map((p) => p._id) || []);
+      setTreatmentName(treatment.treatmentName || '');
+      setDescription(treatment.description || '');
+      setSelectedActivities(treatment.activities?.map((a) => a._id) || []);
+      setMedications(
+        treatment.medications?.map((med) => ({
+          ...med,
+          startDate: med.startDate ? med.startDate.substring(0, 10) : '',
+          endDate: med.endDate ? med.endDate.substring(0, 10) : '',
+        })) || []
+      );
+      setExerciseVideos(treatment.exerciseVideos || []);
       setStartDate(treatment.startDate ? treatment.startDate.substring(0, 10) : '');
       setEndDate(treatment.endDate ? treatment.endDate.substring(0, 10) : '');
-      setObservations(treatment.observations);
+      setObservations(treatment.observations || '');
       setNextReviewDate(
         treatment.nextReviewDate ? treatment.nextReviewDate.substring(0, 10) : ''
       );
     }
   }, [treatment]);
+
+  // Función para manejar el cambio de datos de medicamentos
+  const handleMedicationChange = (index, field, value) => {
+    const updatedMedications = [...medications];
+    const updatedMedication = { ...updatedMedications[index] };
+    updatedMedication[field] = value;
+    updatedMedications[index] = updatedMedication;
+    setMedications(updatedMedications);
+  };
+
+  // Funciones para agregar un nuevo medicamento y ejercicio en video
+  const addMedication = () => {
+    setMedications([
+      ...medications,
+      { name: '', dosage: '', frequency: '', startDate: '', endDate: '', imageUrl: '' },
+    ]);
+  };
+
+  const handleExerciseVideoChange = (index, field, value) => {
+    const updatedVideos = [...exerciseVideos];
+    const updatedVideo = { ...updatedVideos[index] };
+    updatedVideo[field] = value;
+    updatedVideos[index] = updatedVideo;
+    setExerciseVideos(updatedVideos);
+  };
+
+  const addExerciseVideo = () => {
+    setExerciseVideos([
+      ...exerciseVideos,
+      { title: '', description: '', url: '', duration: '' },
+    ]);
+  };
 
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -81,38 +115,10 @@ const EditTreatmentScreen = () => {
       alert('Tratamiento actualizado exitosamente');
       setTimeout(() => {
         navigate('/admin/treatments/list');
-      }, 2000); // Navegar de regreso a la lista de tratamientos
+      }, 2000);
     } catch (err) {
       console.error('Error al actualizar el tratamiento:', err);
     }
-  };
-
-  // Funciones para manejar medicamentos y ejercicios en video (similares al CreateTreatmentScreen)
-
-  const addMedication = () => {
-    setMedications([
-      ...medications,
-      { name: '', dosage: '', frequency: '', startDate: '', endDate: '', imageUrl: '' },
-    ]);
-  };
-
-  const handleMedicationChange = (index, field, value) => {
-    const updatedMedications = [...medications];
-    updatedMedications[index][field] = value;
-    setMedications(updatedMedications);
-  };
-
-  const addExerciseVideo = () => {
-    setExerciseVideos([
-      ...exerciseVideos,
-      { title: '', description: '', url: '', duration: '' },
-    ]);
-  };
-
-  const handleExerciseVideoChange = (index, field, value) => {
-    const updatedVideos = [...exerciseVideos];
-    updatedVideos[index][field] = value;
-    setExerciseVideos(updatedVideos);
   };
 
   return (
@@ -122,11 +128,9 @@ const EditTreatmentScreen = () => {
       {(errorTreatment || errorPatients || errorUpdate) && (
         <Message variant="danger">
           {errorTreatment?.data?.message ||
-            errorTreatment?.error ||
             errorPatients?.data?.message ||
-            errorPatients?.error ||
             errorUpdate?.data?.message ||
-            errorUpdate?.error}
+            'Error al cargar los datos.'}
         </Message>
       )}
       <Card className="p-4 shadow">
@@ -147,38 +151,25 @@ const EditTreatmentScreen = () => {
               >
                 {patientsData?.map((patient) => (
                   <option key={patient._id} value={patient._id}>
-                    {patient.user?.name || 'No disponible'} {patient.user?.lastName || ''}
+                    {patient.user?.name} {patient.user?.lastName}
                   </option>
                 ))}
               </Form.Control>
             )}
           </Form.Group>
 
-          {/* Nombre y descripción del tratamiento */}
+          {/* Nombre del tratamiento */}
           <Form.Group controlId="treatmentName" className="mb-3">
             <Form.Label>Nombre del Tratamiento</Form.Label>
             <Form.Control
               type="text"
-              placeholder="Ingrese el nombre del tratamiento"
               value={treatmentName}
               onChange={(e) => setTreatmentName(e.target.value)}
               required
             />
           </Form.Group>
 
-          <Form.Group controlId="description" className="mb-3">
-            <Form.Label>Descripción</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              placeholder="Ingrese una descripción del tratamiento"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-            />
-          </Form.Group>
-
-          {/* Seleccionar actividades */}
+          {/* Asignar actividades */}
           <Form.Group controlId="activities" className="mb-3">
             <Form.Label>Asignar Actividades</Form.Label>
             <ActivitySelector
@@ -187,62 +178,100 @@ const EditTreatmentScreen = () => {
             />
           </Form.Group>
 
-          {/* Agregar medicamentos */}
+          {/* Medicamentos */}
           <Form.Group controlId="medications" className="mb-3">
             <Form.Label>Medicamentos</Form.Label>
             <Button variant="secondary" onClick={addMedication} className="mb-2">
               Agregar Medicamento
             </Button>
-            {medications.map((medication, index) => (
+            {medications.map((med, index) => (
               <Card key={index} className="mb-3 p-3">
                 <Row>
                   <Col md={6}>
                     <Form.Control
                       type="text"
                       placeholder="Nombre del medicamento"
-                      value={medication.name}
+                      value={med.name}
                       onChange={(e) => handleMedicationChange(index, 'name', e.target.value)}
-                      className="mb-2"
-                      required
                     />
                   </Col>
                   <Col md={6}>
                     <Form.Control
                       type="text"
                       placeholder="Dosis"
-                      value={medication.dosage}
+                      value={med.dosage}
                       onChange={(e) => handleMedicationChange(index, 'dosage', e.target.value)}
-                      className="mb-2"
-                      required
                     />
                   </Col>
-                  <Col md={6}>
-                    <Form.Control
-                      type="text"
-                      placeholder="Frecuencia"
-                      value={medication.frequency}
-                      onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)}
-                      className="mb-2"
-                      required
-                    />
+                  <Col md={12}>
+                    <Form.Group controlId={`frequency-${index}`} className="mb-3">
+                      <Form.Label>Frecuencia</Form.Label>
+                      <div className="custom-radio-container">
+                        <div className="custom-radio">
+                          {/* Frecuencia Diaria */}
+                          <input
+                            type="radio"
+                            id={`radio-diaria-${index}`}
+                            name={`frequency-${index}`}
+                            value="Diaria"
+                            checked={med.frequency === 'Diaria'}
+                            onChange={(e) =>
+                              handleMedicationChange(index, 'frequency', e.target.value)
+                            }
+                            required
+                          />
+                          <label className="radio-label" htmlFor={`radio-diaria-${index}`}>
+                            <div className="radio-circle"></div>
+                            <span className="radio-text">Diaria</span>
+                          </label>
+
+                          {/* Frecuencia Semanal */}
+                          <input
+                            type="radio"
+                            id={`radio-semanal-${index}`}
+                            name={`frequency-${index}`}
+                            value="Semanal"
+                            checked={med.frequency === 'Semanal'}
+                            onChange={(e) =>
+                              handleMedicationChange(index, 'frequency', e.target.value)
+                            }
+                          />
+                          <label className="radio-label" htmlFor={`radio-semanal-${index}`}>
+                            <div className="radio-circle"></div>
+                            <span className="radio-text">Semanal</span>
+                          </label>
+
+                          {/* Frecuencia Mensual */}
+                          <input
+                            type="radio"
+                            id={`radio-mensual-${index}`}
+                            name={`frequency-${index}`}
+                            value="Mensual"
+                            checked={med.frequency === 'Mensual'}
+                            onChange={(e) =>
+                              handleMedicationChange(index, 'frequency', e.target.value)
+                            }
+                          />
+                          <label className="radio-label" htmlFor={`radio-mensual-${index}`}>
+                            <div className="radio-circle"></div>
+                            <span className="radio-text">Mensual</span>
+                          </label>
+                        </div>
+                      </div>
+                    </Form.Group>
                   </Col>
                   <Col md={6}>
                     <Form.Control
                       type="date"
-                      placeholder="Fecha de inicio"
-                      value={medication.startDate}
+                      value={med.startDate}
                       onChange={(e) => handleMedicationChange(index, 'startDate', e.target.value)}
-                      className="mb-2"
-                      required
                     />
                   </Col>
                   <Col md={6}>
                     <Form.Control
                       type="date"
-                      placeholder="Fecha de fin"
-                      value={medication.endDate}
+                      value={med.endDate}
                       onChange={(e) => handleMedicationChange(index, 'endDate', e.target.value)}
-                      className="mb-2"
                     />
                   </Col>
                 </Row>

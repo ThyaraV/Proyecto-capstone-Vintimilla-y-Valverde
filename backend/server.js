@@ -12,6 +12,7 @@ import doctorRoutes from "./routes/doctorRoutes.js";
 import patientRoutes from "./routes/patientRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import treatmentRoutes from "./routes/treatmentRoutes.js"
+import assignmentRoutes from "./routes/assignmentRoutes.js"
 
 import connectDB from "./config/db.js";
 
@@ -37,7 +38,11 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/chats", chatRoutes);
-app.use('/api/assignments', treatmentRoutes);
+
+// Montar las rutas de tratamientos y asignaciones en sus respectivas rutas
+app.use('/api/treatments', treatmentRoutes);
+app.use('/api/assignments', assignmentRoutes); // Montar el nuevo router de asignaciones
+
 
 // Configurar ruta para archivos estáticos (subidas)
 const __dirname = path.resolve();

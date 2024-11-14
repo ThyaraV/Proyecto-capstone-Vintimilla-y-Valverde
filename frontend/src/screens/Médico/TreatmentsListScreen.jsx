@@ -17,6 +17,7 @@ const TreatmentsListScreen = () => {
   // Función para manejar la selección de un tratamiento
   const handleTreatmentSelect = (treatment) => {
     setSelectedTreatment(treatment);
+    console.log('Tratamiento seleccionado:', treatment); 
   };
 
   return (
