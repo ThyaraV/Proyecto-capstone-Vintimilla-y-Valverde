@@ -9,5 +9,5 @@ export const patientApiSlice = apiSlice.injectEndpoints({
     }),
   }),
 });
-
+ 
 export const { useGetPatientsQuery } = patientApiSlice;
