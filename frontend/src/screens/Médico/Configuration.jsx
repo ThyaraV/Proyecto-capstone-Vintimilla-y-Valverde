@@ -18,7 +18,8 @@ const Configuration = () => {
     if (event.target.value === 'crear') {
       navigate('/admin/treatments');
     } else if (event.target.value === 'visualizar') {
-      navigate('/admin/treatments/list');
+      navigate('/admin/UsersActivities');
+        /*/admin/treatments/list'*/
     }
   };
 

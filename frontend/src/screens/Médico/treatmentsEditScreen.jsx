@@ -8,12 +8,14 @@ import { useGetDoctorWithPatientsQuery } from '../../slices/doctorApiSlice';
 import Loader from '../../components/Loader';
 import Message from '../../components/Message';
 import ActivitySelector from '../../components/ActivitySelector';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import '../../assets/styles/CreateTreatmentScreen.css';
 
 const EditTreatmentScreen = () => {
   const { treatmentId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { patientId } = location.state || {}; // Obtener patientId del estado de navegación
 
   // Obtener detalles del tratamiento
   const { data: treatment, isLoading: loadingTreatment, error: errorTreatment } =
@@ -114,7 +116,11 @@ const EditTreatmentScreen = () => {
       await updateTreatment({ treatmentId, updatedData }).unwrap();
       alert('Tratamiento actualizado exitosamente');
       setTimeout(() => {
-        navigate('/admin/treatments/list');
+        if (patientId) {
+          navigate(`/admin/${patientId}/UserActivity`); // Redirigir a la pantalla específica del paciente
+        } else {
+          navigate('/admin/treatments/list'); // Redirigir a la lista general si no se proporciona patientId
+        }
       }, 2000);
     } catch (err) {
       console.error('Error al actualizar el tratamiento:', err);
@@ -165,6 +171,17 @@ const EditTreatmentScreen = () => {
               type="text"
               value={treatmentName}
               onChange={(e) => setTreatmentName(e.target.value)}
+              required
+            />
+          </Form.Group>
+
+          {/* Descripción */}
+          <Form.Group controlId="description" className="mb-3">
+            <Form.Label>Descripción</Form.Label>
+            <Form.Control
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               required
             />
           </Form.Group>

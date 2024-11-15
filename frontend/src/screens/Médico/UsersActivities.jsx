@@ -53,7 +53,7 @@ const HomeScreenMedico = () => {
                 <p className="patient-role">{patient.user?.role || "Paciente"}</p>
               </div>
 
-              {/* Botón para Ver Reporte */}
+              {/* Botón para Ver Más */}
               <Link
                 to={`/admin/${patient._id}/UserActivity`}
                 className="report-button"

@@ -73,6 +73,12 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
     getDueMedications: builder.query({
       query: () => '/api/treatments/due-medications',
       providesTags: ['Medications'],
+    }),
+    getTreatmentsByPatient: builder.query({
+      query: (patientId) => `/api/treatments/patient/${patientId}`,
+      providesTags: (result, error, patientId) => [
+        { type: 'TreatmentsByPatient', id: patientId },
+      ],
     }),      
   }),
 });
@@ -90,6 +96,7 @@ export const {
   useGetMyTreatmentsQuery,
   useGetTreatmentByIdQuery,
   useUpdateTreatmentMutation,
+  useGetTreatmentsByPatientQuery,
 
   // **Medicamentos Hooks**
   useGetMyMedicationsQuery,

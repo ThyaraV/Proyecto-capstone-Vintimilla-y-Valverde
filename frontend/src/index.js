@@ -134,7 +134,7 @@ const router = createBrowserRouter(
         <Route path="/admin/user/:id/edit" element={<UserEditScreen />} />
         <Route path="/admin/treatments" element={<TreatmentsScreen />} />
         <Route path="/admin/treatments/:treatmentId/edit" element={<EditTreatmentScreen />} />
-        <Route path="/admin/treatments/list" element={<TreatmentsListScreen />} />
+        <Route path="/admin/:patientId/UserActivity" element={<TreatmentsListScreen />} />
         <Route path="/admin/activities" element={<ActivitiesListScreen />} />
         <Route path="/admin/UsersActivities" element={<UsersActivities />} />
         <Route path="/admin/:patientId/UserActivity" element={<UserActivity />} />

@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { useGetMyTreatmentsQuery } from '../../slices/treatmentSlice';
+import { useParams, Link } from 'react-router-dom';
+import { useGetTreatmentsByPatientQuery } from '../../slices/treatmentSlice';
 import Loader from '../../components/Loader';
 import Message from '../../components/Message';
 import { ListGroup, Card, Row, Col, Button } from 'react-bootstrap';
 import { FaEdit } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
 import '../../assets/styles/TreatmentsListScreen.css'; // Opcional: para estilos personalizados
 
 const TreatmentsListScreen = () => {
-  // Hook para obtener los tratamientos del médico
-  const { data: treatments, isLoading, error } = useGetMyTreatmentsQuery();
+  // Obtener patientId de los parámetros de la ruta
+  const { patientId } = useParams();
+
+  // Usar la nueva consulta para obtener tratamientos por paciente
+  const { data: treatments, isLoading, error } = useGetTreatmentsByPatientQuery(patientId);
 
   // Estado para el tratamiento seleccionado
   const [selectedTreatment, setSelectedTreatment] = useState(null);
@@ -22,14 +25,14 @@ const TreatmentsListScreen = () => {
 
   return (
     <div className="treatments-list-container p-4">
-      <h1 className="mb-4 text-center">Mis Tratamientos</h1>
+      <h1 className="mb-4 text-center">Tratamientos del Paciente</h1>
       {isLoading ? (
         <Loader />
       ) : error ? (
         <Message variant="danger">
           {error?.data?.message || error.error || 'Error al cargar los tratamientos.'}
         </Message>
-      ) : (
+      ) : treatments && treatments.length > 0 ? (
         <Row>
           {/* Lista de Tratamientos */}
           <Col md={4}>
@@ -60,6 +63,7 @@ const TreatmentsListScreen = () => {
                       to={`/admin/treatments/${selectedTreatment._id}/edit`}
                       variant="warning"
                       className="d-flex align-items-center"
+                      state={{ patientId }} // Pasar el patientId mediante el estado de navegación
                     >
                       <FaEdit className="me-2" />
                       Editar
@@ -116,6 +120,8 @@ const TreatmentsListScreen = () => {
             )}
           </Col>
         </Row>
+      ) : (
+        <p className="no-treatments-message">Este paciente no tiene tratamientos asignados.</p>
       )}
     </div>
   );

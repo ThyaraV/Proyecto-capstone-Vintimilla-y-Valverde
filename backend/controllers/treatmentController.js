@@ -497,7 +497,39 @@ const getDueMedications = asyncHandler(async (req, res) => {
   res.status(200).json(dueMedications);
 });
 
+// Nuevo controlador para obtener tratamientos por paciente
+// @desc    Obtener tratamientos de un paciente específico
+// @route   GET /api/treatments/patient/:patientId
+// @access  Privado/Doctor
+const getTreatmentsByPatient = asyncHandler(async (req, res) => {
+  const { patientId } = req.params;
+
+  // Verificar que el paciente existe
+  const patient = await Patient.findById(patientId);
+  if (!patient) {
+    res.status(404);
+    throw new Error('Paciente no encontrado');
+  }
+
+  // Obtener tratamientos que incluyen al paciente
+  const treatments = await Treatment.find({ patients: patientId })
+    .populate({
+      path: 'patients',
+      populate: { path: 'user', select: 'name lastName email' },
+    })
+    .populate('activities')
+    .populate({
+      path: 'doctor',
+      populate: { path: 'user', select: 'name lastName email' },
+    });
+
+  res.status(200).json(treatments);
+});
+
+
+
 export { assignActivityToPatient, updateAssignmentResults, 
   getAssignedActivities,unassignActivityFromPatient,getMyAssignedActivities, 
   createTreatment, getMyTreatments, 
-  getTreatmentById, updateTreatment, getMyMedications, getDueMedications};
+  getTreatmentById, updateTreatment, getMyMedications, getDueMedications,
+getTreatmentsByPatient};

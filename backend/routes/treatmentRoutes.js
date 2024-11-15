@@ -8,6 +8,7 @@ import {
   updateTreatment,
   getMyMedications,
   getDueMedications,
+  getTreatmentsByPatient
 } from '../controllers/treatmentController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -32,6 +33,8 @@ router
   .route('/:treatmentId')
   .get(protect, getTreatmentById)
   .put(protect, admin, updateTreatment);
+
+router.route('/patient/:patientId').get(protect, admin, getTreatmentsByPatient);
 
 
 export default router;
