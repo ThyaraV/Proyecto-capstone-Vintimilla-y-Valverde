@@ -16,7 +16,19 @@ const App = () => {
         </Container>
       </main>
       <Footer />
-      <ToastContainer />
+      <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+          style={{ zIndex: 9999 }} // Asegura que los toasts estén por encima
+        />
     </>
   );
 };

@@ -103,6 +103,7 @@ const Header = () => {
               {/* Opciones del administrador */}
               {userInfo && userInfo.isAdmin && (
                 <NavDropdown title="Admin" id="adminmenu">
+                  <NavDropdown.Item onClick={() => navigateTo('/activities')}>Lista de Actividades</NavDropdown.Item>
                   <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist')}>Ayuda</NavDropdown.Item>
                   <NavDropdown.Item onClick={() => navigateTo('/admin/productlist')}>Configuración</NavDropdown.Item>
                   <NavDropdown.Item onClick={() => navigateTo('/admin/userlist')}>Usuarios</NavDropdown.Item>

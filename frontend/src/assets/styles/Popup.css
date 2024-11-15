@@ -1,0 +1,98 @@
+.popup {
+    background-color: #e0e4ff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-align: center;
+  }
+  
+  .mood-meter {
+    position: relative;
+    width: 200px;
+    height: 100px;
+    margin: 20px auto;
+    background: linear-gradient(to right, red, orange, yellow, lightgreen, green);
+    border-radius: 100px 100px 0 0;
+  }
+  
+  .arrow {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 20px solid black;
+    transform-origin: bottom;
+    transition: transform 0.5s ease;
+  }
+  
+  .mood-emoji {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    transform-origin: bottom center;
+    transition: color 0.3s ease;
+  }
+  /* src/components/Popup.css */
+
+.popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Fondo semi-transparente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Asegura que esté por encima de otros elementos */
+  }
+  
+  .popup-content {
+    background-color: #fff;
+    padding: 20px 30px;
+    border-radius: 8px;
+    text-align: center;
+    position: relative;
+    width: 80%;
+    max-width: 400px;
+  }
+  
+  .popup h1 {
+    margin-bottom: 20px;
+  }
+  
+  .mood-meter {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .mood-button {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    margin: 10px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  
+  .mood-button:hover {
+    transform: scale(1.2);
+  }
+  
+  .arrow {
+    width: 0; 
+    height: 0; 
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 20px solid #000;
+    margin-bottom: 20px;
+    transition: transform 0.3s ease;
+  }
+  
