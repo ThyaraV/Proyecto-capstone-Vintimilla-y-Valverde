@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Container, ListGroup, Row, Col } from 'react-bootstrap';
+import { Container, ListGroup, Row, Col } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useGetPatientsQuery } from '../slices/patientApiSlice';
+import '../assets/styles/MocaStart.css';
+import Image1a from '../images/infopaciente.png';
+import Image2a from '../images/infopaciente.png';
+import Image3a from '../images/infopaciente.png';
 
 const MocaScreen = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const navigate = useNavigate();
-  const { data: patients = [], isLoading, error } = useGetPatientsQuery(); // Usamos useGetPatientsQuery directamente
+  const { data: patients = [], isLoading, error } = useGetPatientsQuery();
   const [selectedPatient, setSelectedPatient] = useState(null);
 
   useEffect(() => {
     if (!userInfo?.isAdmin) {
-      navigate('/'); // Redirigir si no es admin
+      navigate('/');
     }
   }, [userInfo, navigate]);
 
@@ -20,11 +24,22 @@ const MocaScreen = () => {
     setSelectedPatient(patient);
   };
 
+  const handleOptionChange = (option) => {
+    if (option === 'registrar') {
+      navigate(`/moca/register/${selectedPatient?._id}`);
+    } else if (option === 'historico') {
+      navigate(`/moca/history/${selectedPatient?._id}`);
+    } else if (option === 'iniciar') {
+      navigate(`/moca/start/${selectedPatient?._id}`);
+    }
+  };
+
   return (
-    <Container>
-      <h1>Evaluación Cognitiva Montreal (MoCA)</h1>
-      <Row className="my-3">
-        <Col md={4}>
+    <Container className="moca-card-wrapper">
+      <h1 className="moca-title">Evaluación Cognitiva Montreal (MoCA)</h1>
+      <Row className="moca-row">
+        {/* Columna izquierda: Lista de Pacientes */}
+        <Col md={4} className="moca-patient-list">
           <h4>Lista de Pacientes</h4>
           {isLoading ? (
             <p>Cargando pacientes...</p>
@@ -37,6 +52,7 @@ const MocaScreen = () => {
                   key={patient._id}
                   active={selectedPatient?._id === patient._id}
                   onClick={() => handleSelectPatient(patient)}
+                  className="patient-item"
                 >
                   {patient.user?.name || "Paciente sin nombre"}
                 </ListGroup.Item>
@@ -44,31 +60,34 @@ const MocaScreen = () => {
             </ListGroup>
           )}
         </Col>
-        <Col md={8}>
-          <h4>Opciones MoCA</h4>
-          <Button
-            variant="primary"
-            onClick={() => navigate(`/moca/register/${selectedPatient?._id}`)}
-            disabled={!selectedPatient}
-            className="me-2"
-          >
-            Registrar Resultados
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => navigate(`/moca/history/${selectedPatient?._id}`)}
-            disabled={!selectedPatient}
-            className="me-2"
-          >
-            Consultar Histórico
-          </Button>
-          <Button
-            variant="success"
-            onClick={() => navigate(`/moca/start/${selectedPatient?._id}`)}
-            disabled={!selectedPatient}
-          >
-            Iniciar Prueba MoCA
-          </Button>
+
+        {/* Columna derecha: Botones de Opciones */}
+        <Col md={8} className="moca-options-container">
+          <div className="button-container">
+            <div className="config-card" onClick={() => handleOptionChange('registrar')}>
+              <span className="config-card-overlay"></span>
+              <div className="config-card-content">
+                <img src={Image1a} alt="Registrar" className="config-card-image" />
+                <div>Registrar Resultados</div>
+              </div>
+            </div>
+
+            <div className="config-card" onClick={() => handleOptionChange('historico')}>
+              <span className="config-card-overlay"></span>
+              <div className="config-card-content">
+                <img src={Image2a} alt="Histórico" className="config-card-image" />
+                <div>Consultar Histórico</div>
+              </div>
+            </div>
+
+            <div className="config-card" onClick={() => handleOptionChange('iniciar')}>
+              <span className="config-card-overlay"></span>
+              <div className="config-card-content">
+                <img src={Image3a} alt="Iniciar" className="config-card-image" />
+                <div>Iniciar Prueba MoCA</div>
+              </div>
+            </div>
+          </div>
         </Col>
       </Row>
     </Container>
