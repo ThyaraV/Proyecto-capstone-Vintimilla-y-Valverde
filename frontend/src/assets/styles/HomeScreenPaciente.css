@@ -1,179 +1,101 @@
-/* From Uiverse.io by elijahgummer */
-ul {
-    position: relative;
-    display: flex;
-    gap: 25px;
-  }
-  
-  ul li {
-    position: relative;
-    list-style: none;
-    width: 60px;
-    height: 60px;
-    background: #fcb64c;
-    border-radius: 60px;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    transition: 0.5s;
-  }
-  
-  ul li:hover {
-    width: 180px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0);
-  }
-  
-  ul li::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 60px;
-    background: linear-gradient(45deg, var(--i), var(--j));
-    opacity: 0;
-    transition: 0.5s;
-  }
-  
-  ul li:hover::before {
-    opacity: 1;
-  }
-  
-  ul li::after {
-    content: "";
-    position: absolute;
-    top: 10px;
-    width: 100%;
-    height: 100%;
-    border-radius: 60px;
-    background: linear-gradient(45deg, var(--i), var(--j));
-    transition: 0.5s;
-    filter: blur(15px);
-    z-index: -1;
-    opacity: 0;
-  }
-  
-  ul li:hover::after {
-    opacity: 0.5;
-  }
-  
-  ul li .icon {
-    color: #777;
-    font-size: 1.75em;
-    transition: 0.5s;
-    transition-delay: 0.25s;
-  }
-  
-  ul li:hover .icon {
-    transform: scale(0);
-    color: #fff;
-    transition-delay: 0s;
-  }
-  
-  ul li span {
-    position: absolute;
-  }
-  
-  ul li .title {
-    color: #fff;
-    font-size: 1.1em;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    transform: scale(0);
-    transition: 0.5s;
-    transition-delay: 0s;
-  }
-  
-  ul li:hover .title {
-    transform: scale(1);
-    transition-delay: 0.25s;
-  }
-  
-  /* Estilos adicionales para posicionar el ícono de mensajes en la esquina inferior derecha */
-  .home-screen-container {
-    position: relative;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .message-icon-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-  }
-  
-  /* src/assets/styles/HomeScreenPaciente.css */
+/* src/assets/styles/HomeScreenPaciente.css */
 
+/* Contenedor principal */
 .home-screen-container {
   padding: 2rem;
   position: relative;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f5f5;
+  min-height: 100vh;
 }
 
-.calendar-container {
+/* Contenido principal: Agenda y Calendario */
+.main-content {
+  display: flex;
+  gap: 2rem;
   margin-top: 2rem;
+  justify-content: space-between; /* Asegura que el contenido se distribuya con espacio */
+}
+
+/* Agenda */
+.agenda-container {
+  flex: 1;
+  max-width: 100%; /* Limita el ancho máximo de la agenda */
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Calendario */
+.calendar-container {
+  flex: 1;
+  max-width: 60%; /* Define un ancho mayor para el calendario */
+  display: flex;
+  justify-content: flex-end; /* Alinea el calendario hacia la derecha */
+}
+
+.custom-calendar {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px; /* Define un ancho máximo para el calendario */
+}
+
+.custom-calendar .react-calendar__tile--active {
+  background: #2F80ED;
+  color: white;
+}
+
+.custom-calendar .react-calendar__tile--now {
+  background: #56CCF2;
+  color: white;
 }
 
 .dot {
-  height: 6px;
-  width: 6px;
+  height: 8px;
+  width: 8px;
   background-color: #ff6347;
   border-radius: 50%;
-  display: block;
-  margin: 0 auto;
-  margin-top: 2px;
+  margin: 2px auto 0;
 }
 
-.day-details-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: none;
-  justify-content: center;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.5);
+/* Agenda Styles */
+.agenda-container h2 {
+  margin-bottom: 1rem;
+  color: #2F80ED;
 }
 
-.day-details-modal.open {
-  display: flex;
+.selected-date {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #555555;
 }
 
-.day-details-content {
-  background: #fff;
-  padding: 2rem;
-  border-radius: 8px;
-  width: 400px;
-  max-width: 90%;
-}
-
-.day-details-content ul {
+.medications-list ul {
   list-style-type: none;
   padding: 0;
 }
 
-.day-details-content li {
+.medications-list li {
+  background-color: #e6f7ff;
+  padding: 0.75rem 1rem;
   margin-bottom: 0.5rem;
+  border-radius: 5px;
+  transition: background-color 0.3s;
 }
 
-.close-button {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  background-color: #2F80ED;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.medications-list li:hover {
+  background-color: #d0ebff;
 }
 
-.close-button:hover {
-  background-color: #1c5bbf;
+.medications-list p {
+  color: #888888;
 }
 
-.message-icon-container {
+/* Icono de mensajes */
+ul.message-icon-container {
   position: fixed;
   bottom: 20px;
   right: 20px;
@@ -181,7 +103,7 @@ ul {
   padding: 0;
 }
 
-.message-icon-container li {
+ul.message-icon-container li {
   background: linear-gradient(var(--i), var(--j));
   border-radius: 50%;
   width: 60px;
@@ -190,126 +112,123 @@ ul {
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, width 0.5s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.message-icon-container li:hover {
+ul.message-icon-container li:hover {
   transform: scale(1.1);
 }
 
-.message-icon-container .icon {
+ul.message-icon-container .icon {
   font-size: 1.5rem;
+  z-index: 2;
 }
 
-.message-icon-container .title {
-  display: none;
+ul.message-icon-container .title {
+  position: absolute;
+  right: -100px;
+  background: #2F80ED;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  white-space: nowrap;
+  transition: right 0.3s ease;
+  font-size: 1rem;
+  z-index: 1;
 }
 
-.home-screen-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 2rem;
-    font-family: Arial, sans-serif;
-    color: #333;
+ul.message-icon-container li:hover .title {
+  right: 70px;
 }
 
-.calendar-container {
-    margin-top: 1rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-}
-
-h1 {
-    font-size: 2rem;
-    color: #2F80ED;
-}
-
-.dot {
-    height: 8px;
-    width: 8px;
-    background-color: #ff6347;
-    border-radius: 50%;
-    margin: 5px auto 0;
-}
-
-.day-details-modal.open {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-}
-
-.day-details-content {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    width: 80%;
-    max-width: 400px;
-    text-align: center;
-}
-
-.day-details-content h2 {
-    font-size: 1.5rem;
-    color: #2F80ED;
-}
-
-.day-details-content ul {
-    list-style-type: none;
-    padding: 0;
-    font-size: 1rem;
-}
-
-.close-button {
-    background-color: #2F80ED;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 1rem;
-}
-
-.close-button:hover {
-    background-color: #1d4f91;
-}
-.home-screen-container {
+/* Popup de Estado de Ánimo */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  justify-content: center; /* Alinear verticalmente en el centro */
-  height: 80vh; /* Ajustar la altura para centrar */
-  margin-top: 2rem;
-  font-family: Arial, sans-serif;
-  color: #333;
+  z-index: 1000;
 }
 
-h1 {
-  font-size: 2.5rem;
-  color: #000000;
-  margin-bottom: 2rem; /* Aumentar el margen para separar del calendario */
-}
-
-.calendar-container {
-  margin-top: 1rem;
+.popup-content {
+  background: #fff;
+  padding: 2rem;
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
-  padding: 1rem;
-  background-color: white;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
 }
 
-.dot {
-  height: 8px;
-  width: 8px;
-  background-color: #ff6347;
+.popup-content h2 {
+  margin-bottom: 1rem;
+  color: #2F80ED;
+}
+
+.moods-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.mood-item {
+  width: 60px;
+  height: 60px;
+  background-color: #f0f0f0;
   border-radius: 50%;
-  margin: 5px auto 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.mood-item:hover {
+  transform: scale(1.1);
+  background-color: #e0e0e0;
+}
+
+/* Responsividad */
+@media (max-width: 1024px) {
+  .main-content {
+    flex-direction: row;
+  }
+
+  .agenda-container {
+    max-width: 35%;
+  }
+
+  .calendar-container {
+    max-width: 65%;
+  }
+
+  .custom-calendar {
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    flex-direction: column;
+  }
+
+  .agenda-container,
+  .calendar-container {
+    max-width: 100%;
+  }
+
+  .custom-calendar {
+    max-width: 100%;
+  }
+
+  ul.message-icon-container li:hover .title {
+    right: 70px;
+  }
 }

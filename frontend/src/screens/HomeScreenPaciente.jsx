@@ -4,13 +4,13 @@ import React, { useEffect, useState } from 'react';
 import '../assets/styles/HomeScreenPaciente.css';
 import { useNavigate } from 'react-router-dom';
 import { useGetDueMedicationsQuery, useGetMyMedicationsQuery } from '../slices/treatmentSlice.js';
-import MedicationPopup from '../components/MedicationPopup.jsx';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { format, addDays } from 'date-fns';
 import axios from 'axios';
 import Popup from '../components/Popup.jsx';
-import MedicationReminder from '../components/FloatingMessage.jsx'; // Importar el nuevo componente
+import MedicationReminder from '../components/FloatingMessage.jsx';
+import MedicationPopup from '../components/MedicationPopup.jsx'; // Asegúrate de importar correctamente
 
 const HomeScreenPaciente = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const HomeScreenPaciente = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [medicationsForPopup, setMedicationsForPopup] = useState([]);
   const [calendarEvents, setCalendarEvents] = useState({});
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [medsForSelectedDate, setMedsForSelectedDate] = useState([]);
 
   // Estados para el Popup de Estado de Ánimo
@@ -55,6 +55,13 @@ const HomeScreenPaciente = () => {
 
   // Log del estado para depuración
   console.log('isMoodPopupOpen:', isMoodPopupOpen);
+
+  // Actualizar la agenda cuando se cambia la fecha seleccionada
+  useEffect(() => {
+    const dateKey = format(selectedDate, 'yyyy-MM-dd');
+    const meds = calendarEvents[dateKey] || [];
+    setMedsForSelectedDate(meds);
+  }, [selectedDate, calendarEvents]);
 
   // Mostrar el mensaje de recordatorio de medicamentos después de cerrar el popup de estado de ánimo
   useEffect(() => {
@@ -128,17 +135,20 @@ const HomeScreenPaciente = () => {
   }, [allMedications]);
 
   const handleDateClick = (date) => {
-    const dateKey = format(date, 'yyyy-MM-dd');
-    const meds = calendarEvents[dateKey] || [];
-    console.log(`Selected Date: ${dateKey}, Medications:`, meds);
     setSelectedDate(date);
-    setMedsForSelectedDate(meds);
   };
 
   // Manejar el clic en el mensaje de recordatorio
   const handleMedicationReminderClick = () => {
-    setMedicationsForPopup(dueMedications);
-    setIsPopupOpen(true);
+    console.log("Se hizo clic en el mensaje flotante de medicamentos.");
+    if (dueMedications) {
+      console.log("Medications due:", dueMedications);
+      setMedicationsForPopup(dueMedications);
+      setIsPopupOpen(true);
+      console.log("Popup de Medicamentos abierto");
+    } else {
+      console.log("No hay medicamentos para mostrar en el popup.");
+    }
   };
 
   return (
@@ -170,19 +180,44 @@ const HomeScreenPaciente = () => {
       )}
 
       {/* Pop-up de Medicamentos */}
+      {console.log("isPopupOpen:", isPopupOpen)}
+      {console.log("medicationsForPopup:", medicationsForPopup)}
       <MedicationPopup
         isOpen={isPopupOpen}
         onRequestClose={() => setIsPopupOpen(false)}
         medications={medicationsForPopup}
       />
 
-      {/* Calendario Interactivo */}
+      {/* Calendario y Agenda */}
       {!isMoodPopupOpen && (
-        <>
-          <h1>Bienvenido a tu HomeScreen</h1>
+        <div className="main-content">
+          {/* Agenda */}
+          <div className="agenda-container">
+            <h2>Agenda</h2>
+            <div className="selected-date">
+              {format(selectedDate, 'dd MMMM yyyy')}
+            </div>
+            <div className="medications-list">
+              {medsForSelectedDate.length > 0 ? (
+                <ul>
+                  {medsForSelectedDate.map((med, index) => (
+                    <li key={index}>
+                      <strong>{med.name}</strong> - {med.dosage}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No tienes medicamentos programados para este día.</p>
+              )}
+            </div>
+            {/* Puedes agregar más elementos a la agenda aquí, como tareas pendientes */}
+          </div>
+
+          {/* Calendario */}
           <div className="calendar-container">
             <Calendar
               onClickDay={handleDateClick}
+              value={selectedDate}
               tileContent={({ date, view }) => {
                 if (view === 'month') {
                   const dateKey = format(date, 'yyyy-MM-dd');
@@ -192,39 +227,19 @@ const HomeScreenPaciente = () => {
                 }
                 return null;
               }}
+              className="custom-calendar"
             />
           </div>
-
-          {/* Pop-up de Detalles del Día Seleccionado */}
-          {selectedDate && (
-            <div className="day-details-modal open">
-              <div className="day-details-content">
-                <h2>Medicamentos para {format(selectedDate, 'dd/MM/yyyy')}</h2>
-                {medsForSelectedDate.length > 0 ? (
-                  <ul>
-                    {medsForSelectedDate.map((med, index) => (
-                      <li key={index}>
-                        <strong>{med.name}</strong> - {med.dosage}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No tienes medicamentos programados para este día.</p>
-                )}
-                <button onClick={() => setSelectedDate(null)} className="close-button">Cerrar</button>
-              </div>
-            </div>
-          )}
-
-          {/* Icono de mensajes */}
-          <ul className="message-icon-container">
-            <li style={{ "--i": "#56CCF2", "--j": "#2F80ED" }} onClick={() => navigate('/chat')}>
-              <span className="icon">💬</span>
-              <span className="title">Mensajes</span>
-            </li>
-          </ul>
-        </>
+        </div>
       )}
+
+      {/* Icono de mensajes */}
+      <ul className="message-icon-container">
+        <li style={{ "--i": "#56CCF2", "--j": "#2F80ED" }} onClick={() => navigate('/chat')}>
+          <span className="icon">💬</span>
+          <span className="title">Mensajes</span>
+        </li>
+      </ul>
     </div>
   );
 };
