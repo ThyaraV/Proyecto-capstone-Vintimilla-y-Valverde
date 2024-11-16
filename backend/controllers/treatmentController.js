@@ -243,16 +243,6 @@ const createTreatment = asyncHandler(async (req, res) => {
         patient.treatments = patient.treatments || [];
         patient.treatments.push(treatment._id);
 
-        // Asignar actividades al paciente (si tienes un modelo de asignaciones, puedes crearlas aquí)
-        // Por ejemplo, si usas un modelo Assignment:
-        // for (const activityId of activities) {
-        //   await Assignment.create({
-        //     patient: patientId,
-        //     doctor: doctor._id,
-        //     activity: activityId,
-        //   });
-        // }
-
         await patient.save();
       }
     }
