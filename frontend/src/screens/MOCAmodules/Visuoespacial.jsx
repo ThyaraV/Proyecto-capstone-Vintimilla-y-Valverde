@@ -9,17 +9,18 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
 
   // Función para manejar el puntaje y avanzar al siguiente módulo
   const handleNext = () => {
+    // Calcular el puntaje total del módulo sumando los puntajes de las actividades
     const totalScore = (diagramScore || 0) + (cubeScore || 0) + (clockScore || 0);
 
     // Enviar puntajes individuales y puntaje total al MocaStartSelf.jsx
-    onComplete({
-      totalScore,
-      individualScores: {
+    onComplete(
+      totalScore, // Puntaje total del módulo
+      {
         diagram: diagramScore,
         cube: cubeScore,
         clock: clockScore,
-      },
-    });
+      }
+    );
   };
 
   return (
@@ -28,8 +29,7 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
       <Row className="justify-content-center mt-3">
         <Col md={8} className="d-flex flex-column">
           <p className="instructions-text">
-            Pida al paciente que trace el diagrama en orden | Seguimiento visual
-            | Precisión
+            Pida al paciente que trace el diagrama en orden | Seguimiento visual | Precisión
           </p>
           <Button
             variant={diagramScore === 1 ? "success" : "outline-success"}

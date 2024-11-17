@@ -36,8 +36,8 @@ const MocaStartSelf = () => {
   const [startTime, setStartTime] = useState(null);
   const [currentScore, setCurrentScore] = useState(0);
   const [individualScores, setIndividualScores] = useState({});
+  const [moduleScores, setModuleScores] = useState({});
 
-  // Inicializar el temporizador
   useEffect(() => {
     let interval;
     if (testStarted) {
@@ -46,7 +46,6 @@ const MocaStartSelf = () => {
     return () => clearInterval(interval);
   }, [testStarted]);
 
-  // Convertir segundos a minutos y segundos
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -58,23 +57,28 @@ const MocaStartSelf = () => {
     setStartTime(new Date().toLocaleString());
   };
 
-  // Manejar la finalización del módulo
   const handleCompleteModule = (moduleId, moduleScore, activityScores) => {
-    // Actualizar el puntaje total y los puntajes individuales
-    updateScore(moduleScore);
-    setCurrentScore((prevScore) => prevScore + moduleScore);
+    setModuleScores((prevModuleScores) => ({
+      ...prevModuleScores,
+      [moduleId]: moduleScore,
+    }));
 
-    // Guardar los puntajes por actividad para el módulo actual
+    const newCurrentScore = Object.values({
+      ...moduleScores,
+      [moduleId]: moduleScore,
+    }).reduce((sum, score) => sum + score, 0);
+
+    setCurrentScore(newCurrentScore);
+
     setIndividualScores((prevScores) => ({
       ...prevScores,
       [MODULES[moduleId].name]: { ...activityScores, total: moduleScore },
     }));
 
-    // Avanzar al siguiente módulo
     if (currentModuleIndex < MODULES.length - 1) {
       setCurrentModuleIndex(currentModuleIndex + 1);
     } else {
-      alert(`¡Prueba completada! Puntaje final: ${totalScore}`);
+      alert(`¡Prueba completada! Puntaje final: ${newCurrentScore}`);
     }
   };
 
@@ -84,7 +88,6 @@ const MocaStartSelf = () => {
     }
   };
 
-  // Obtener el componente del módulo actual
   const CurrentModuleComponent = MODULES[currentModuleIndex].component;
 
   return (
@@ -125,26 +128,24 @@ const MocaStartSelf = () => {
 
           <hr className="my-4" />
 
-          {/* Barra de progreso y contador */}
-<div className="progress-container">
-  <h5>Tiempo transcurrido: {formatTime(timeElapsed)}</h5>
-  <h5>Puntaje Actual: {currentScore}</h5>
-  <ProgressBar
-    now={(currentModuleIndex / MODULES.length) * 100}
-    label={`${currentModuleIndex + 1} / ${MODULES.length}`}
-  />
-  <div className="module-status">
-    {MODULES.map((module, index) => (
-      <span
-        key={module.id}
-        className={`module-dot ${
-          index <= currentModuleIndex ? "completed" : "pending"
-        }`}
-      ></span>
-    ))}
-  </div>
-</div>
-
+          <div className="progress-container">
+            <h5>Tiempo transcurrido: {formatTime(timeElapsed)}</h5>
+            <h5>Puntaje Actual: {currentScore}</h5>
+            <ProgressBar
+              now={(currentModuleIndex / MODULES.length) * 100}
+              label={`${currentModuleIndex + 1} / ${MODULES.length}`}
+            />
+            <div className="module-status">
+              {MODULES.map((module, index) => (
+                <span
+                  key={module.id}
+                  className={`module-dot ${
+                    index <= currentModuleIndex ? "completed" : "pending"
+                  }`}
+                ></span>
+              ))}
+            </div>
+          </div>
 
           {/* Mostrar los puntajes individuales para depuración */}
           <pre className="mt-4">
