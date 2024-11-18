@@ -1,3 +1,5 @@
+// TreatmentsListScreen.jsx
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useGetTreatmentsByPatientQuery } from '../../slices/treatmentSlice';
@@ -10,9 +12,11 @@ import '../../assets/styles/TreatmentsListScreen.css'; // Opcional: para estilos
 const TreatmentsListScreen = () => {
   // Obtener patientId de los parámetros de la ruta
   const { patientId } = useParams();
+  console.log('patientId:', patientId);
 
-  // Usar la nueva consulta para obtener tratamientos por paciente
+  // Usar la consulta para obtener tratamientos por paciente
   const { data: treatments, isLoading, error } = useGetTreatmentsByPatientQuery(patientId);
+  console.log('Tratamientos obtenidos:', treatments);
 
   // Estado para el tratamiento seleccionado
   const [selectedTreatment, setSelectedTreatment] = useState(null);
@@ -20,7 +24,7 @@ const TreatmentsListScreen = () => {
   // Función para manejar la selección de un tratamiento
   const handleTreatmentSelect = (treatment) => {
     setSelectedTreatment(treatment);
-    console.log('Tratamiento seleccionado:', treatment); 
+    console.log('Tratamiento seleccionado:', treatment);
   };
 
   return (
@@ -77,15 +81,15 @@ const TreatmentsListScreen = () => {
                     {selectedTreatment.patients
                       .map(
                         (patient) =>
-                          `${patient.user?.name || 'No disponible'} ${
-                            patient.user?.lastName || ''
+                          `${patient.user.name || 'No disponible'} ${
+                            patient.user.lastName || ''
                           }`
                       )
                       .join(', ')}
                   </Card.Text>
                   <Card.Text>
                     <strong>Actividades:</strong>{' '}
-                    {selectedTreatment.activities
+                    {selectedTreatment.assignedActivities
                       .map((activity) => activity.name)
                       .join(', ')}
                   </Card.Text>

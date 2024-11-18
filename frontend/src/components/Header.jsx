@@ -73,7 +73,7 @@ const Header = () => {
               </NavDropdown>
               */}
               {/* Enlace a MoCA */}
-              <Nav.Link onClick={() => navigateTo('/api/assignments/:patientId/activities')}>
+              <Nav.Link onClick={() => navigateTo('/api/treatments/activities')}>
                 <FaBrain /> Actividades
               </Nav.Link>
 

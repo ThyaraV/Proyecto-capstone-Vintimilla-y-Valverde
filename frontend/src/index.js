@@ -100,7 +100,7 @@ const router = createBrowserRouter(
         <Route path="/activity/10" element={<ActivityScreen10 />} />
 
         {/* Nivel 2 */}
-        <Route path="/api/assignments/:patientId/activities" element={<ActivitiesL2Screen />} />
+        <Route path="/api/treatments/activities" element={<ActivitiesL2Screen />} />
         <Route path="/activity/level2/1" element={<Activity1L2Screen />} />
         <Route path="/activity/level2/2" element={<Activity2L2Screen />} />
         <Route path="/activity/level2/3" element={<Activity3L2Screen />} />

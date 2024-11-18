@@ -1,3 +1,5 @@
+// EditTreatmentScreen.jsx
+
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Card, Row, Col } from 'react-bootstrap';
 import {
@@ -46,7 +48,7 @@ const EditTreatmentScreen = () => {
       setPatientIds(treatment.patients?.map((p) => p._id) || []);
       setTreatmentName(treatment.treatmentName || '');
       setDescription(treatment.description || '');
-      setSelectedActivities(treatment.activities?.map((a) => a._id) || []);
+      setSelectedActivities(treatment.assignedActivities?.map((a) => a._id) || []);
       setMedications(
         treatment.medications?.map((med) => ({
           ...med,
@@ -103,7 +105,7 @@ const EditTreatmentScreen = () => {
       patientIds,
       treatmentName,
       description,
-      activities: selectedActivities,
+      assignedActivities: selectedActivities, // Campo correcto
       medications,
       exerciseVideos,
       startDate,

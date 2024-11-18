@@ -1,12 +1,14 @@
+// src/screens/CreateTreatmentScreen.jsx
 import React, { useEffect, useState } from 'react';
 import { Form, Button } from 'react-bootstrap';
-import { useCreateTreatmentMutation } from '../../slices/treatmentSlice';
+import { useCreateTreatmentMutation } from '../../slices/treatmentSlice'; // Asegúrate de importar desde treatmentApiSlice
 import { useGetDoctorWithPatientsQuery } from '../../slices/doctorApiSlice';
 import { useSelector } from 'react-redux';
 import Loader from '../../components/Loader';
 import Message from '../../components/Message';
 import ActivitySelector from '../../components/ActivitySelector';
 import '../../assets/styles/CreateTreatmentScreen.css'; // Asegúrate de importar el CSS
+import { toast } from 'react-toastify';
 
 const CreateTreatmentScreen = () => {
   // Estados locales
@@ -49,11 +51,16 @@ const CreateTreatmentScreen = () => {
   const submitHandler = async (e) => {
     e.preventDefault();
 
+    if (patientIds.length === 0) {
+      toast.error('Debe seleccionar al menos un paciente');
+      return;
+    }
+
     const treatmentData = {
       patientIds,
       treatmentName,
       description,
-      activities: selectedActivities,
+      assignedActivities: selectedActivities, // Cambiado a assignedActivities
       medications,
       exerciseVideos,
       startDate,
@@ -68,7 +75,7 @@ const CreateTreatmentScreen = () => {
       const response = await createTreatment(treatmentData).unwrap();
 
       if (response) {
-        alert('Tratamiento creado exitosamente');
+        toast.success('Tratamiento creado exitosamente');
         // Limpiar el formulario
         setPatientIds([]);
         setTreatmentName('');
@@ -83,6 +90,7 @@ const CreateTreatmentScreen = () => {
       }
     } catch (err) {
       console.error('Error al crear el tratamiento:', err);
+      toast.error(`Error al crear el tratamiento: ${err.data?.message || err.message}`);
     }
   };
 
@@ -171,7 +179,7 @@ const CreateTreatmentScreen = () => {
           />
         </Form.Group>
 
-        {/* Seleccionar actividades */}
+        {/* Seleccionar actividades asignadas */}
         <Form.Group controlId="activities" className="mb-3">
           <Form.Label>Asignar Actividades</Form.Label>
           <ActivitySelector
@@ -205,7 +213,7 @@ const CreateTreatmentScreen = () => {
                 required
               />
 
-              {/* Reemplazar el campo de texto de frecuencia con radio buttons personalizados */}
+              {/* Frecuencia con radio buttons personalizados */}
               <Form.Group controlId={`frequency-${index}`} className="mb-2">
                 <Form.Label>Frecuencia</Form.Label>
                 <div className="custom-radio-container">

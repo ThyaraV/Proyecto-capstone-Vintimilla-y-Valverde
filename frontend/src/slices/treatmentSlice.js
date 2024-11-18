@@ -7,9 +7,9 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // **Asignaciones Endpoints**
     getAssignedActivities: builder.query({
-      query: (patientId) => `/api/assignments/${patientId}/activities`,
-      providesTags: (result, error, patientId) => [
-        { type: 'AssignedActivities', id: patientId },
+      query: (treatmentId) => `/api/treatments/${treatmentId}/assignedActivities`, // Asegúrate de que esta ruta existe en el backend
+      providesTags: (result, error, treatmentId) => [
+        { type: 'AssignedActivities', id: treatmentId },
       ],
     }),
     assignActivityToPatient: builder.mutation({
@@ -64,6 +64,16 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         'Treatments',
       ],
     }),
+    getActivitiesByUser: builder.query({ // Nueva query
+      query: () => `/api/treatments/activities`,
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ _id }) => ({ type: 'Activities', id: _id })),
+              { type: 'Activities', id: 'LIST' },
+            ]
+          : [{ type: 'Activities', id: 'LIST' }],
+    }),
 
     // **Medicamentos Endpoints**
     getMyMedications: builder.query({
@@ -75,11 +85,27 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
       providesTags: ['Medications'],
     }),
     getTreatmentsByPatient: builder.query({
-      query: (patientId) => `/api/treatments/patient/${patientId}`,
-      providesTags: (result, error, patientId) => [
-        { type: 'TreatmentsByPatient', id: patientId },
+      query: (patientId) => `/api/treatments/patient/${patientId}/treatments`,
+    }),
+
+    // **Nuevos Endpoints para Actividades Completadas**
+    recordActivity: builder.mutation({
+      query: ({ treatmentId, activityData }) => ({
+        url: `/api/treatments/${treatmentId}/activities`,
+        method: 'POST',
+        body: activityData,
+      }),
+      invalidatesTags: (result, error, { treatmentId }) => [
+        { type: 'Treatment', id: treatmentId },
+        { type: 'CompletedActivities', id: treatmentId },
       ],
-    }),      
+    }),
+    getCompletedActivities: builder.query({
+      query: (treatmentId) => `/api/treatments/${treatmentId}/activities`,
+      providesTags: (result, error, treatmentId) => [
+        { type: 'CompletedActivities', id: treatmentId },
+      ],
+    }),
   }),
 });
 
@@ -97,8 +123,13 @@ export const {
   useGetTreatmentByIdQuery,
   useUpdateTreatmentMutation,
   useGetTreatmentsByPatientQuery,
+  useGetActivitiesByUserQuery,
 
   // **Medicamentos Hooks**
   useGetMyMedicationsQuery,
   useGetDueMedicationsQuery,
+
+  // **Nuevos Hooks para Actividades Completadas**
+  useRecordActivityMutation,
+  useGetCompletedActivitiesQuery,
 } = treatmentApiSlice;
