@@ -1,27 +1,29 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useContext, useState } from "react";
 
 const MocaContext = createContext();
 
-export const useMoca = () => useContext(MocaContext);
-
 export const MocaProvider = ({ children }) => {
   const [totalScore, setTotalScore] = useState(0);
-  const [responses, setResponses] = useState({});
+  const [currentModule, setCurrentModule] = useState(0);
 
-  const updateScore = (points) => {
+  const incrementScore = (points) => {
     setTotalScore((prevScore) => prevScore + points);
   };
 
-  const saveResponse = (module, response) => {
-    setResponses((prevResponses) => ({
-      ...prevResponses,
-      [module]: response,
-    }));
-  };
-
   return (
-    <MocaContext.Provider value={{ totalScore, responses, updateScore, saveResponse }}>
+    <MocaContext.Provider
+      value={{
+        totalScore,
+        setTotalScore,
+        incrementScore,
+        currentModule,
+        setCurrentModule,
+      }}
+    >
       {children}
     </MocaContext.Provider>
   );
 };
+
+// Hook para usar el contexto
+export const useMoca = () => useContext(MocaContext);
