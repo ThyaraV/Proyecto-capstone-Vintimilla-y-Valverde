@@ -1,10 +1,11 @@
 // src/screens/ActivityScreen1.jsx
+
 import React, { useState, useEffect } from 'react'; 
 import { createBoard } from '../utils/createBoard';
 import Cell from '../components/Activity 1/Cell';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
-import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Asegúrate de importar desde treatmentApiSlice
+import { useRecordActivityMutation, useGetActiveTreatmentQuery } from '../slices/treatmentSlice'; // Importa useGetActiveTreatmentQuery si tienes
 import { useSelector } from 'react-redux';
 
 const ActivityScreen1 = () => {
@@ -15,8 +16,10 @@ const ActivityScreen1 = () => {
   const navigate = useNavigate();
   const userInfo = useSelector((state) => state.auth.userInfo);
 
-  // Suponiendo que el paciente está asociado a un tratamiento activo
-  const activeTreatmentId = useSelector((state) => state.treatment.activeTreatmentId); // Asegúrate de tener este estado
+  // Obtener el tratamiento activo basado en el userId
+  const { data: activeTreatment, isLoading: isTreatmentLoading, error: treatmentError } = useGetActiveTreatmentQuery(userInfo?._id, {
+    skip: !userInfo?._id, // Omitir la consulta si no hay userId
+  });
 
   // Hook de la mutación para registrar actividad
   const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
@@ -37,14 +40,24 @@ const ActivityScreen1 = () => {
         return;
       }
 
-      if (!activeTreatmentId) {
+      if (isTreatmentLoading) {
+        toast.error('Cargando tratamiento activo...');
+        return;
+      }
+
+      if (treatmentError) {
+        toast.error(`Error al obtener tratamiento activo: ${treatmentError.message}`);
+        return;
+      }
+
+      if (!activeTreatment) {
         toast.error('No hay tratamiento activo asociado');
         return;
       }
 
       const activityData = {
-        activityId: '673902d3d166bf9105cdf757', // Reemplaza con el ID real de la actividad asignada
-        scoreObtained: 100,
+        activityId: '673902d3d166bf9105cdf757', // Reemplaza con el ID real de la actividad asignada o hazlo dinámico
+        scoreObtained: 100, // Ajusta según cómo calcules el score
         timeUsed: parseFloat(miliseconds),
         progress: 'mejorando',
         observations: 'El paciente completó la actividad satisfactoriamente.',
@@ -53,7 +66,7 @@ const ActivityScreen1 = () => {
       console.log('Actividad a registrar:', activityData);
 
       // Registrar la actividad dentro del tratamiento
-      const response = await recordActivity({ treatmentId: activeTreatmentId, activityData }).unwrap();
+      const response = await recordActivity({ treatmentId: activeTreatment._id, activityData }).unwrap();
 
       toast.success('Actividad guardada correctamente');
       setTimeout(() => navigate('/activities'), 6000);
@@ -74,6 +87,39 @@ const ActivityScreen1 = () => {
       }
     }
   };
+
+  // Manejar la conexión de Socket.io (opcional)
+  useEffect(() => {
+    if (!userInfo) {
+      console.warn('El usuario no está definido');
+      return;
+    }
+
+    // Inicializar el socket
+    const socket = io('http://localhost:5000'); // Asegúrate de que el puerto es correcto
+
+    socket.on('connect', () => {
+      console.log('Conectado al servidor de Socket.io con ID:', socket.id);
+    });
+
+    // Ajusta el evento según cómo esté emitido en el backend
+    if (activeTreatment?._id) {
+      socket.on(`treatmentActivitiesUpdated:${activeTreatment._id}`, (data) => {
+        console.log(`Evento treatmentActivitiesUpdated recibido para el tratamiento ${activeTreatment._id}`, data);
+        // Refetch o actualizar el estado según sea necesario
+      });
+    }
+
+    socket.on('disconnect', () => {
+      console.log('Desconectado del servidor de Socket.io');
+    });
+
+    // Limpiar el socket al desmontar el componente o cuando activeTreatmentId cambie
+    return () => {
+      socket.disconnect();
+      console.log('Socket desconectado en cleanup');
+    };
+  }, [userInfo, activeTreatment]);
 
   return (
     <div className='activity-screen'>
