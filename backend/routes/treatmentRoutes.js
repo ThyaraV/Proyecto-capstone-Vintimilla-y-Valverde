@@ -12,7 +12,8 @@ import {
   recordActivity,
   getCompletedActivities,
   getAssignedActivities,
-  getActivitiesByUser
+  getActivitiesByUser,
+  getActiveTreatment
 } from '../controllers/treatmentController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -41,7 +42,10 @@ router.route('/:treatmentId/activities')
   router.route('/patient/:patientId/treatments').get(protect, admin, getTreatmentsByPatient);
 router.route('/:treatmentId/assignedActivities').get(protect, getAssignedActivities);
 
+
 router.route('/activities').get(protect, getActivitiesByUser);
+
+router.route('/:userId/active-treatment').get(protect, getActiveTreatment);
 
 // Ruta para obtener detalles de un tratamiento específico
 router

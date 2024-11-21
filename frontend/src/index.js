@@ -67,6 +67,7 @@ import UserActivity from "./screens/Médico/UserActivity.jsx";
 import TreatmentsScreen from "./screens/Médico/TreatmentsScreen.jsx";
 import TreatmentsListScreen from "./screens/Médico/TreatmentsListScreen.jsx";
 import EditTreatmentScreen from "./screens/Médico/treatmentsEditScreen.jsx";
+import ActivityPlay from "./components/ActivityPlay.jsx";
 
 const HomeScreenSelector = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -88,8 +89,8 @@ const router = createBrowserRouter(
         <Route path="/chat" element={<ChatScreen />} />
 
          {/* Actividades de nivel 1 */}
-         <Route path="/activity/1" element={<ActivityScreen1 />} />
-        <Route path="/activity/2" element={<ActivityScreen2 />} />
+         <Route path="/activities/play/:activityId" element={<ActivityPlay />} />
+        <Route path="/activities/play/:activityId" element={<ActivityScreen2 />} />
         <Route path="/activity/3" element={<ActivityScreen3 />} />
         <Route path="/activity/4" element={<ActivityScreen4 />} />
         <Route path="/activity/5" element={<ActivityScreen5 />} />

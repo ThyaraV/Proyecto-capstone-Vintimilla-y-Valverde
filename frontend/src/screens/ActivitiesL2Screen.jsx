@@ -12,6 +12,7 @@ import '../assets/styles/ActivitiesScreen.css';
 import io from 'socket.io-client';
 import { useSelector } from 'react-redux';
 import { ToastContainer, toast } from 'react-toastify';
+import { Link } from 'react-router-dom'; // Importar Link
 
 const UserActivity = () => {
   // Obtener la información del usuario autenticado desde el estado de Redux
@@ -97,40 +98,45 @@ const UserActivity = () => {
           <h3>Actividades Asignadas</h3>
           {uniqueActivities && uniqueActivities.length > 0 ? (
             <Row className="activity-levels">
-              {uniqueActivities.map((activity) => (
-                <Col key={activity._id} xs={12} md={6} lg={4} className="mb-4">
-                  {activity.difficultyLevel === 1 && (
-                    <Activity
-                      activity={{
-                        name: activity.name,
-                        description: activity.description,
-                        image: activity.image,
-                        type: activity.type,
-                      }}
-                    />
-                  )}
-                  {activity.difficultyLevel === 2 && (
-                    <Activity2
-                      activity={{
-                        name: activity.name,
-                        description: activity.description,
-                        image: activity.image,
-                        type: activity.type,
-                      }}
-                    />
-                  )}
-                  {activity.difficultyLevel === 3 && (
-                    <Activity3
-                      activity={{
-                        name: activity.name,
-                        description: activity.description,
-                        image: activity.image,
-                        type: activity.type,
-                      }}
-                    />
-                  )}
-                </Col>
-              ))}
+              {uniqueActivities.map((activity) => {
+                console.log('Activity ID:', activity._id); // Añade este log
+                return (
+                  <Col key={activity._id} xs={12} md={6} lg={4} className="mb-4">
+                    <Link to={`/activities/play/${activity._id}`} style={{ textDecoration: 'none' }}>
+                      {activity.difficultyLevel === 1 && (
+                        <Activity
+                          activity={{
+                            name: activity.name,
+                            description: activity.description,
+                            image: activity.image,
+                            type: activity.type,
+                          }}
+                        />
+                      )}
+                      {activity.difficultyLevel === 2 && (
+                        <Activity2
+                          activity={{
+                            name: activity.name,
+                            description: activity.description,
+                            image: activity.image,
+                            type: activity.type,
+                          }}
+                        />
+                      )}
+                      {activity.difficultyLevel === 3 && (
+                        <Activity3
+                          activity={{
+                            name: activity.name,
+                            description: activity.description,
+                            image: activity.image,
+                            type: activity.type,
+                          }}
+                        />
+                      )}
+                    </Link>
+                  </Col>
+                );
+              })}
             </Row>
           ) : (
             <p>No tienes actividades asignadas.</p>

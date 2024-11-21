@@ -4,6 +4,7 @@ import Patient from '../models/patientModel.js';
 import Activity from '../models/activityModel.js';
 import Doctor from '../models/doctorModel.js';
 import { io } from 'socket.io-client';
+import { getIO } from '../socket.js';
 
 
 // @desc    Asignar una actividad a un paciente
@@ -545,19 +546,12 @@ const getAssignedActivities = asyncHandler(async (req, res) => {
   res.status(200).json(treatment.assignedActivities);
 });
 
-
 // @desc    Registrar una actividad realizada por el paciente en su tratamiento
 // @route   POST /api/treatments/:treatmentId/activities
-// @access  Privado/Paciente
+// @access  Privado/Paciente o Doctor
 const recordActivity = asyncHandler(async (req, res) => {
   const { treatmentId } = req.params;
-  const {
-    activityId, // ID de la actividad asignada
-    scoreObtained,
-    timeUsed,
-    progress,
-    observations,
-  } = req.body;
+  const { activityId, photoId, scoreObtained, timeUsed, progress, observations } = req.body;
 
   const userId = req.user._id;
 
@@ -575,8 +569,13 @@ const recordActivity = asyncHandler(async (req, res) => {
     throw new Error('Tratamiento no encontrado para este paciente');
   }
 
+  // Registro de depuración
+  console.log('Actividades asignadas al tratamiento:', treatment.assignedActivities.map(a => a._id.toString()));
+  console.log('ActividadId recibida:', activityId);
+
   // Verificar que la actividad asignada esté dentro del tratamiento
-  if (!treatment.assignedActivities.includes(activityId)) {
+  const isAssigned = treatment.assignedActivities.some(activity => activity._id.toString() === activityId);
+  if (!isAssigned) {
     res.status(400);
     throw new Error('Actividad no asignada a este tratamiento');
   }
@@ -584,6 +583,7 @@ const recordActivity = asyncHandler(async (req, res) => {
   // Crear una nueva actividad completada
   const completedActivity = {
     activity: activityId,
+    photo: photoId, // Si deseas almacenar información sobre la foto
     patient: patient._id,
     dateCompleted: Date.now(),
     scoreObtained,
@@ -599,14 +599,21 @@ const recordActivity = asyncHandler(async (req, res) => {
   await treatment.save();
 
   // Emitir un evento para actualizar en tiempo real (si aplica)
-  io.emit(`treatmentActivitiesUpdated:${treatmentId}`, { message: 'Actividad registrada' });
-  console.log(`Evento treatmentActivitiesUpdated emitido para el tratamiento ${treatmentId}`);
+  try {
+    const io = getIO(); // Obtener la instancia de Socket.io
+    io.emit(`treatmentActivitiesUpdated:${treatmentId}`, { message: 'Actividad registrada' });
+    console.log(`Evento treatmentActivitiesUpdated emitido para el tratamiento ${treatmentId}`);
+  } catch (error) {
+    console.error('Error al emitir el evento de Socket.io:', error.message);
+    // Puedes optar por no lanzar un error si el evento falla
+  }
 
   res.status(201).json({
     message: 'Actividad registrada exitosamente en el tratamiento',
     completedActivity,
   });
 });
+
 
 // @desc    Obtener actividades realizadas por el paciente en un tratamiento específico
 // @route   GET /api/treatments/:treatmentId/activities
@@ -634,8 +641,37 @@ const getCompletedActivities = asyncHandler(async (req, res) => {
   res.status(200).json(treatment.completedActivities);
 });
 
+// @desc    Obtener el tratamiento activo de un usuario
+// @route   GET /api/users/:userId/active-treatment
+// @access  Privado/Paciente o Doctor
+const getActiveTreatment = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  // Obtener el paciente asociado al usuario autenticado
+  const patient = await Patient.findOne({ user: userId });
+  if (!patient) {
+    res.status(404);
+    throw new Error('Paciente no encontrado para este usuario');
+  }
+
+  // Definir qué constituye un tratamiento activo
+  // Por ejemplo, tratamientos que no han finalizado (endDate en el futuro)
+  const currentDate = new Date();
+  const activeTreatment = await Treatment.findOne({
+    patients: patient._id,
+    endDate: { $gte: currentDate },
+  }).populate('assignedActivities');
+
+  if (!activeTreatment) {
+    res.status(404);
+    throw new Error('No hay tratamiento activo para este paciente');
+  }
+
+  res.status(200).json(activeTreatment);
+});
+
 export { assignActivityToPatient, updateAssignmentResults, 
   getAssignedActivities,unassignActivityFromPatient,getMyAssignedActivities, 
   createTreatment, getMyTreatments, getActivitiesByUser,
   getTreatmentById, updateTreatment, getMyMedications, getDueMedications,
-getTreatmentsByPatient,recordActivity,getCompletedActivities};
+getTreatmentsByPatient,recordActivity,getCompletedActivities, getActiveTreatment};

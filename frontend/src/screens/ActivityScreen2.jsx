@@ -1,13 +1,18 @@
+// src/screens/ActivityScreen2.jsx
+
 import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom'; 
+import { useRecordActivityMutation, useGetActiveTreatmentQuery } from '../slices/treatmentSlice'; // Importa los hooks
+import { useSelector } from 'react-redux';
+import 'react-toastify/dist/ReactToastify.css';
 
 const photos = [
-  { src: require('../images/pizza.jpg'), name: 'Pizza' },
-  { src: require('../images/cafe.jpg'), name: 'Café' },
-  { src: require('../images/mariposa.jpg'), name: 'Mariposa' },
-  { src: require('../images/oso.jpg'), name: 'Oso' },
-  { src: require('../images/ensalada.jpg'), name: 'Ensalada' }
+  { _id: '673902d3d166bf9105cdf757', src: require('../images/pizza.jpg'), name: 'Pizza' },
+  { _id: '673902d3d166bf9105cdf758', src: require('../images/cafe.jpg'), name: 'Café' },
+  { _id: '673902d3d166bf9105cdf759', src: require('../images/mariposa.jpg'), name: 'Mariposa' },
+  { _id: '673902d3d166bf9105cdf760', src: require('../images/oso.jpg'), name: 'Oso' },
+  { _id: '673902d3d166bf9105cdf761', src: require('../images/ensalada.jpg'), name: 'Ensalada' }
 ];
 
 const shuffle = (array) => {
@@ -15,6 +20,18 @@ const shuffle = (array) => {
 };
 
 const ActivityScreen2 = () => {
+  const navigate = useNavigate();
+  const userInfo = useSelector((state) => state.auth.userInfo);
+  const userId = userInfo?._id;
+
+  // Obtener el tratamiento activo
+  const { data: activeTreatment, isLoading: isTreatmentLoading, error: treatmentError } = useGetActiveTreatmentQuery(userId, {
+    skip: !userId, // Omitir la consulta si no hay userId
+  });
+
+  // Hooks de la mutación
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+
   const [photoQueue, setPhotoQueue] = useState([]); // Lista barajada de fotos
   const [currentPhoto, setCurrentPhoto] = useState(null);
   const [options, setOptions] = useState([]);
@@ -25,7 +42,6 @@ const ActivityScreen2 = () => {
   const [timer, setTimer] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [activitySaved, setActivitySaved] = useState(false); // Bloqueo para evitar guardado doble
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Barajar las imágenes al inicio
@@ -53,7 +69,7 @@ const ActivityScreen2 = () => {
 
   const shuffleOptions = (correctPhoto) => {
     const randomNames = photos.map((photo) => photo.name).filter((name) => name !== correctPhoto.name);
-    const wrongOptions = randomNames.sort(() => 0.5 - Math.random()).slice(0, 2);
+    const wrongOptions = shuffle(randomNames).slice(0, 2);
     return shuffle([correctPhoto.name, ...wrongOptions]);
   };
 
@@ -89,45 +105,39 @@ const ActivityScreen2 = () => {
 
   // Guardar actividad solo cuando el juego ha terminado
   useEffect(() => {
-    if (gameFinished && !activitySaved) {
-      saveActivity(score);
+    if (gameFinished && !activitySaved && activeTreatment) {
+      saveActivity(score, activeTreatment._id);
       setActivitySaved(true);
     }
-  }, [gameFinished, activitySaved, score]);
+  }, [gameFinished, activitySaved, score, activeTreatment]);
 
-  const saveActivity = async (finalScore) => {
+  const saveActivity = async (finalScore, treatmentId) => {
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Asegúrate de que cada foto tiene un _id
     const activityData = {
-      name: 'Asociación de Fotos',
-      description: 'Actividad de asociación de fotos con nombres.',
-      type: 'asociacion_fotos',
+      activityId: currentPhoto?._id || null, // ID de la actividad (foto)
       scoreObtained: finalScore,
       timeUsed: timer, 
-      difficultyLevel: 1,
-      observations: 'El paciente completó la actividad de asociación de fotos.',
       progress: 'mejorando',
-      image: currentPhoto?.src || '',
-      patientId: 'somePatientId' 
+      observations: 'El paciente completó la actividad de asociación de fotos.',
     };
 
     try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+      // Registrar la actividad dentro del tratamiento usando la mutación
+      await recordActivity({ treatmentId, activityData }).unwrap();
 
-      if (response.ok) {
-        toast.success('Actividad guardada correctamente');
-        setTimeout(() => {
-            navigate('/activities'); // Redirige a la lista de actividades después de mostrar el toast
-          }, 6000);
-      } else {
-        toast.error('Error al guardar la actividad');
-      }
+      toast.success('Actividad guardada correctamente');
+      setTimeout(() => {
+          navigate('/activities'); // Redirige a la lista de actividades después de mostrar el toast
+        }, 6000);
     } catch (error) {
-      toast.error('Hubo un problema al guardar la actividad');
+      console.error('Error al guardar la actividad:', error);
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
@@ -136,6 +146,10 @@ const ActivityScreen2 = () => {
       <h1>Juego de Asociación de Fotos</h1>
       <p>Puntaje: {score}</p>
       <p>Tiempo: {timer} segundos</p>
+
+      {isRecording && <p>Guardando actividad...</p>}
+      {isTreatmentLoading && <p>Cargando tratamiento activo...</p>}
+      {treatmentError && <p>Error: {treatmentError.message}</p>}
 
       {gameFinished ? (
         <div className="game-finished">

@@ -13,6 +13,8 @@ import patientRoutes from "./routes/patientRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import treatmentRoutes from "./routes/treatmentRoutes.js"
 import assignmentRoutes from "./routes/assignmentRoutes.js"
+import http from 'http';
+import { initSocket } from './socket.js';
 
 import connectDB from "./config/db.js";
 
@@ -96,6 +98,10 @@ io.on("connection", (socket) => {
     console.log("Usuario desconectado del socket");
   });
 });
+
+const server = http.createServer(app);
+
+initSocket(server);
 
 // Iniciar el servidor en el puerto especificado
 httpServer.listen(port, () => {

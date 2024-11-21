@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from 'react'; 
 import { createBoard } from '../utils/createBoard';
 import Cell from '../components/Activity 1/Cell';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
-import { useRecordActivityMutation, useGetActiveTreatmentQuery } from '../slices/treatmentSlice'; // Importa useGetActiveTreatmentQuery si tienes
+import { useRecordActivityMutation, useGetActiveTreatmentQuery } from '../slices/treatmentSlice'; // Importar desde treatmentApiSlice
 import { useSelector } from 'react-redux';
+import 'react-toastify/dist/ReactToastify.css'; // Importar estilos de react-toastify
+import io from 'socket.io-client';
 
 const ActivityScreen1 = () => {
   const [board, setBoard] = useState(() => createBoard(1)); // Nivel 1
@@ -14,11 +16,16 @@ const ActivityScreen1 = () => {
   const [timer, setTimer] = useState(0);
   const miliseconds = (timer / 10).toFixed(2);
   const navigate = useNavigate();
+  const { activityId } = useParams(); // Obtener activityId de la ruta
+  console.log('activityId from route:', activityId); // Añade este log
   const userInfo = useSelector((state) => state.auth.userInfo);
 
-  // Obtener el tratamiento activo basado en el userId
-  const { data: activeTreatment, isLoading: isTreatmentLoading, error: treatmentError } = useGetActiveTreatmentQuery(userInfo?._id, {
-    skip: !userInfo?._id, // Omitir la consulta si no hay userId
+  // Obtener el userId
+  const userId = userInfo?._id;
+
+  // Usar la query para obtener el tratamiento activo
+  const { data: activeTreatment, isLoading: isTreatmentLoading, error: treatmentError } = useGetActiveTreatmentQuery(userId, {
+    skip: !userId, // Omitir la consulta si no hay userId
   });
 
   // Hook de la mutación para registrar actividad
@@ -55,15 +62,20 @@ const ActivityScreen1 = () => {
         return;
       }
 
+      if (!activityId) {
+        toast.error('No se encontró una actividad seleccionada');
+        return;
+      }
+
       const activityData = {
-        activityId: '673902d3d166bf9105cdf757', // Reemplaza con el ID real de la actividad asignada o hazlo dinámico
+        activityId: activityId,
         scoreObtained: 100, // Ajusta según cómo calcules el score
         timeUsed: parseFloat(miliseconds),
         progress: 'mejorando',
         observations: 'El paciente completó la actividad satisfactoriamente.',
       };
 
-      console.log('Actividad a registrar:', activityData);
+      console.log('Actividad a registrar:', activityData); // Agrega este log
 
       // Registrar la actividad dentro del tratamiento
       const response = await recordActivity({ treatmentId: activeTreatment._id, activityData }).unwrap();
@@ -72,7 +84,9 @@ const ActivityScreen1 = () => {
       setTimeout(() => navigate('/activities'), 6000);
     } catch (error) {
       console.error('Error al guardar la actividad:', error);
-      toast.error(`Hubo un problema al guardar la actividad: ${error.data?.message || error.message}`);
+      // Verificar si error.data existe antes de acceder a error.data.message
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
@@ -90,8 +104,8 @@ const ActivityScreen1 = () => {
 
   // Manejar la conexión de Socket.io (opcional)
   useEffect(() => {
-    if (!userInfo) {
-      console.warn('El usuario no está definido');
+    if (!userInfo || !activeTreatment?._id) {
+      console.warn('El usuario o el tratamiento activo no están definidos');
       return;
     }
 
@@ -103,18 +117,16 @@ const ActivityScreen1 = () => {
     });
 
     // Ajusta el evento según cómo esté emitido en el backend
-    if (activeTreatment?._id) {
-      socket.on(`treatmentActivitiesUpdated:${activeTreatment._id}`, (data) => {
-        console.log(`Evento treatmentActivitiesUpdated recibido para el tratamiento ${activeTreatment._id}`, data);
-        // Refetch o actualizar el estado según sea necesario
-      });
-    }
+    socket.on(`treatmentActivitiesUpdated:${activeTreatment._id}`, (data) => {
+      console.log(`Evento treatmentActivitiesUpdated recibido para el tratamiento ${activeTreatment._id}`, data);
+      // Puedes implementar lógica adicional aquí, como actualizar el estado o refetch
+    });
 
     socket.on('disconnect', () => {
       console.log('Desconectado del servidor de Socket.io');
     });
 
-    // Limpiar el socket al desmontar el componente o cuando activeTreatmentId cambie
+    // Limpiar el socket al desmontar el componente o cuando activeTreatment cambie
     return () => {
       socket.disconnect();
       console.log('Socket desconectado en cleanup');
@@ -125,6 +137,8 @@ const ActivityScreen1 = () => {
     <div className='activity-screen'>
       <h1>Encuentra la letra (Nivel 1)</h1>
       {isRecording && <p>Guardando actividad...</p>}
+      {isTreatmentLoading && <p>Cargando tratamiento activo...</p>}
+      {treatmentError && <p>Error: {treatmentError.message}</p>}
       {gamesToWin > 0 && <p>Tiempo: {miliseconds} segundos</p>}
       {gamesToWin === 0 ? (
         <p>Felicidades, tu tiempo fue: {miliseconds} segundos</p>

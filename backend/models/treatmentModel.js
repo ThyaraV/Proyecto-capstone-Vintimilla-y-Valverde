@@ -9,7 +9,7 @@ const completedActivitySchema = new mongoose.Schema({
   timeUsed: { type: Number }, // Tiempo utilizado en segundos
   progress: { type: String, enum: ['mejorando', 'estable', 'deteriorando'] }, // Progreso
   observations: { type: String }, // Observaciones
-  image: { type: String, required: true }, // URL de la imagen
+  image: { type: String, required: false }, // URL de la imagen
   activeView: { type: Boolean, default: false }, // Vista activa
 });
 
