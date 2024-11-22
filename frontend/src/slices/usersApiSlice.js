@@ -68,11 +68,19 @@ export const usersApiSlice=apiSlice.injectEndpoints({
               url: `${USERS_URL}/${userId}/enable`, // Asegúrate de que esté en la ruta correcta
               method: 'PUT',
             }),
-          }),                           
+          }),
+          saveMood: builder.mutation({
+            query: (mood) => ({
+                url: `${USERS_URL}/mood`,
+                method: 'POST',
+                body: { mood },
+            }),
+            invalidatesTags: ['UserMood'], // Opcional: para invalidar caches si es necesario
+        }),                           
     }),
 });
 
 export const {useLoginMutation,useLogoutMutation, 
 useRegisterMutation,useProfileMutation,useGetUsersQuery,
 useDeleteUserMutation,useGetUserDetailsQuery,
-useUpdateUserMutation, useSearchUsersQuery, useEnableUserMutation}=usersApiSlice;
+useUpdateUserMutation, useSearchUsersQuery, useEnableUserMutation,useSaveMoodMutation}=usersApiSlice;

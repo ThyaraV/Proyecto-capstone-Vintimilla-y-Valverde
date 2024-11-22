@@ -553,6 +553,14 @@ const recordActivity = asyncHandler(async (req, res) => {
   const { treatmentId } = req.params;
   const { activityId, photoId, scoreObtained, timeUsed, progress, observations } = req.body;
 
+  console.log('Datos recibidos en recordActivity:', req.body);
+  console.log('treatmentId:', treatmentId); // Verificar que no es undefined
+
+  if (!treatmentId) {
+    res.status(400);
+    throw new Error('treatmentId no proporcionado');
+  }
+
   const userId = req.user._id;
 
   // Obtener el paciente asociado al usuario autenticado
@@ -583,16 +591,18 @@ const recordActivity = asyncHandler(async (req, res) => {
   // Crear una nueva actividad completada
   const completedActivity = {
     activity: activityId,
-    photo: photoId, // Si deseas almacenar información sobre la foto
+    photo: photoId, // Opcional
     patient: patient._id,
     dateCompleted: Date.now(),
     scoreObtained,
     timeUsed,
     progress,
     observations,
-    image: '', // Asigna una imagen si es necesario
-    activeView: false, // Ajusta según corresponda
+    image: '', // Opcional
+    activeView: false, // Opcional
   };
+
+  console.log('Datos de la actividad completada:', completedActivity); // Log de la actividad completada
 
   // Agregar la actividad completada al tratamiento
   treatment.completedActivities.push(completedActivity);
@@ -613,7 +623,6 @@ const recordActivity = asyncHandler(async (req, res) => {
     completedActivity,
   });
 });
-
 
 // @desc    Obtener actividades realizadas por el paciente en un tratamiento específico
 // @route   GET /api/treatments/:treatmentId/activities

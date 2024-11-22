@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Row, Col } from 'react-bootstrap';
-import { useGetActivitiesByUserQuery } from '../slices/treatmentSlice.js'; // Usar la nueva query
+import { useGetActivitiesByUserQuery, useGetActiveTreatmentQuery } from '../slices/treatmentSlice.js'; // Importar useGetActiveTreatmentQuery
 import Loader from '../components/Loader';
 import Message from '../components/Message';
 import Activity from '../components/Activity';
@@ -17,7 +17,7 @@ import { Link } from 'react-router-dom'; // Importar Link
 const UserActivity = () => {
   // Obtener la información del usuario autenticado desde el estado de Redux
   const userInfo = useSelector((state) => state.auth.userInfo);
-
+  
   // Obtener el userId
   const userId = userInfo?._id;
   console.log('userId:', userId);
@@ -26,6 +26,11 @@ const UserActivity = () => {
   const { data: activities, isLoading: isActivitiesLoading, error: activitiesError, refetch } = useGetActivitiesByUserQuery(userId, {
     skip: !userId, // Omitir la consulta si no hay userId
     refetchOnMountOrArgChange: true,
+  });
+
+  // Obtener el tratamiento activo del usuario
+  const { data: activeTreatment, isLoading: isTreatmentLoading, error: treatmentError } = useGetActiveTreatmentQuery(userId, {
+    skip: !userId, // Omitir la consulta si no hay userId
   });
 
   const [uniqueActivities, setUniqueActivities] = useState([]);
@@ -85,6 +90,15 @@ const UserActivity = () => {
     };
   }, [userInfo, userId, refetch]);
 
+  // Verificar si el tratamiento activo está cargando o hay errores
+  if (isTreatmentLoading) {
+    return <Loader />;
+  }
+
+  if (treatmentError) {
+    return <Message variant="danger">Error al cargar tratamiento activo: {treatmentError.message}</Message>;
+  }
+
   return (
     <div className="user-activity-container">
       <h1 className="text-center mb-5">Mis Actividades Asignadas</h1>
@@ -102,38 +116,43 @@ const UserActivity = () => {
                 console.log('Activity ID:', activity._id); // Añade este log
                 return (
                   <Col key={activity._id} xs={12} md={6} lg={4} className="mb-4">
-                    <Link to={`/activities/play/${activity._id}`} style={{ textDecoration: 'none' }}>
-                      {activity.difficultyLevel === 1 && (
-                        <Activity
-                          activity={{
-                            name: activity.name,
-                            description: activity.description,
-                            image: activity.image,
-                            type: activity.type,
-                          }}
-                        />
-                      )}
-                      {activity.difficultyLevel === 2 && (
-                        <Activity2
-                          activity={{
-                            name: activity.name,
-                            description: activity.description,
-                            image: activity.image,
-                            type: activity.type,
-                          }}
-                        />
-                      )}
-                      {activity.difficultyLevel === 3 && (
-                        <Activity3
-                          activity={{
-                            name: activity.name,
-                            description: activity.description,
-                            image: activity.image,
-                            type: activity.type,
-                          }}
-                        />
-                      )}
-                    </Link>
+                    {/* Verificar que activeTreatment está definido antes de construir el Link */}
+                    {activeTreatment ? (
+                      <Link to={`/treatments/${activeTreatment._id}/activities/play/${activity._id}`} style={{ textDecoration: 'none' }}>
+                        {activity.difficultyLevel === 1 && (
+                          <Activity
+                            activity={{
+                              name: activity.name,
+                              description: activity.description,
+                              image: activity.image,
+                              type: activity.type,
+                            }}
+                          />
+                        )}
+                        {activity.difficultyLevel === 2 && (
+                          <Activity2
+                            activity={{
+                              name: activity.name,
+                              description: activity.description,
+                              image: activity.image,
+                              type: activity.type,
+                            }}
+                          />
+                        )}
+                        {activity.difficultyLevel === 3 && (
+                          <Activity3
+                            activity={{
+                              name: activity.name,
+                              description: activity.description,
+                              image: activity.image,
+                              type: activity.type,
+                            }}
+                          />
+                        )}
+                      </Link>
+                    ) : (
+                      <Message variant="warning">No se encontró un tratamiento activo para esta actividad.</Message>
+                    )}
                   </Col>
                 );
               })}

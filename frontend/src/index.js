@@ -89,8 +89,8 @@ const router = createBrowserRouter(
         <Route path="/chat" element={<ChatScreen />} />
 
          {/* Actividades de nivel 1 */}
-         <Route path="/activities/play/:activityId" element={<ActivityPlay />} />
-        <Route path="/activities/play/:activityId" element={<ActivityScreen2 />} />
+         <Route path="/treatments/:treatmentId/activities/play/:activityId" element={<ActivityPlay />} />
+        {/*<Route path="/activities/play/:activityId" element={<ActivityScreen2 />} />*/}
         <Route path="/activity/3" element={<ActivityScreen3 />} />
         <Route path="/activity/4" element={<ActivityScreen4 />} />
         <Route path="/activity/5" element={<ActivityScreen5 />} />
