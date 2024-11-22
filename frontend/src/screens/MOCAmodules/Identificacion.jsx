@@ -174,7 +174,7 @@ const Identificacion = ({ onComplete, onPrevious, isFirstModule }) => {
                 fluid
                 style={{ maxHeight: "300px" }}
               />
-              <p className="instructions-text mt-3">
+              <p>
                 Nombre el animal mostrado en la imagen.
               </p>
 
