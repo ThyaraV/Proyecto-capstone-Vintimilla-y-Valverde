@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Button, Container, ProgressBar, Row, Col } from "react-bootstrap";
+import { Button, Container, ProgressBar, Row, Col, ListGroup } from "react-bootstrap";
 import { useGetPatientsQuery } from "../slices/patientApiSlice";
 import { useMoca } from "../context/MocaContext";
 import Visuoespacial from "./MOCAmodules/Visuoespacial";
@@ -37,6 +37,7 @@ const MocaStartSelf = () => {
   const [currentScore, setCurrentScore] = useState(0);
   const [individualScores, setIndividualScores] = useState({});
   const [moduleScores, setModuleScores] = useState({});
+  const [selectedModuleIndex, setSelectedModuleIndex] = useState(null); // Índice del módulo seleccionado manualmente
 
   useEffect(() => {
     let interval;
@@ -75,17 +76,30 @@ const MocaStartSelf = () => {
       [MODULES[moduleId].name]: { ...activityScores, total: moduleScore },
     }));
 
-    if (currentModuleIndex < MODULES.length - 1) {
-      setCurrentModuleIndex(currentModuleIndex + 1);
+    if (selectedModuleIndex !== null) {
+      // Si se ha seleccionado un módulo manualmente, no avanzar automáticamente
+      setSelectedModuleIndex(null);
     } else {
-      alert(`¡Prueba completada! Puntaje final: ${newCurrentScore}`);
+      if (currentModuleIndex < MODULES.length - 1) {
+        setCurrentModuleIndex(currentModuleIndex + 1);
+      } else {
+        alert(`¡Prueba completada! Puntaje final: ${newCurrentScore}`);
+      }
     }
   };
 
   const handlePreviousModule = () => {
-    if (currentModuleIndex > 0) {
+    if (selectedModuleIndex !== null) {
+      setSelectedModuleIndex(null);
+      setCurrentModuleIndex(currentModuleIndex - 1 >= 0 ? currentModuleIndex - 1 : 0);
+    } else if (currentModuleIndex > 0) {
       setCurrentModuleIndex(currentModuleIndex - 1);
     }
+  };
+
+  const handleSelectModule = (index) => {
+    setSelectedModuleIndex(index);
+    setCurrentModuleIndex(index);
   };
 
   const CurrentModuleComponent = MODULES[currentModuleIndex].component;
@@ -93,7 +107,7 @@ const MocaStartSelf = () => {
   return (
     <Container className="moca-container my-5">
       {!testStarted ? (
-        <div className="instructions-container">
+        <div className="instructions-container text-center">
           <h2>Instrucciones para la Prueba MoCA</h2>
           <p>Por favor, siga las instrucciones y complete las actividades en cada sección.</p>
           {selectedPatient && (
@@ -108,7 +122,7 @@ const MocaStartSelf = () => {
         </div>
       ) : (
         <>
-          <h3 className="module-title">
+          <h3 className="module-title text-center mb-4">
             {MODULES[currentModuleIndex].icon} {MODULES[currentModuleIndex].name}
           </h3>
 
@@ -128,19 +142,20 @@ const MocaStartSelf = () => {
 
           <hr className="my-4" />
 
-          <div className="progress-container">
+          <div className="progress-container mb-4">
             <h5>Tiempo transcurrido: {formatTime(timeElapsed)}</h5>
             <h5>Puntaje Actual: {currentScore}</h5>
             <ProgressBar
-              now={(currentModuleIndex / MODULES.length) * 100}
-              label={`${currentModuleIndex + 1} / ${MODULES.length}`}
+              now={((selectedModuleIndex !== null ? 1 : currentModuleIndex + 1) / MODULES.length) * 100}
+              label={`${selectedModuleIndex !== null ? 1 : currentModuleIndex + 1} / ${MODULES.length}`}
+              className="mb-3"
             />
             <div className="module-status">
               {MODULES.map((module, index) => (
                 <span
                   key={module.id}
                   className={`module-dot ${
-                    index <= currentModuleIndex ? "completed" : "pending"
+                    index < currentModuleIndex || index === selectedModuleIndex ? "completed" : "pending"
                   }`}
                 ></span>
               ))}
@@ -156,6 +171,27 @@ const MocaStartSelf = () => {
               </div>
             ))}
           </pre>
+
+          {/* Lista de módulos para selección directa */}
+          <div className="mt-5">
+            <h4 className="text-center">Selecciona un Módulo para Probar:</h4>
+            <ListGroup horizontal className="flex-wrap justify-content-center">
+              {MODULES.map((module, index) => (
+                <ListGroup.Item key={module.id} className="m-2">
+                  <Button
+                    variant={
+                      index === currentModuleIndex || index === selectedModuleIndex
+                        ? "primary"
+                        : "outline-primary"
+                    }
+                    onClick={() => handleSelectModule(index)}
+                  >
+                    {module.icon} {module.name}
+                  </Button>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          </div>
         </>
       )}
     </Container>
