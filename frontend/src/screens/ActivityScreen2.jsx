@@ -55,7 +55,7 @@ const ActivityScreen2 = ({ activity, treatmentId }) => { // Recibe 'treatmentId'
 
     if (!activity || !activity._id) {
       toast.error('Actividad inválida o no encontrada');
-      navigate('/activities'); // Redirige si la actividad no es válida
+      navigate('/api/treatments/activities'); // Redirige si la actividad no es válida
       return;
     }
 
@@ -154,7 +154,7 @@ const ActivityScreen2 = ({ activity, treatmentId }) => { // Recibe 'treatmentId'
       console.log('Actividad guardada correctamente');
       toast.success('Actividad guardada correctamente');
       setTimeout(() => {
-        navigate('/activities'); // Redirige a la lista de actividades después de mostrar el toast
+        navigate('/api/treatments/activities'); // Redirige a la lista de actividades después de mostrar el toast
       }, 6000);
     } catch (error) {
       console.error('Error al guardar la actividad:', error);

@@ -1,7 +1,8 @@
+// src/components/Header.js
 import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
-import { FaUser, FaListUl, FaComments, FaBrain, FaBars } from "react-icons/fa";
+import { FaUser, FaComments, FaBrain, FaBars, FaBell } from "react-icons/fa"; // Importar FaBell
 import logo from "../assets/logo.png";
 import { LinkContainer } from "react-router-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
@@ -11,12 +12,16 @@ import '../assets/styles/Header.css';
 
 const Header = () => {
   const { userInfo } = useSelector((state) => state.auth);
+  const notifications = useSelector((state) => state.notifications.notifications);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [logoutApiCall] = useLogoutMutation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  // Calcula el total de notificaciones
+  const totalNotifications = Object.values(notifications).reduce((acc, count) => acc + count, 0);
 
   // Maneja el cierre de sesión
   const logoutHandler = async () => {
@@ -43,6 +48,11 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
+  // Manejar clic en la campanita de notificaciones
+  const handleNotificationsClick = () => {
+    navigateTo('/notifications');
+  };
+
   return (
     <header>
       {/* Navbar principal */}
@@ -62,17 +72,8 @@ const Header = () => {
           {/* Menú de navegación principal */}
           <Navbar.Toggle aria-controls="basic-navbar-nav" className="ms-auto" />
           <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="ms-auto">
-              {/* Menú desplegable para Actividades */}
-              
-              {/*<NavDropdown title="Actividades" id="activities-dropdown">
-                
-                <NavDropdown.Item onClick={() => navigateTo('/activities')}>Actividades Nivel 1</NavDropdown.Item>
-                <NavDropdown.Item onClick={() => navigateTo('/activitiesL2')}>Actividades Nivel 2</NavDropdown.Item>
-                <NavDropdown.Item onClick={() => navigateTo('/activitiesL3')}>Actividades Nivel 3</NavDropdown.Item>
-              </NavDropdown>
-              */}
-              {/* Enlace a MoCA */}
+            <Nav className="ms-auto align-items-center">
+              {/* Enlace a Actividades */}
               <Nav.Link onClick={() => navigateTo('/api/treatments/activities')}>
                 <FaBrain /> Actividades
               </Nav.Link>
@@ -85,6 +86,14 @@ const Header = () => {
               {/* Enlace al chat */}
               <Nav.Link onClick={() => navigateTo('/chat')}>
                 <FaComments /> Chat
+              </Nav.Link>
+
+              {/* Campanita de Notificaciones */}
+              <Nav.Link onClick={handleNotificationsClick} className="position-relative">
+                <FaBell size={20} />
+                {totalNotifications > 0 && (
+                  <span className="notification-badge-header">{totalNotifications}</span>
+                )}
               </Nav.Link>
 
               {/* Enlace de usuario y opciones de administración */}

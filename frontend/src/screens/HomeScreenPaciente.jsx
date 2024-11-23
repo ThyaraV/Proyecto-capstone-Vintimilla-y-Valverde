@@ -1,4 +1,4 @@
-// src/screens/HomeScreenPaciente.js
+// src/screens/HomeScreenPaciente.jsx
 
 import React, { useEffect, useState } from 'react';
 import '../assets/styles/HomeScreenPaciente.css';
@@ -12,14 +12,22 @@ import {
 } from '../slices/treatmentSlice.js';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import { format, addDays, isValid } from 'date-fns'; // Importar isValid
-import axios from 'axios';
+import { format, addDays, isValid } from 'date-fns';
+import { useSaveMoodMutation } from '../slices/usersApiSlice';
 import Popup from '../components/Popup.jsx';
 import MedicationReminder from '../components/FloatingMessage.jsx';
-import MedicationPopup from '../components/MedicationPopup.jsx'; // Asegúrate de importar correctamente
+import MedicationPopup from '../components/MedicationPopup.jsx';
+import { useSelector } from 'react-redux'; // Importa useSelector
 
 const HomeScreenPaciente = () => {
   const navigate = useNavigate();
+
+  // ** Obtener userId desde el estado de autenticación **
+  const { userInfo } = useSelector((state) => state.auth); // Ajusta según tu estructura de estado
+  const userId = userInfo?._id; // Asegúrate de que _id es el campo correcto
+
+  // ** Mutación para guardar el estado de ánimo **
+  const [saveMood, { isLoading: isSavingMood, error: saveMoodError, data: saveMoodData }] = useSaveMoodMutation();
 
   // ** Medicamentos **
   const { data: dueMedications, isSuccess: isMedDueSuccess, isLoading: isMedDueLoading, error: medDueError } = useGetDueMedicationsQuery();
@@ -29,7 +37,9 @@ const HomeScreenPaciente = () => {
   const { data: assignedActivities, isSuccess: isAssignedActivitiesSuccess, isLoading: isAssignedActivitiesLoading, error: assignedActivitiesError } = useGetActivitiesByUserQuery();
 
   // ** Tratamiento Activo **
-  const { data: activeTreatment, isSuccess: isActiveTreatmentSuccess, isLoading: isActiveTreatmentLoading, error: activeTreatmentError } = useGetActiveTreatmentQuery();
+  const { data: activeTreatment, isSuccess: isActiveTreatmentSuccess, isLoading: isActiveTreatmentLoading, error: activeTreatmentError } = useGetActiveTreatmentQuery(userId, {
+    skip: !userId, // Evita la llamada si userId no está disponible
+  });
 
   // ** Actividades Completadas **
   const { data: completedActivities, isSuccess: isCompletedActivitiesSuccess, isLoading: isCompletedActivitiesLoading, error: completedActivitiesError } = useGetCompletedActivitiesQuery(activeTreatment?._id, {
@@ -51,14 +61,14 @@ const HomeScreenPaciente = () => {
 
   // Definir los estados de ánimo disponibles
   const moods = [
-    { emoji: '😊', color: '#FFD700' }, // Feliz
-    { emoji: '😢', color: '#1E90FF' }, // Triste
     { emoji: '😠', color: '#FF4500' }, // Enojado
-    { emoji: '😴', color: '#8A2BE2' }, // Cansado
-    { emoji: '😎', color: '#32CD32' }, // Relajado
     { emoji: '🤢', color: '#FF69B4' }, // Enfermo
-    { emoji: '😇', color: '#00CED1' }, // Contento
+    { emoji: '😢', color: '#1E90FF' }, // Triste
+    { emoji: '😴', color: '#8A2BE2' }, // Cansado
     { emoji: '🤔', color: '#FF8C00' }, // Pensativo
+    { emoji: '😎', color: '#32CD32' }, // Relajado 
+    { emoji: '😊', color: '#FFD700' }, // Feliz
+    { emoji: '🤩', color: '#FFD700' }, // Feliz
   ];
 
   // ** Logear los datos recibidos de las consultas **
@@ -109,7 +119,11 @@ const HomeScreenPaciente = () => {
 
   // ** Procesar medicamentos y actividades para el calendario **
   useEffect(() => {
-    if ((allMedications || isMedLoading === false) && (assignedActivities || isAssignedActivitiesLoading === false) && (completedActivities || isCompletedActivitiesLoading === false)) {
+    if (
+      (allMedications || isMedLoading === false) &&
+      (assignedActivities || isAssignedActivitiesLoading === false) &&
+      (completedActivities || isCompletedActivitiesLoading === false)
+    ) {
       const events = {};
 
       // ** Crear un mapa de actividades completadas por fecha y por ID de actividad **
@@ -281,13 +295,17 @@ const HomeScreenPaciente = () => {
             console.log('Estado de ánimo seleccionado:', mood);
             setSelectedMood(mood);
             setIsMoodPopupOpen(false);
-            // Opcional: enviar el estado de ánimo al servidor
-            axios.post('/api/user/mood', { mood: mood.emoji })
-              .then(response => {
-                console.log('Estado de ánimo guardado:', response.data);
+            
+            // Enviar el estado de ánimo al servidor usando la mutación de Redux
+            saveMood(mood.emoji)
+              .unwrap()
+              .then((response) => {
+                console.log('Estado de ánimo guardado:', response);
+                // Opcional: mostrar una notificación de éxito
               })
-              .catch(error => {
+              .catch((error) => {
                 console.error('Error al guardar el estado de ánimo:', error);
+                // Opcional: mostrar una notificación de error
               });
           }}
         />
@@ -306,6 +324,10 @@ const HomeScreenPaciente = () => {
         onRequestClose={() => setIsPopupOpen(false)}
         medications={medicationsForPopup}
       />
+
+      {/* Mostrar indicadores de carga y errores para guardar el estado de ánimo */}
+      {isSavingMood && <p>Guardando tu estado de ánimo...</p>}
+      {saveMoodError && <p>Error al guardar tu estado de ánimo: {saveMoodError.data?.message || saveMoodError.error}</p>}
 
       {/* Calendario y Agenda */}
       {!isMoodPopupOpen && (

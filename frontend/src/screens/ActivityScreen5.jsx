@@ -1,5 +1,11 @@
+// src/screens/ActivityScreenLevel1.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useSelector } from 'react-redux';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Función para barajar opciones
 const shuffleOptions = (options, correctOption) => {
@@ -23,7 +29,7 @@ const proverbsLevel1 = [
   { id: 10, phrase: "El que ríe último...", options: ["no ríe más", "pierde"], correctOption: "ríe mejor" }
 ];
 
-const ActivityScreenLevel1 = () => {
+const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activity' y 'treatmentId' como props
   const [currentProverbIndex, setCurrentProverbIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState("");
   const [shuffledOptions, setShuffledOptions] = useState([]);
@@ -33,6 +39,12 @@ const ActivityScreenLevel1 = () => {
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
+  const userInfo = useSelector((state) => state.auth.userInfo); // Obtener información del usuario autenticado
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+
+  // Iniciar el temporizador al montar el componente
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -43,24 +55,28 @@ const ActivityScreenLevel1 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
+  // Navegar a la lista de actividades una vez que el juego haya terminado
   useEffect(() => {
     if (gameFinished) {
       const timeout = setTimeout(() => {
-        navigate('/activities');
-      }, 6000);
+        navigate('/api/treatments/activities');
+      }, 6000); // Esperar 6 segundos antes de navegar
       return () => clearTimeout(timeout);
     }
   }, [gameFinished, navigate]);
 
+  // Barajar las opciones al cambiar de refrán
   useEffect(() => {
     const currentProverb = proverbsLevel1[currentProverbIndex];
     setShuffledOptions(shuffleOptions(currentProverb.options, currentProverb.correctOption));
   }, [currentProverbIndex]);
 
+  // Manejar la selección de una opción
   const handleOptionClick = (option) => {
     setSelectedOption(option);
   };
 
+  // Manejar el envío de la respuesta del usuario
   const handleSubmitAnswer = () => {
     const currentProverb = proverbsLevel1[currentProverbIndex];
     if (selectedOption === currentProverb.correctOption) {
@@ -82,31 +98,42 @@ const ActivityScreenLevel1 = () => {
     }, 2000);
   };
 
+  // Función para guardar la actividad en el backend dentro del tratamiento correspondiente
   const saveActivity = async (finalScore) => {
+    // Validar que el usuario está autenticado
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Validar que treatmentId está definido
+    if (!treatmentId) {
+      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
+      return;
+    }
+
+    // Construir el objeto de datos de la actividad
     const activityData = {
-      name: 'Forma las frases correctas - Nivel 1',
-      description: 'Actividad para completar refranes seleccionando la opción correcta.',
-      type: 'completa_refranes',
+      activityId: activity._id, // ID de la actividad principal
       scoreObtained: finalScore,
       timeUsed: timer,
-      difficultyLevel: 1,
-      patientId: 'somePatientId',
+      progress: 'mejorando',
+      observations: `El paciente completó la actividad de completar refranes en Nivel 1.`,
+      // Puedes agregar más campos si es necesario
     };
 
-    try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+    console.log('Guardando actividad con los siguientes datos:', activityData);
 
-      if (!response.ok) {
-        console.error('Error al guardar la actividad');
-      }
+    try {
+      // Registrar la actividad dentro del tratamiento usando la mutación
+      await recordActivity({ treatmentId, activityData }).unwrap();
+
+      console.log('Actividad guardada correctamente');
+      toast.success('Actividad guardada correctamente');
     } catch (error) {
-      console.error('Hubo un problema al guardar la actividad');
+      console.error('Error al guardar la actividad:', error);
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
@@ -133,6 +160,10 @@ const ActivityScreenLevel1 = () => {
             Enviar Respuesta
           </button>
           {message && <p className="message-box">{message}</p>}
+
+          {/* Mostrar estado de guardado de la actividad */}
+          {isRecording && <p>Guardando actividad...</p>}
+          {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
         </>
       ) : (
         <div className="results">
@@ -141,9 +172,9 @@ const ActivityScreenLevel1 = () => {
           <p>Tiempo total: {timer} segundos</p>
         </div>
       )}
+      <ToastContainer />
     </div>
   );
 };
 
 export default ActivityScreenLevel1;
-

@@ -81,7 +81,7 @@ const ActivityScreen1 = () => {
       const response = await recordActivity({ treatmentId: activeTreatment._id, activityData }).unwrap();
 
       toast.success('Actividad guardada correctamente');
-      setTimeout(() => navigate('/activities'), 6000);
+      setTimeout(() => navigate('/api/treatments/activities'), 6000);
     } catch (error) {
       console.error('Error al guardar la actividad:', error);
       // Verificar si error.data existe antes de acceder a error.data.message

@@ -1,7 +1,13 @@
+// src/screens/ActivityScreenLevel1.jsx
+
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useSelector } from 'react-redux';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { useDrag, useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { useNavigate } from 'react-router-dom'; 
 
 const categoriesLevel1 = [
   { id: 1, name: 'Colores' },
@@ -17,13 +23,19 @@ const wordsLevel1 = [
   { id: 6, text: 'Triángulo', category: 'Formas', style: { width: '0', height: '0', borderLeft: '50px solid transparent', borderRight: '50px solid transparent', borderBottom: '100px solid gray' } }
 ];
 
-const ActivityScreenLevel1 = () => {
+const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activity' y 'treatmentId' como props
   const [assignedCategories, setAssignedCategories] = useState({});
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
   const navigate = useNavigate();
 
+  const userInfo = useSelector((state) => state.auth.userInfo); // Obtener información del usuario autenticado
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+
+  // Iniciar el temporizador al montar el componente
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -32,12 +44,13 @@ const ActivityScreenLevel1 = () => {
       }, 1000);
     } else {
       setTimeout(() => {
-        navigate('/activities');
+        navigate('/api/treatments/activities');
       }, 6000);
     }
     return () => clearInterval(interval);
   }, [gameFinished, navigate]);
 
+  // Manejar el drop de una palabra en una categoría
   const handleDrop = (word, category) => {
     setAssignedCategories((prevAssigned) => ({
       ...prevAssigned,
@@ -45,6 +58,7 @@ const ActivityScreenLevel1 = () => {
     }));
   };
 
+  // Verificar las respuestas y calcular el puntaje
   const checkAnswers = () => {
     let correctCount = 0;
 
@@ -64,30 +78,42 @@ const ActivityScreenLevel1 = () => {
     saveActivity(score); // Guardamos la actividad con el puntaje correcto
   };
 
+  // Función para guardar la actividad en el backend dentro del tratamiento correspondiente
   const saveActivity = async (score) => {
+    // Validar que el usuario está autenticado
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Validar que treatmentId está definido
+    if (!treatmentId) {
+      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
+      return;
+    }
+
+    // Construir el objeto de datos de la actividad
     const activityData = {
-      name: 'Clasificación de palabras - Nivel 1',
-      description: 'Actividad para clasificar palabras en categorías. Nivel 1 con Colores y Formas.',
-      type: 'clasificacion_palabras',
-      scoreObtained: score,
+      activityId: activity._id, // ID de la actividad principal
+      scoreObtained: parseFloat(score), // Asegurarse de que es un número
       timeUsed: timer,
-      patientId: 'somePatientId'
+      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
+      observations: `El paciente clasificó correctamente ${score} palabras.`,
+      // Puedes agregar más campos si es necesario
     };
 
-    try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+    console.log('Guardando actividad con los siguientes datos:', activityData);
 
-      if (!response.ok) {
-        console.error('Error al guardar la actividad');
-      }
+    try {
+      // Registrar la actividad dentro del tratamiento usando la mutación
+      await recordActivity({ treatmentId, activityData }).unwrap();
+
+      console.log('Actividad guardada correctamente');
+      toast.success('Actividad guardada correctamente');
     } catch (error) {
-      console.error('Hubo un problema al guardar la actividad');
+      console.error('Error al guardar la actividad:', error);
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
@@ -125,15 +151,22 @@ const ActivityScreenLevel1 = () => {
         {gameFinished && (
           <div className="results">
             <h2>¡Juego Terminado!</h2>
-            <p>Respuestas correctas: {correctAnswers} de 5</p>
+            <p>Respuestas correctas: {correctAnswers} / 5</p>
             <p>Tiempo total: {timer} segundos</p>
           </div>
         )}
+
+        {/* Mostrar estado de guardado de la actividad */}
+        {isRecording && <p>Guardando actividad...</p>}
+        {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
+        
+        <ToastContainer />
       </div>
     </DndProvider>
   );
 };
 
+// Componente Word
 const Word = ({ word }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'WORD',
@@ -157,7 +190,8 @@ const Word = ({ word }) => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        margin: '10px'
+        margin: '10px',
+        cursor: 'grab' // Indicador visual de arrastrar
       }}
     >
       {word.text}
@@ -165,6 +199,7 @@ const Word = ({ word }) => {
   );
 };
 
+// Componente Category
 const Category = ({ category, assignedWords, onDrop }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'WORD',
@@ -183,7 +218,8 @@ const Category = ({ category, assignedWords, onDrop }) => {
         padding: '20px',
         border: '2px dashed gray',
         minHeight: '200px',
-        margin: '10px'
+        margin: '10px',
+        borderRadius: '8px'
       }}
     >
       <h3>{category.name}</h3>

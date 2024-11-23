@@ -9,6 +9,17 @@ import ActivityScreen3 from '../screens/ActivityScreen3';
 // ... importa otros componentes de actividad según sea necesario
 import Loader from '../components/Loader';
 import Message from '../components/Message';
+import ActivityScreen4 from '../screens/ActivityScreen4.jsx';
+import ActivityScreen5 from '../screens/ActivityScreen5.jsx';
+import ActivityScreen6 from '../screens/ActivityScreen6.jsx';
+import ActivityScreen7 from '../screens/ActivityScreen7.jsx';
+import ActivityScreen8 from '../screens/ActivityScreen8.jsx';
+import ActivityScreen9 from '../screens/ActivityScreen9.jsx';
+import ActivityScreen10 from '../screens/ActivityScreen10.jsx';
+
+
+
+
 
 const ActivityPlay = () => {
   const { activityId, treatmentId } = useParams(); // Extrae ambos parámetros
@@ -29,10 +40,31 @@ const ActivityPlay = () => {
         case 'asociacion_fotos':
           setActivityComponent(<ActivityScreen2 activity={activity} treatmentId={treatmentId} />);
           break;
-        case 'suma_resta':
+        case 'matematicas':
           setActivityComponent(<ActivityScreen3 activity={activity} treatmentId={treatmentId} />);
           break;
-        // ... añade más casos según tus tipos de actividad
+        case 'diferencias':
+          setActivityComponent(<ActivityScreen4 activity={activity} treatmentId={treatmentId} />);
+          break;
+        case 'formar_refranes':
+          setActivityComponent(<ActivityScreen5 activity={activity} treatmentId={treatmentId} />);
+          break;
+        case 'clasificacion_palabras':
+          setActivityComponent(<ActivityScreen6 activity={activity} treatmentId={treatmentId} />);
+          break;
+        case 'memoria_objetos':
+          setActivityComponent(<ActivityScreen7 activity={activity} treatmentId={treatmentId} />);
+          break;
+        case 'lectura_preguntas':
+          setActivityComponent(<ActivityScreen8 activity={activity} treatmentId={treatmentId} />);
+          break;
+        case 'cumplir_instrucciones':
+          setActivityComponent(<ActivityScreen9 activity={activity} treatmentId={treatmentId} />);
+          break;
+        case 'identificar_objetos':
+          setActivityComponent(<ActivityScreen10 activity={activity} treatmentId={treatmentId} />);
+          break;
+
         default:
           setActivityComponent(<Message variant="danger">Tipo de actividad desconocido.</Message>);
       }

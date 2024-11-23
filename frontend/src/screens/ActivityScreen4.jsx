@@ -1,3 +1,5 @@
+// src/screens/ActivityScreen4.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
@@ -7,6 +9,10 @@ import 'react-toastify/dist/ReactToastify.css';
 import Image1 from '../images/Encontrar7diferenciasp1.png'; 
 import Image2 from '../images/Encontrar7diferenciasp2.png'; 
 
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useSelector } from 'react-redux';
+
+// Define las diferencias que deben ser encontradas
 const differences = [
   { id: 1, name: 'Expresión del niño', x: 228, y: 255, width: 50, height: 50 },
   { id: 2, name: 'Luz de la lámpara', x: 105, y: 185, width: 40, height: 40 },
@@ -17,7 +23,7 @@ const differences = [
   { id: 7, name: 'Color dentro del libro', x: 75, y: 375, width: 50, height: 50 },
 ];
 
-const ActivityScreen4 = () => {
+const ActivityScreen4 = ({ activity, treatmentId }) => { // Recibe 'activity' y 'treatmentId' como props
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
@@ -29,6 +35,12 @@ const ActivityScreen4 = () => {
   const [differencesFound, setDifferencesFound] = useState(0); 
   const navigate = useNavigate();
 
+  const userInfo = useSelector((state) => state.auth.userInfo); // Obtener información del usuario autenticado
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+
+  // Iniciar el temporizador al montar el componente
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -39,15 +51,17 @@ const ActivityScreen4 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
+  // Navegar a la lista de actividades una vez que el juego haya terminado
   useEffect(() => {
     if (gameFinished) {
       const timeout = setTimeout(() => {
-        navigate('/activities');
-      }, 6000);
+        navigate('/api/treatments/activities');
+      }, 6000); // Esperar 6 segundos antes de navegar
       return () => clearTimeout(timeout);
     }
   }, [gameFinished, navigate]);
 
+  // Manejar el clic en la imagen para encontrar diferencias
   const handleImageClick = (e) => {
     const rect = e.target.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -80,51 +94,64 @@ const ActivityScreen4 = () => {
     }
   };
 
+  // Manejar el envío de la respuesta del usuario
   const handleSubmit = () => {
     if (selectedOptions.length < 7) {
-      setShowDialog(true);
+      setShowDialog(true); // Mostrar diálogo si no se han encontrado todas las diferencias
     } else {
       setGameFinished(true);
       saveActivity(correctAnswers, incorrectAnswers);
     }
   };
 
+  // Continuar jugando después de decidir en el diálogo
   const handleContinuePlaying = () => {
     setShowDialog(false);
   };
 
+  // Terminar el juego después de decidir en el diálogo
   const handleEndGame = () => {
     setShowDialog(false);
     setGameFinished(true);
     saveActivity(correctAnswers, incorrectAnswers);
   };
 
+  // Función para guardar la actividad en el backend dentro del tratamiento correspondiente
   const saveActivity = async (correct, incorrect) => {
+    // Validar que el usuario está autenticado
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Validar que treatmentId está definido
+    if (!treatmentId) {
+      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
+      return;
+    }
+
+    // Construir el objeto de datos de la actividad
     const activityData = {
-      name: 'Encuentra diferencias',
-      description: 'Actividad para encontrar las diferencias entre dos imágenes.',
-      type: 'diferencias_imagenes',
-      correctAnswers: correct,
-      incorrectAnswers: incorrect,
-      timeUsed: timer,
+      activityId: activity._id, // ID de la actividad principal
       scoreObtained: points,
-      patientId: 'somePatientId',
+      timeUsed: timer,
+      progress: 'mejorando',
+      observations: `El paciente encontró ${correct} diferencias y cometió ${incorrect} errores.`,
+      // Puedes agregar más campos si es necesario
     };
 
-    try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+    console.log('Guardando actividad con los siguientes datos:', activityData);
 
-      if (!response.ok) {
-        setFeedbackMessage('Error al guardar la actividad');
-      }
+    try {
+      // Registrar la actividad dentro del tratamiento usando la mutación
+      await recordActivity({ treatmentId, activityData }).unwrap();
+
+      console.log('Actividad guardada correctamente');
+      toast.success('Actividad guardada correctamente');
     } catch (error) {
-      setFeedbackMessage('Hubo un problema al guardar la actividad');
+      console.error('Error al guardar la actividad:', error);
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
@@ -135,6 +162,10 @@ const ActivityScreen4 = () => {
       <p>Puntaje: {points}</p>
       <p>Diferencias encontradas: {differencesFound} de 7</p>
       <p>{feedbackMessage}</p>
+
+      {/* Mostrar estado de guardado de la actividad */}
+      {isRecording && <p>Guardando actividad...</p>}
+      {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
 
       <div className="images-container" style={{ position: 'relative' }} onClick={handleImageClick}>
         <img src={Image1} alt="Imagen 1" style={{ width: '464px', height: '534px' }} />
