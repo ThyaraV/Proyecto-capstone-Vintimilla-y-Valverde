@@ -1,8 +1,12 @@
+// src/screens/ActivityScreen9.jsx
+
 import React, { useState, useEffect } from 'react';
 import Fuse from 'fuse.js';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useSelector } from 'react-redux';
 
 // Listas de validaciones específicas
 const validFruitsP = ['piña', 'pera', 'papaya', 'plátano', 'paraguayo'];
@@ -86,12 +90,18 @@ const instructions = [
   }
 ];
 
-const ActivityScreen9 = () => {
+const ActivityScreen9 = ({ activity, treatmentId }) => { // Recibe 'activity' y 'treatmentId' como props
   const [responses, setResponses] = useState({});
   const [score, setScore] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
   const navigate = useNavigate();
+  
+  // Obtener información del usuario autenticado
+  const userInfo = useSelector((state) => state.auth.userInfo);
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
 
   useEffect(() => {
     window.scrollTo(0, 0); 
@@ -108,7 +118,7 @@ const ActivityScreen9 = () => {
   useEffect(() => {
     if (gameFinished) {
       const timeout = setTimeout(() => {
-        navigate('/activities'); 
+        navigate('/api/treatments/activities'); 
       }, 6000);
       return () => clearTimeout(timeout);
     }
@@ -137,35 +147,42 @@ const ActivityScreen9 = () => {
     saveActivity(finalScore, timer.toFixed(2));
   };
 
+  // Función para guardar la actividad en el backend dentro del tratamiento correspondiente
   const saveActivity = async (finalScore, timeUsed) => {
+    // Validar que el usuario está autenticado
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Validar que treatmentId está definido
+    if (!treatmentId) {
+      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
+      return;
+    }
+
+    // Construir el objeto de datos de la actividad
     const activityData = {
-      name: 'Seguir Instrucciones',
-      description: 'Juego de seguir instrucciones con respuestas mixtas.',
-      type: 'seguir_instrucciones',
+      activityId: activity._id, // ID de la actividad principal
       scoreObtained: finalScore,
       timeUsed: parseFloat(timeUsed),
-      difficultyLevel: 1,
-      observations: 'El usuario completó la actividad satisfactoriamente.',
-      progress: 'mejorando',
-      patientId: 'somePatientId' 
+      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
+      observations: 'El usuario completó la actividad de seguir instrucciones.',
+      // Puedes agregar más campos si es necesario
     };
 
-    try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+    console.log('Guardando actividad con los siguientes datos:', activityData);
 
-      if (response.ok) {
-        toast.success('Actividad guardada correctamente.');
-      } else {
-        toast.error('Error al guardar la actividad.');
-      }
+    try {
+      // Registrar la actividad dentro del tratamiento usando la mutación
+      await recordActivity({ treatmentId, activityData }).unwrap();
+
+      console.log('Actividad guardada correctamente');
+      toast.success('Actividad guardada correctamente');
     } catch (error) {
-      toast.error('Hubo un problema al guardar la actividad.');
+      console.error('Error al guardar la actividad:', error);
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
@@ -219,10 +236,13 @@ const ActivityScreen9 = () => {
         </div>
       )}
 
+      {/* Mostrar estado de guardado de la actividad */}
+      {isRecording && <p>Guardando actividad...</p>}
+      {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
+      
       <ToastContainer />
     </div>
   );
 };
 
 export default ActivityScreen9;
-

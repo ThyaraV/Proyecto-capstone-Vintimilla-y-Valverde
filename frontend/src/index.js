@@ -68,7 +68,7 @@ import TreatmentsScreen from "./screens/Médico/TreatmentsScreen.jsx";
 import TreatmentsListScreen from "./screens/Médico/TreatmentsListScreen.jsx";
 import EditTreatmentScreen from "./screens/Médico/treatmentsEditScreen.jsx";
 import ActivityPlay from "./components/ActivityPlay.jsx";
-import Notifications from "./components/Notifications.jsx";
+
 
 const HomeScreenSelector = () => {
   const { userInfo } = useSelector((state) => state.auth);

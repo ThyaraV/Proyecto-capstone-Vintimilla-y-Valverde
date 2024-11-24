@@ -12,16 +12,16 @@ import '../assets/styles/Header.css';
 
 const Header = () => {
   const { userInfo } = useSelector((state) => state.auth);
-  const notifications = useSelector((state) => state.notifications.notifications);
+  //const notifications = useSelector((state) => state.notifications.notifications);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [logoutApiCall] = useLogoutMutation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
-  const [showNotifications, setShowNotifications] = useState(false);
+ // const [showNotifications, setShowNotifications] = useState(false);
 
   // Calcula el total de notificaciones
-  const totalNotifications = Object.values(notifications).reduce((acc, count) => acc + count, 0);
+  //const totalNotifications = Object.values(notifications).reduce((acc, count) => acc + count, 0);
 
   // Maneja el cierre de sesión
   const logoutHandler = async () => {
@@ -88,13 +88,13 @@ const Header = () => {
                 <FaComments /> Chat
               </Nav.Link>
 
-              {/* Campanita de Notificaciones */}
+              {/* Campanita de Notificaciones
               <Nav.Link onClick={handleNotificationsClick} className="position-relative">
                 <FaBell size={20} />
                 {totalNotifications > 0 && (
                   <span className="notification-badge-header">{totalNotifications}</span>
                 )}
-              </Nav.Link>
+              </Nav.Link>*/}
 
               {/* Enlace de usuario y opciones de administración */}
               {userInfo ? (

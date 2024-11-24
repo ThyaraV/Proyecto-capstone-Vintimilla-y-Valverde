@@ -6,9 +6,6 @@ import { useGetActivityByIdQuery } from '../slices/activitiesSlice.js'; // Asumi
 import ActivityScreen1 from '../screens/ActivityScreen1';
 import ActivityScreen2 from '../screens/ActivityScreen2';
 import ActivityScreen3 from '../screens/ActivityScreen3';
-// ... importa otros componentes de actividad según sea necesario
-import Loader from '../components/Loader';
-import Message from '../components/Message';
 import ActivityScreen4 from '../screens/ActivityScreen4.jsx';
 import ActivityScreen5 from '../screens/ActivityScreen5.jsx';
 import ActivityScreen6 from '../screens/ActivityScreen6.jsx';
@@ -16,10 +13,23 @@ import ActivityScreen7 from '../screens/ActivityScreen7.jsx';
 import ActivityScreen8 from '../screens/ActivityScreen8.jsx';
 import ActivityScreen9 from '../screens/ActivityScreen9.jsx';
 import ActivityScreen10 from '../screens/ActivityScreen10.jsx';
+import Loader from '../components/Loader';
+import Message from '../components/Message';
+import { ACTIVITY_TYPES, ACTIVITY_LEVELS } from '../constants'; // Importar constantes
 
-
-
-
+const activityComponents = {
+  [ACTIVITY_TYPES.BUSQUEDA_LETRAS]: ActivityScreen1,
+  [ACTIVITY_TYPES.ASOCIACION_FOTOS]: ActivityScreen2,
+  [ACTIVITY_TYPES.MATEMATICAS]: ActivityScreen3,
+  [ACTIVITY_TYPES.DIFERENCIAS]: ActivityScreen4,
+  [ACTIVITY_TYPES.FORMAR_REFRANES]: ActivityScreen5,
+  [ACTIVITY_TYPES.CLASIFICACION_PALABRAS]: ActivityScreen6,
+  [ACTIVITY_TYPES.MEMORIA_OBJETOS]: ActivityScreen7,
+  [ACTIVITY_TYPES.LECTURA_PREGUNTAS]: ActivityScreen8,
+  [ACTIVITY_TYPES.CUMPLIR_INSTRUCCIONES]: ActivityScreen9,
+  [ACTIVITY_TYPES.IDENTIFICAR_OBJETOS]: ActivityScreen10,
+  // ...otros tipos
+};
 
 const ActivityPlay = () => {
   const { activityId, treatmentId } = useParams(); // Extrae ambos parámetros
@@ -33,40 +43,20 @@ const ActivityPlay = () => {
     if (activity) {
       console.log('Actividad obtenida en ActivityPlay:', activity);
       
-      switch (activity.type) {
-        case 'busqueda_letras':
-          setActivityComponent(<ActivityScreen1 activity={activity} treatmentId={treatmentId} />);
-          break;
-        case 'asociacion_fotos':
-          setActivityComponent(<ActivityScreen2 activity={activity} treatmentId={treatmentId} />);
-          break;
-        case 'matematicas':
-          setActivityComponent(<ActivityScreen3 activity={activity} treatmentId={treatmentId} />);
-          break;
-        case 'diferencias':
-          setActivityComponent(<ActivityScreen4 activity={activity} treatmentId={treatmentId} />);
-          break;
-        case 'formar_refranes':
-          setActivityComponent(<ActivityScreen5 activity={activity} treatmentId={treatmentId} />);
-          break;
-        case 'clasificacion_palabras':
-          setActivityComponent(<ActivityScreen6 activity={activity} treatmentId={treatmentId} />);
-          break;
-        case 'memoria_objetos':
-          setActivityComponent(<ActivityScreen7 activity={activity} treatmentId={treatmentId} />);
-          break;
-        case 'lectura_preguntas':
-          setActivityComponent(<ActivityScreen8 activity={activity} treatmentId={treatmentId} />);
-          break;
-        case 'cumplir_instrucciones':
-          setActivityComponent(<ActivityScreen9 activity={activity} treatmentId={treatmentId} />);
-          break;
-        case 'identificar_objetos':
-          setActivityComponent(<ActivityScreen10 activity={activity} treatmentId={treatmentId} />);
-          break;
+      const { type, difficultyLevel } = activity;
 
-        default:
-          setActivityComponent(<Message variant="danger">Tipo de actividad desconocido.</Message>);
+      // Validar que el nivel es válido
+      if (!ACTIVITY_LEVELS.includes(difficultyLevel)) {
+        setActivityComponent(<Message variant="danger">Nivel de actividad inválido.</Message>);
+        return;
+      }
+
+      const Component = activityComponents[type];
+      
+      if (Component) {
+        setActivityComponent(<Component activity={activity} treatmentId={treatmentId} level={difficultyLevel} />);
+      } else {
+        setActivityComponent(<Message variant="danger">Tipo de actividad desconocido.</Message>);
       }
     }
   }, [activity, treatmentId]);
@@ -82,6 +72,3 @@ const ActivityPlay = () => {
 };
 
 export default ActivityPlay;
-
-
-

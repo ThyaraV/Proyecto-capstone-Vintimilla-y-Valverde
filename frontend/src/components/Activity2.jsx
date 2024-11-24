@@ -1,36 +1,9 @@
+// src/components/Activity.jsx
+
 import { Card } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
 import backgroundImg from '../images/background2.png'; // Ruta a la imagen de fondo
 
 const Activity = ({ activity }) => {
-  // Determina la ruta basada en el tipo de actividad o un identificador único
-  const getActivityLink = (activity) => {
-    switch (activity.name) {
-      case 'Búsqueda de Letras':
-        return '/activity/level2/1';
-      case 'Asociación de Fotos':
-        return '/activity/level2/2';
-      case 'Sumas y Restas':
-        return '/activity/level2/3';
-      case 'Encontrar Diferencias':
-        return '/activity/level2/4';
-      case 'Formar Refranes':
-        return '/activity/level2/5';
-      case 'Clasificación de Palabras':
-        return '/activity/level2/6';
-      case 'Ejercicio de Memoria':
-        return '/activity/level2/7';
-      case 'Lectura y Preguntas':
-        return '/activity/level2/8';
-      case 'Cumplir Instrucciones':
-        return '/activity/level2/9';
-      case 'Identificar Objetos':
-        return '/activity/level2/10';
-      default:
-        return `/activity/${activity._id}`;
-    }
-  };
-
   return (
     <Card className="activity-card my-3 p-3 rounded">
       {/* Imagen de fondo */}
@@ -45,11 +18,9 @@ const Activity = ({ activity }) => {
       
       <Card.Body className="text-center">
         {/* Título de la actividad */}
-        <Link to={getActivityLink(activity)}>
-          <Card.Title as="h5" className="activity-title">
-            <strong>{activity.name}</strong>
-          </Card.Title>
-        </Link>
+        <Card.Title as="h5" className="activity-title">
+          <strong>{activity.name}</strong>
+        </Card.Title>
 
         {/* Descripción de la actividad */}
         <Card.Text className="activity-description text-muted">
@@ -58,9 +29,7 @@ const Activity = ({ activity }) => {
 
         {/* Botón para jugar */}
         <div className="activity-card__wrapper">
-          <Link to={getActivityLink(activity)}>
-            <button className="activity-card__btn activity-card__btn-solid">Jugar</button>
-          </Link>
+          <button className="activity-card__btn activity-card__btn-solid">Jugar</button>
         </div>
       </Card.Body>
     </Card>
