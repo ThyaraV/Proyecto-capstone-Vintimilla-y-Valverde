@@ -1,5 +1,11 @@
+// src/screens/ActivityScreen4.jsx
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import { useNavigate, useParams } from 'react-router-dom'; 
+import 'react-toastify/dist/ReactToastify.css';
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useSelector } from 'react-redux';
 
 // Importa las imágenes
 import Image1 from '../images/imagen1.png'; 
@@ -19,6 +25,7 @@ const differences = [
 ];
 
 const ActivityScreen4 = () => {
+  const { treatmentId, activityId } = useParams(); // Extrae treatmentId y activityId de la ruta
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
@@ -29,6 +36,13 @@ const ActivityScreen4 = () => {
   const [timer, setTimer] = useState(0);
   const [differencesFound, setDifferencesFound] = useState(0);
   const navigate = useNavigate();
+
+  // Obtener información del usuario autenticado desde el estado de Redux
+  const userInfo = useSelector((state) => state.auth.userInfo);
+  const patientId = userInfo?._id;
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
 
   useEffect(() => {
     let interval;
@@ -41,11 +55,10 @@ const ActivityScreen4 = () => {
   }, [gameFinished]);
 
   useEffect(() => {
-    if (gameFinished) {
-      const timeout = setTimeout(() => {
-        navigate('/activities');
+    if (gameFinished && !differencesFound) { // Ajusta la condición si es necesario
+      setTimeout(() => {
+        navigate('/api/treatments/activities');
       }, 6000);
-      return () => clearTimeout(timeout);
     }
   }, [gameFinished, navigate]);
 
@@ -101,31 +114,44 @@ const ActivityScreen4 = () => {
   };
 
   const saveActivity = async (correct, incorrect) => {
+    // Validar que el usuario está autenticado
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Validar que treatmentId está definido
+    if (!treatmentId) {
+      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
+      return;
+    }
+
+    // Construir el objeto de datos de la actividad
     const activityData = {
-      name: 'Encuentra diferencias',
-      description: 'Actividad para encontrar las diferencias entre dos imágenes.',
-      type: 'diferencias_imagenes',
+      activityId, // ID de la actividad principal desde los parámetros de la ruta
       correctAnswers: correct,
       incorrectAnswers: incorrect,
       timeUsed: timer,
       scoreObtained: points,
-      patientId: 'somePatientId',
+      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
+      observations: 'El paciente completó la actividad de encontrar diferencias en nivel avanzado.',
+      patientId, // ID del paciente desde el estado de Redux
+      difficultyLevel: 3, // Nivel de dificultad
+      image: '', // No hay imagen asociada en esta actividad
     };
 
-    try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+    console.log('Guardando actividad con los siguientes datos:', activityData);
 
-      if (!response.ok) {
-        setFeedbackMessage('Error al guardar la actividad');
-      }
+    try {
+      // Registrar la actividad dentro del tratamiento usando la mutación
+      await recordActivity({ treatmentId, activityData }).unwrap();
+
+      console.log('Actividad guardada correctamente');
+      toast.success('Actividad guardada correctamente');
     } catch (error) {
-      setFeedbackMessage('Hubo un problema al guardar la actividad');
+      console.error('Error al guardar la actividad:', error);
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
@@ -171,6 +197,8 @@ const ActivityScreen4 = () => {
           </div>
         </div>
       )}
+
+      <ToastContainer />
     </div>
   );
 };

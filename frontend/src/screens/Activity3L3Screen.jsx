@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/screens/Activity3L3Screen.jsx
 
+import React, { useState, useEffect } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import { useNavigate, useParams } from 'react-router-dom'; 
+import 'react-toastify/dist/ReactToastify.css';
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useSelector } from 'react-redux';
+
+// Función para generar ecuaciones
 const generateEquation = (type) => {
-  const num1 = Math.floor(Math.random() * 500)+500;  // Números más grandes para nivel 3
-  const num2 = Math.floor(Math.random() * 500)+500;
+  const num1 = Math.floor(Math.random() * 500) + 500;  // Números más grandes para nivel 3
+  const num2 = Math.floor(Math.random() * 500) + 500;
 
   if (type === 'sum') {
     return { equation: `${num1} + ${num2}`, correctAnswer: num1 + num2, num1, num2, operator: '+' };
@@ -13,6 +20,7 @@ const generateEquation = (type) => {
 };
 
 const Activity3L3Screen = () => {
+  const { treatmentId, activityId } = useParams(); // Extrae treatmentId y activityId de la ruta
   const [equations, setEquations] = useState([]);
   const [currentEquationIndex, setCurrentEquationIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
@@ -23,7 +31,15 @@ const Activity3L3Screen = () => {
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
+  // Obtener información del usuario autenticado desde el estado de Redux
+  const userInfo = useSelector((state) => state.auth.userInfo);
+  const patientId = userInfo?._id;
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+
   useEffect(() => {
+    // Generar ecuaciones al inicio
     const generatedEquations = [
       generateEquation('sum'),
       generateEquation('sum'),
@@ -55,7 +71,7 @@ const Activity3L3Screen = () => {
       setActivitySaved(true);
 
       setTimeout(() => {
-        navigate('/activities');
+        navigate('/api/treatments/activities');
       }, 6000);
     }
   }, [gameFinished, activitySaved, score, navigate]);
@@ -64,7 +80,7 @@ const Activity3L3Screen = () => {
     const currentEquation = equations[currentEquationIndex];
     const correctAnswer = currentEquation.correctAnswer;
 
-    if (parseInt(userAnswer) === correctAnswer) {
+    if (parseInt(userAnswer, 10) === correctAnswer) {
       setScore((prevScore) => prevScore + 5);
       setMessage('¡Correcto! Ganaste 5 puntos.');
     } else {
@@ -88,32 +104,42 @@ const Activity3L3Screen = () => {
   };
 
   const saveActivity = async (finalScore) => {
+    // Validar que el usuario está autenticado
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Validar que treatmentId está definido
+    if (!treatmentId) {
+      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
+      return;
+    }
+
+    // Construir el objeto de datos de la actividad
     const activityData = {
-      name: 'Sumas y Restas - Nivel 3',
-      description: 'Actividad de sumas y restas avanzada con puntajes.',
-      type: 'sumas_restas',
+      activityId, // ID de la actividad principal desde los parámetros de la ruta
       scoreObtained: finalScore,
-      timeUsed: timer,
-      difficultyLevel: 3,
+      timeUsed: parseFloat(timer), 
+      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
       observations: 'El paciente completó la actividad de sumas y restas en nivel avanzado.',
-      progress: 'mejorando',
-      patientId: 'somePatientId',
+      patientId, // ID del paciente desde el estado de Redux
+      difficultyLevel: 3, // Nivel de dificultad
+      image: '', // No hay imagen asociada en esta actividad
     };
 
-    try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+    console.log('Guardando actividad con los siguientes datos:', activityData);
 
-      if (!response.ok) {
-        setMessage('Error al guardar la actividad');
-      }
+    try {
+      // Registrar la actividad dentro del tratamiento usando la mutación
+      await recordActivity({ treatmentId, activityData }).unwrap();
+
+      console.log('Actividad guardada correctamente');
+      toast.success('Actividad guardada correctamente');
     } catch (error) {
-      setMessage('Hubo un problema al guardar la actividad');
+      console.error('Error al guardar la actividad:', error);
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
@@ -157,6 +183,8 @@ const Activity3L3Screen = () => {
           )}
         </>
       )}
+
+      <ToastContainer />
     </div>
   );
 };
