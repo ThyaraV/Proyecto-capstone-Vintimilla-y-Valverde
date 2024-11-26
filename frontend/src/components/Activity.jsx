@@ -1,9 +1,9 @@
-// src/components/Activity.jsx
+// src/components/ActivityLevel1.jsx
 
 import { Card } from 'react-bootstrap';
-import backgroundImg from '../images/background.png'; // Ruta a la imagen de fondo
+import backgroundImg from '../images/background1.png'; // Imagen específica para nivel 1
 
-const Activity = ({ activity }) => {
+const ActivityLevel1 = ({ activity }) => {
   return (
     <Card className="activity-card my-3 p-3 rounded">
       {/* Imagen de fondo */}
@@ -36,4 +36,4 @@ const Activity = ({ activity }) => {
   );
 };
 
-export default Activity;
+export default ActivityLevel1;

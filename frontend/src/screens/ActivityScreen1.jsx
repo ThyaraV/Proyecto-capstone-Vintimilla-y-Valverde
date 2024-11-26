@@ -69,7 +69,7 @@ const ActivityScreen1 = () => {
 
       const activityData = {
         activityId: activityId,
-        scoreObtained: 100, // Ajusta según cómo calcules el score
+        scoreObtained: 5, // Ajusta según cómo calcules el score
         timeUsed: parseFloat(miliseconds),
         progress: 'mejorando',
         observations: 'El paciente completó la actividad satisfactoriamente.',

@@ -45,7 +45,7 @@ const Activity1L2Screen = () => {
       if (gamesToWin > 1) {
         setTimeout(() => setBoard(createBoard(2)), 500);
       } else if (gamesToWin === 1) {
-        saveActivity(100, timer.toFixed(2)); // Guardar la actividad con el puntaje actualizado
+        saveActivity(5, timer.toFixed(2)); // Guardar la actividad con el puntaje actualizado
       }
     }
   };
