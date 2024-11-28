@@ -1,8 +1,12 @@
+// src/screens/ActivityScreenLevel3.jsx
+
 import React, { useState, useEffect } from 'react';
 import Fuse from 'fuse.js';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación RTK Query
+import { useSelector } from 'react-redux';
 
 const fuseOptions = { includeScore: true, threshold: 0.4 };
 const validProfessions = ['científico', 'ingeniero', 'matemático', 'arquitecto', 'doctor'];
@@ -89,17 +93,28 @@ const instructionsLevel3 = [
 ];
 
 const ActivityScreenLevel3 = () => {
+  const { treatmentId, activityId } = useParams(); // Extrae treatmentId y activityId de la ruta
+  const navigate = useNavigate();
+
   const [responses, setResponses] = useState({});
   const [score, setScore] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
   const [feedback, setFeedback] = useState({});
-  const navigate = useNavigate();
 
+  // Obtener información del usuario autenticado desde el estado de Redux
+  const userInfo = useSelector((state) => state.auth.userInfo);
+  const patientId = userInfo?._id;
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+
+  // Scroll al inicio al montar el componente
   useEffect(() => {
-    window.scrollTo(0, 0); 
+    window.scrollTo(0, 0);
   }, []);
 
+  // Iniciar el temporizador
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -108,16 +123,30 @@ const ActivityScreenLevel3 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
+  // Manejar errores de la mutación
+  useEffect(() => {
+    if (recordError) {
+      toast.error(`Error al guardar la actividad: ${recordError.data?.message || recordError.message}`);
+    }
+  }, [recordError]);
+
+  // Verificar si el juego ha finalizado y guardar la actividad
   useEffect(() => {
     if (gameFinished) {
+      toast.success('Juego terminado. ¡Revisa tus resultados!');
+      saveActivity();
+
+      // Navegar de regreso después de 6 segundos
       const timeout = setTimeout(() => {
-        navigate('/activities'); 
+        navigate('/api/treatments/activities'); // Asegúrate de que esta ruta sea correcta
       }, 6000);
       return () => clearTimeout(timeout);
     }
   }, [gameFinished, navigate]);
 
   const handleChange = (id, value) => {
+    if (gameFinished) return; // Evitar cambiar respuestas después de finalizar el juego
+
     setResponses((prev) => ({ ...prev, [id]: value }));
   };
 
@@ -145,39 +174,62 @@ const ActivityScreenLevel3 = () => {
     setScore(finalScore);
     setFeedback(newFeedback);
     setGameFinished(true);
-    toast.success('Juego terminado. ¡Revisa tus resultados!');
-    saveActivity(finalScore, timer.toFixed(2));
   };
 
-  const saveActivity = async (finalScore, timeUsed) => {
+  // Función para guardar la actividad utilizando RTK Query
+  const saveActivity = async () => {
+    // Validar que el usuario está autenticado
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Validar que treatmentId y activityId están definidos
+    if (!treatmentId || !activityId) {
+      toast.error('Tratamiento o actividad no identificado. No se puede guardar la actividad.');
+      return;
+    }
+
+    // Calcula respuestas correctas e incorrectas
+    const correctAnswers = instructionsLevel3.filter(
+      (instruction) => {
+        const userResponse = responses[instruction.id] || '';
+        if (instruction.type === 'input') {
+          return instruction.validator(userResponse);
+        } else if (instruction.type === 'multiple') {
+          return userResponse.toLowerCase() === instruction.correctAnswer.toLowerCase();
+        }
+        return false;
+      }
+    ).length;
+
+    const incorrectAnswers = instructionsLevel3.length - correctAnswers;
+
+    // Construir el objeto de datos de la actividad
     const activityData = {
-      name: 'Seguir Instrucciones - Nivel 3',
-      description: 'Juego de seguir instrucciones con respuestas mixtas - Nivel 3.',
-      type: 'seguir_instrucciones',
-      scoreObtained: finalScore,
-      timeUsed: parseFloat(timeUsed),
-      difficultyLevel: 3,
+      activityId, // ID de la actividad principal desde los parámetros de la ruta
+      correctAnswers, // Número de respuestas correctas
+      incorrectAnswers, // Número de respuestas incorrectas
+      timeUsed: timer,
+      scoreObtained: parseFloat(score.toFixed(2)), // Asegurar que es un número decimal
+      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
       observations: 'El usuario completó la actividad satisfactoriamente.',
-      progress: 'mejorando',
-      patientId: 'somePatientId' 
+      patientId, // ID del paciente desde el estado de Redux
+      difficultyLevel: 3, // Nivel de dificultad
+      image: '', // No hay imagen asociada en esta actividad
     };
 
-    try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+    console.log('Guardando actividad con los siguientes datos:', activityData);
 
-      if (response.ok) {
-        toast.success('Actividad guardada correctamente.');
-      } else {
-        toast.error('Error al guardar la actividad.');
-      }
+    try {
+      // Registrar la actividad dentro del tratamiento usando la mutación RTK Query
+      await recordActivity({ treatmentId, activityData }).unwrap();
+
+      console.log('Actividad guardada correctamente');
+      toast.success('Actividad guardada correctamente');
     } catch (error) {
-      toast.error('Hubo un problema al guardar la actividad.');
+      console.error('Error al guardar la actividad:', error);
+      // El error será manejado por el useEffect anterior
     }
   };
 
@@ -230,7 +282,7 @@ const ActivityScreenLevel3 = () => {
       ) : (
         <div className="results">
           <h2>¡Juego Terminado!</h2>
-          <p>Puntuación final: {score.toFixed(2)} / 5</p>
+          <p>Puntuación final: {score.toFixed(2)} / {instructionsLevel3.length * 0.5}</p>
           <p>Tiempo total: {timer.toFixed(2)} segundos</p>
         </div>
       )}
@@ -241,5 +293,3 @@ const ActivityScreenLevel3 = () => {
 };
 
 export default ActivityScreenLevel3;
-
-

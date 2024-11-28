@@ -1,11 +1,14 @@
+// src/screens/ActivityScreenLevel2.jsx
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Slider from 'react-slick';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import "slick-carousel/slick/slick.css"; 
-import "slick-carousel/slick/slick-theme.css";
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useSelector } from 'react-redux';
 
+// Definición de preguntas de nivel 2
 const questionsLevel2 = [
   {
     id: 1,
@@ -13,21 +16,55 @@ const questionsLevel2 = [
     options: ['Un libro', 'Un teléfono', 'Una botella de agua', 'Un cuaderno'],
     correctAnswer: 'Un cuaderno'
   },
-  // (otras preguntas aquí)
+  {
+    id: 2,
+    question: '¿Con quién se encontró Marta en la biblioteca?',
+    options: ['Su hermana Laura', 'Su amiga Laura', 'Su profesora Laura', 'Su prima Laura'],
+    correctAnswer: 'Su amiga Laura'
+  },
+  {
+    id: 3,
+    question: '¿Qué observó Marta en el parque?',
+    options: ['Una exhibición de arte urbano', 'Un desfile de moda', 'Un torneo de fútbol', 'Un espectáculo de teatro'],
+    correctAnswer: 'Una exhibición de arte urbano'
+  },
+  {
+    id: 4,
+    question: '¿Qué compró Marta en la floristería?',
+    options: ['Rosas', 'Lirios', 'Tulipanes', 'Girasoles'],
+    correctAnswer: 'Tulipanes'
+  },
+  {
+    id: 5,
+    question: '¿Qué hizo Marta al llegar a casa?',
+    options: ['Preparó la cena', 'Organizó sus libros nuevos', 'Hizo ejercicio', 'Vio una película'],
+    correctAnswer: 'Organizó sus libros nuevos'
+  }
 ];
 
 const ActivityScreenLevel2 = () => {
+  const { treatmentId, activityId } = useParams(); // Extrae treatmentId y activityId de la ruta
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [score, setScore] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(0); // Estado para rastrear la diapositiva actual
   const navigate = useNavigate();
   const sliderRef = React.useRef(null);
 
+  // Obtener información del usuario autenticado desde el estado de Redux
+  const userInfo = useSelector((state) => state.auth.userInfo);
+  const patientId = userInfo?._id;
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+
+  // Scroll al inicio al montar el componente
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Iniciar el temporizador
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -38,16 +75,31 @@ const ActivityScreenLevel2 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
+  // Manejar errores de la mutación
+  useEffect(() => {
+    if (recordError) {
+      toast.error(`Error al guardar la actividad: ${recordError.data?.message || recordError.message}`);
+    }
+  }, [recordError]);
+
+  // Verificar si el juego ha finalizado y guardar la actividad
   useEffect(() => {
     if (gameFinished) {
+      toast.success('Juego terminado. ¡Revisa tus resultados!');
+      saveActivity();
+
+      // Navegar de regreso después de 6 segundos
       const timeout = setTimeout(() => {
-        navigate('/activities');
+        navigate('/api/treatments/activities'); // Asegúrate de que esta ruta sea correcta
       }, 6000);
       return () => clearTimeout(timeout);
     }
-  }, [gameFinished, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameFinished]);
 
   const handleOptionClick = (questionId, answer) => {
+    if (gameFinished) return; // Evitar cambiar respuestas después de finalizar el juego
+
     setSelectedAnswers((prevAnswers) => ({
       ...prevAnswers,
       [questionId]: answer
@@ -63,36 +115,53 @@ const ActivityScreenLevel2 = () => {
     });
     setScore(finalScore);
     setGameFinished(true);
-    toast.success('Juego terminado. ¡Revisa tus resultados!');
-    saveActivity(finalScore, timer);
   };
 
-  const saveActivity = async (finalScore, timeUsed) => {
+  // Función para guardar la actividad utilizando RTK Query
+  const saveActivity = async () => {
+    // Validar que el usuario está autenticado
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Validar que treatmentId y activityId están definidos
+    if (!treatmentId || !activityId) {
+      toast.error('Tratamiento o actividad no identificado. No se puede guardar la actividad.');
+      return;
+    }
+
+    // Calcula respuestas correctas e incorrectas
+    const correctAnswers = questionsLevel2.filter(
+      (question) => selectedAnswers[question.id] === question.correctAnswer
+    ).length;
+    const incorrectAnswers = questionsLevel2.length - correctAnswers;
+
+    // Construir el objeto de datos de la actividad
     const activityData = {
-      name: 'Responde Preguntas - Nivel 2',
-      description: 'Actividad de preguntas basada en una historia más larga.',
-      type: 'preguntas',
-      scoreObtained: finalScore,
-      timeUsed: timeUsed,
-      patientId: 'somePatientId'
+      activityId, // ID de la actividad principal desde los parámetros de la ruta
+      correctAnswers, // Número de respuestas correctas
+      incorrectAnswers, // Número de respuestas incorrectas
+      timeUsed: timer,
+      scoreObtained: parseFloat((score).toFixed(2)), // Asegurar que es un número decimal
+      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
+      observations: 'El paciente completó la actividad de preguntas de nivel intermedio.',
+      patientId, // ID del paciente desde el estado de Redux
+      difficultyLevel: 2, // Nivel de dificultad
+      image: '', // No hay imagen asociada en esta actividad
     };
 
-    try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+    console.log('Guardando actividad con los siguientes datos:', activityData);
 
-      if (response.ok) {
-        toast.success('Actividad guardada correctamente');
-      } else {
-        toast.error('Error al guardar la actividad');
-      }
+    try {
+      // Registrar la actividad dentro del tratamiento usando la mutación
+      await recordActivity({ treatmentId, activityData }).unwrap();
+
+      console.log('Actividad guardada correctamente');
+      toast.success('Actividad guardada correctamente');
     } catch (error) {
-      toast.error('Hubo un problema al guardar la actividad');
+      console.error('Error al guardar la actividad:', error);
+      // El error será manejado por el useEffect anterior
     }
   };
 
@@ -104,7 +173,8 @@ const ActivityScreenLevel2 = () => {
     slidesToScroll: 1,
     arrows: true,
     swipe: false,
-    adaptiveHeight: true
+    adaptiveHeight: true,
+    afterChange: (current) => setCurrentSlide(current) // Actualiza la diapositiva actual
   };
 
   return (
@@ -160,8 +230,20 @@ const ActivityScreenLevel2 = () => {
             </div>
 
             <div className="navigation-buttons">
-              <button onClick={() => sliderRef.current.slickPrev()} className="prev-button">Anterior</button>
-              <button onClick={() => sliderRef.current.slickNext()} className="next-button">Siguiente</button>
+              <button
+                onClick={() => sliderRef.current.slickPrev()}
+                className="prev-button"
+                disabled={currentSlide === 0} // Opcional: Deshabilitar 'Anterior' en la primera diapositiva
+              >
+                Anterior
+              </button>
+              <button
+                onClick={() => sliderRef.current.slickNext()}
+                className="next-button"
+                disabled={currentSlide === questionsLevel2.length - 1} // Deshabilitar 'Siguiente' en la última diapositiva
+              >
+                Siguiente
+              </button>
             </div>
 
             <button onClick={handleSubmit} className="submit-button">Enviar Respuestas</button>
@@ -169,7 +251,7 @@ const ActivityScreenLevel2 = () => {
         ) : (
           <div className="results">
             <h2>¡Juego Terminado!</h2>
-            <p>Puntuación final: {score}</p>
+            <p>Puntuación final: {score} de {questionsLevel2.length}</p>
             <p>Tiempo total: {timer} segundos</p>
           </div>
         )}
