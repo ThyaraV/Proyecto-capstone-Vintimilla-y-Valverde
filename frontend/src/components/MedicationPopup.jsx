@@ -17,7 +17,7 @@ const MedicationPopup = ({ isOpen, onRequestClose, medications = [] }) => {
       overlayClassName="medication-overlay"
     >
       <div className="modal-header">
-        <h2>🩺 Medicamentos de Hoy</h2>
+        <h2>🩺 Medicamentos de hoy</h2>
         <button className="close-icon" onClick={onRequestClose}>✖</button>
       </div>
       {medications.length > 0 ? (

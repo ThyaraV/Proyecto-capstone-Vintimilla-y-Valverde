@@ -199,6 +199,20 @@ const createTreatment = asyncHandler(async (req, res) => {
   });
 
   const createdTreatment = await treatment.save();
+  // Asignar actividades a cada paciente seleccionado
+  if (treatment && activities && activities.length > 0) {
+    for (const patientId of patientIds) {
+      const patient = await Patient.findById(patientId);
+
+      if (patient) {
+        // Agregar el tratamiento al paciente
+        patient.treatments = patient.treatments || [];
+        patient.treatments.push(treatment._id);
+
+        await patient.save();
+      }
+    }
+  }
 
   console.log('Tratamiento creado:', createdTreatment); // Depuración
 

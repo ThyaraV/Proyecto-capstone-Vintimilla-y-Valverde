@@ -7,6 +7,7 @@ import '../assets/styles/MocaStart.css';
 import Image1a from '../images/infopaciente.png';
 import Image2a from '../images/infopaciente.png';
 import Image3a from '../images/infopaciente.png';
+import Image4a from '../images/infopaciente.png'; // Nueva imagen para la prueba sin médico
 
 const MocaScreen = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -31,6 +32,8 @@ const MocaScreen = () => {
       navigate(`/moca/history/${selectedPatient?._id}`);
     } else if (option === 'iniciar') {
       navigate(`/moca/start/${selectedPatient?._id}`);
+    } else if (option === 'iniciarPaciente') {
+      navigate(`/moca/patient/${selectedPatient?._id}`); // Nueva ruta para la prueba sin médico
     }
   };
 
@@ -54,7 +57,7 @@ const MocaScreen = () => {
                   onClick={() => handleSelectPatient(patient)}
                   className="patient-item"
                 >
-                  {patient.user?.name || "Paciente sin nombre"}
+                  {patient.user?.name || 'Paciente sin nombre'}
                 </ListGroup.Item>
               ))}
             </ListGroup>
@@ -64,6 +67,7 @@ const MocaScreen = () => {
         {/* Columna derecha: Botones de Opciones */}
         <Col md={8} className="moca-options-container">
           <div className="button-container">
+            {/* Opción para Registrar Resultados */}
             <div className="config-card" onClick={() => handleOptionChange('registrar')}>
               <span className="config-card-overlay"></span>
               <div className="config-card-content">
@@ -72,6 +76,7 @@ const MocaScreen = () => {
               </div>
             </div>
 
+            {/* Opción para Consultar Histórico */}
             <div className="config-card" onClick={() => handleOptionChange('historico')}>
               <span className="config-card-overlay"></span>
               <div className="config-card-content">
@@ -80,11 +85,21 @@ const MocaScreen = () => {
               </div>
             </div>
 
+            {/* Opción para Iniciar Prueba MoCA con Médico */}
             <div className="config-card" onClick={() => handleOptionChange('iniciar')}>
               <span className="config-card-overlay"></span>
               <div className="config-card-content">
                 <img src={Image3a} alt="Iniciar" className="config-card-image" />
-                <div>Iniciar Prueba MoCA</div>
+                <div>Iniciar Prueba MoCA (Médico)</div>
+              </div>
+            </div>
+
+            {/* Nueva Opción para Iniciar Prueba MoCA sin Médico */}
+            <div className="config-card" onClick={() => handleOptionChange('iniciarPaciente')}>
+              <span className="config-card-overlay"></span>
+              <div className="config-card-content">
+                <img src={Image4a} alt="Paciente" className="config-card-image" />
+                <div>Iniciar Prueba MoCA (Paciente)</div>
               </div>
             </div>
           </div>

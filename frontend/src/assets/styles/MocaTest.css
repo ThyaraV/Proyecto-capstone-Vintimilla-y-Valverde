@@ -46,3 +46,42 @@
     text-align: center;
   }
   
+  .moca-container {
+    max-width: 800px;
+    margin: auto;
+  }
+  
+  .instructions-container {
+    text-align: center;
+  }
+  
+  .module-container {
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    padding: 20px;
+  }
+  
+  .progress-container {
+    text-align: center;
+  }
+  
+  .module-status {
+    margin-top: 10px;
+  }
+  
+  .module-dot {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+  
+  .module-dot.completed {
+    background-color: #28a745;
+  }
+  
+  .module-dot.pending {
+    background-color: #d3d3d3;
+  }
+  

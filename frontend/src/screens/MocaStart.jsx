@@ -35,8 +35,7 @@ const MocaStart = () => {
   const [abstraction2Score, setAbstraction2Score] = useState(null);
 
   const [delayedRecallScore, setDelayedRecallScore] = useState(null);
-const [orientationScore, setOrientationScore] = useState(null);
-
+  const [orientationScore, setOrientationScore] = useState(null);
 
   const handleStartTest = () => {
     setTestStarted(true);
@@ -72,7 +71,7 @@ const [orientationScore, setOrientationScore] = useState(null);
       (abstraction2Score || 0) +
       (delayedRecallScore || 0) +
       (orientationScore || 0);
-  
+
     setTotalScore(currentScore);
   }, [
     extraPoint,
@@ -95,7 +94,6 @@ const [orientationScore, setOrientationScore] = useState(null);
     delayedRecallScore,
     orientationScore,
   ]);
-  
 
   return (
     <Container className="my-5">
@@ -715,117 +713,168 @@ const [orientationScore, setOrientationScore] = useState(null);
               </Row>
 
               {/* Sección Delayed Recall */}
-<div className="section-title">Recuerdo Diferido</div>
+              <div className="section-title">Recuerdo Diferido</div>
 
-<Row className="justify-content-center mt-4">
-  <Col md={8} className="d-flex flex-column">
-    <p className="instructions-text">
-      Pida al paciente que recuerde las palabras del test de memoria anterior (Ej. "Cara", "Terciopelo", "Iglesia", "Margarita", "Rojo")
-    </p>
-    <Button
-      variant={delayedRecallScore === 5 ? "success" : "outline-success"}
-      className={`toggle-button ${delayedRecallScore === 5 ? "active" : ""} mb-2`}
-      onClick={() => handleScoreChange(5, setDelayedRecallScore)}
-    >
-      Recordó todas las palabras +5
-    </Button>
-    <Button
-      variant={delayedRecallScore === 4 ? "primary" : "outline-primary"}
-      className={`toggle-button ${delayedRecallScore === 4 ? "active" : ""} mb-2`}
-      onClick={() => handleScoreChange(4, setDelayedRecallScore)}
-    >
-      Recordó 4 palabras +4
-    </Button>
-    <Button
-      variant={delayedRecallScore === 3 ? "warning" : "outline-warning"}
-      className={`toggle-button ${delayedRecallScore === 3 ? "active" : ""} mb-2`}
-      onClick={() => handleScoreChange(3, setDelayedRecallScore)}
-    >
-      Recordó 3 palabras +3
-    </Button>
-    <Button
-      variant={delayedRecallScore === 2 ? "info" : "outline-info"}
-      className={`toggle-button ${delayedRecallScore === 2 ? "active" : ""} mb-2`}
-      onClick={() => handleScoreChange(2, setDelayedRecallScore)}
-    >
-      Recordó 2 palabras +2
-    </Button>
-    <Button
-      variant={delayedRecallScore === 1 ? "secondary" : "outline-secondary"}
-      className={`toggle-button ${delayedRecallScore === 1 ? "active" : ""} mb-2`}
-      onClick={() => handleScoreChange(1, setDelayedRecallScore)}
-    >
-      Recordó 1 palabra +1
-    </Button>
-    <Button
-      variant={delayedRecallScore === 0 ? "danger" : "outline-danger"}
-      className={`toggle-button ${delayedRecallScore === 0 ? "active" : ""}`}
-      onClick={() => handleScoreChange(0, setDelayedRecallScore)}
-    >
-      No recordó ninguna palabra 0
-    </Button>
-  </Col>
-</Row>
+              <Row className="justify-content-center mt-4">
+                <Col md={8} className="d-flex flex-column">
+                  <p className="instructions-text">
+                    Pida al paciente que recuerde las palabras del test de
+                    memoria anterior (Ej. "Cara", "Terciopelo", "Iglesia",
+                    "Margarita", "Rojo")
+                  </p>
+                  <Button
+                    variant={
+                      delayedRecallScore === 5 ? "success" : "outline-success"
+                    }
+                    className={`toggle-button ${
+                      delayedRecallScore === 5 ? "active" : ""
+                    } mb-2`}
+                    onClick={() => handleScoreChange(5, setDelayedRecallScore)}
+                  >
+                    Recordó todas las palabras +5
+                  </Button>
+                  <Button
+                    variant={
+                      delayedRecallScore === 4 ? "primary" : "outline-primary"
+                    }
+                    className={`toggle-button ${
+                      delayedRecallScore === 4 ? "active" : ""
+                    } mb-2`}
+                    onClick={() => handleScoreChange(4, setDelayedRecallScore)}
+                  >
+                    Recordó 4 palabras +4
+                  </Button>
+                  <Button
+                    variant={
+                      delayedRecallScore === 3 ? "warning" : "outline-warning"
+                    }
+                    className={`toggle-button ${
+                      delayedRecallScore === 3 ? "active" : ""
+                    } mb-2`}
+                    onClick={() => handleScoreChange(3, setDelayedRecallScore)}
+                  >
+                    Recordó 3 palabras +3
+                  </Button>
+                  <Button
+                    variant={delayedRecallScore === 2 ? "info" : "outline-info"}
+                    className={`toggle-button ${
+                      delayedRecallScore === 2 ? "active" : ""
+                    } mb-2`}
+                    onClick={() => handleScoreChange(2, setDelayedRecallScore)}
+                  >
+                    Recordó 2 palabras +2
+                  </Button>
+                  <Button
+                    variant={
+                      delayedRecallScore === 1
+                        ? "secondary"
+                        : "outline-secondary"
+                    }
+                    className={`toggle-button ${
+                      delayedRecallScore === 1 ? "active" : ""
+                    } mb-2`}
+                    onClick={() => handleScoreChange(1, setDelayedRecallScore)}
+                  >
+                    Recordó 1 palabra +1
+                  </Button>
+                  <Button
+                    variant={
+                      delayedRecallScore === 0 ? "danger" : "outline-danger"
+                    }
+                    className={`toggle-button ${
+                      delayedRecallScore === 0 ? "active" : ""
+                    }`}
+                    onClick={() => handleScoreChange(0, setDelayedRecallScore)}
+                  >
+                    No recordó ninguna palabra 0
+                  </Button>
+                </Col>
+              </Row>
 
-{/* Sección Orientation */}
-<div className="section-title">Orientación</div>
+              {/* Sección Orientation */}
+              <div className="section-title">Orientación</div>
 
-<Row className="justify-content-center mt-4">
-  <Col md={8} className="d-flex flex-column">
-    <p className="instructions-text">Pida al paciente que diga la fecha, mes, año, día, lugar y ciudad</p>
-    <Button
-      variant={orientationScore === 6 ? "success" : "outline-success"}
-      className={`toggle-button ${orientationScore === 6 ? "active" : ""} mb-2`}
-      onClick={() => handleScoreChange(6, setOrientationScore)}
-    >
-      Todo correcto +6
-    </Button>
-    <Button
-      variant={orientationScore === 5 ? "primary" : "outline-primary"}
-      className={`toggle-button ${orientationScore === 5 ? "active" : ""} mb-2`}
-      onClick={() => handleScoreChange(5, setOrientationScore)}
-    >
-      5 correctas +5
-    </Button>
-    <Button
-      variant={orientationScore === 4 ? "warning" : "outline-warning"}
-      className={`toggle-button ${orientationScore === 4 ? "active" : ""} mb-2`}
-      onClick={() => handleScoreChange(4, setOrientationScore)}
-    >
-      4 correctas +4
-    </Button>
-    <Button
-      variant={orientationScore === 3 ? "info" : "outline-info"}
-      className={`toggle-button ${orientationScore === 3 ? "active" : ""} mb-2`}
-      onClick={() => handleScoreChange(3, setOrientationScore)}
-    >
-      3 correctas +3
-    </Button>
-    <Button
-      variant={orientationScore === 2 ? "secondary" : "outline-secondary"}
-      className={`toggle-button ${orientationScore === 2 ? "active" : ""} mb-2`}
-      onClick={() => handleScoreChange(2, setOrientationScore)}
-    >
-      2 correctas +2
-    </Button>
-    <Button
-      variant={orientationScore === 1 ? "dark" : "outline-dark"}
-      className={`toggle-button ${orientationScore === 1 ? "active" : ""} mb-2`}
-      onClick={() => handleScoreChange(1, setOrientationScore)}
-    >
-      1 correcta +1
-    </Button>
-    <Button
-      variant={orientationScore === 0 ? "danger" : "outline-danger"}
-      className={`toggle-button ${orientationScore === 0 ? "active" : ""}`}
-      onClick={() => handleScoreChange(0, setOrientationScore)}
-    >
-      Ninguna correcta 0
-    </Button>
-  </Col>
-</Row>
-
-
+              <Row className="justify-content-center mt-4">
+                <Col md={8} className="d-flex flex-column">
+                  <p className="instructions-text">
+                    Pida al paciente que diga la fecha, mes, año, día, lugar y
+                    ciudad
+                  </p>
+                  <Button
+                    variant={
+                      orientationScore === 6 ? "success" : "outline-success"
+                    }
+                    className={`toggle-button ${
+                      orientationScore === 6 ? "active" : ""
+                    } mb-2`}
+                    onClick={() => handleScoreChange(6, setOrientationScore)}
+                  >
+                    Todo correcto +6
+                  </Button>
+                  <Button
+                    variant={
+                      orientationScore === 5 ? "primary" : "outline-primary"
+                    }
+                    className={`toggle-button ${
+                      orientationScore === 5 ? "active" : ""
+                    } mb-2`}
+                    onClick={() => handleScoreChange(5, setOrientationScore)}
+                  >
+                    5 correctas +5
+                  </Button>
+                  <Button
+                    variant={
+                      orientationScore === 4 ? "warning" : "outline-warning"
+                    }
+                    className={`toggle-button ${
+                      orientationScore === 4 ? "active" : ""
+                    } mb-2`}
+                    onClick={() => handleScoreChange(4, setOrientationScore)}
+                  >
+                    4 correctas +4
+                  </Button>
+                  <Button
+                    variant={orientationScore === 3 ? "info" : "outline-info"}
+                    className={`toggle-button ${
+                      orientationScore === 3 ? "active" : ""
+                    } mb-2`}
+                    onClick={() => handleScoreChange(3, setOrientationScore)}
+                  >
+                    3 correctas +3
+                  </Button>
+                  <Button
+                    variant={
+                      orientationScore === 2 ? "secondary" : "outline-secondary"
+                    }
+                    className={`toggle-button ${
+                      orientationScore === 2 ? "active" : ""
+                    } mb-2`}
+                    onClick={() => handleScoreChange(2, setOrientationScore)}
+                  >
+                    2 correctas +2
+                  </Button>
+                  <Button
+                    variant={orientationScore === 1 ? "dark" : "outline-dark"}
+                    className={`toggle-button ${
+                      orientationScore === 1 ? "active" : ""
+                    } mb-2`}
+                    onClick={() => handleScoreChange(1, setOrientationScore)}
+                  >
+                    1 correcta +1
+                  </Button>
+                  <Button
+                    variant={
+                      orientationScore === 0 ? "danger" : "outline-danger"
+                    }
+                    className={`toggle-button ${
+                      orientationScore === 0 ? "active" : ""
+                    }`}
+                    onClick={() => handleScoreChange(0, setOrientationScore)}
+                  >
+                    Ninguna correcta 0
+                  </Button>
+                </Col>
+              </Row>
 
               {/* Puntaje total */}
               <div className="mt-4">
