@@ -21,8 +21,6 @@ router.route('/:assignmentId/results').put(protect, admin, updateAssignmentResul
 // Ruta para desasignar una actividad de un paciente
 router.route('/:assignmentId').delete(protect, admin, unassignActivityFromPatient);
 
-// Ruta para obtener actividades asignadas a un paciente específico
-router.route('/:patientId/activities').get(protect, admin, getAssignedActivities);
 
 // Ruta para obtener actividades asignadas al paciente autenticado
 router.route('/myactivities').get(protect, getMyAssignedActivities);

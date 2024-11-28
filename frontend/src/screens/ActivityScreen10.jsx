@@ -1,7 +1,11 @@
+// src/screens/ActivityScreen10.jsx
+
 import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useSelector } from 'react-redux';
 
 // Lista de objetos con imágenes y sus usos
 const objects = [
@@ -67,12 +71,18 @@ const objects = [
   }
 ];
 
-const ActivityScreen10 = () => {
+const ActivityScreen10 = ({ activity, treatmentId }) => { // Recibe 'activity' y 'treatmentId' como props
   const [currentObjectIndex, setCurrentObjectIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [timer, setTimer] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const navigate = useNavigate();
+
+  // Obtener información del usuario autenticado
+  const userInfo = useSelector((state) => state.auth.userInfo);
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
 
   useEffect(() => {
     let interval;
@@ -112,40 +122,47 @@ const ActivityScreen10 = () => {
         setGameFinished(true);
         toast.success('¡Juego terminado!');
         saveActivity(newScore, timer.toFixed(2)); // Guardar la actividad con el puntaje actualizado
-        setTimeout(() => navigate('/activities'), 6000); // Redirigir después de 6 segundos
+        setTimeout(() => navigate('/api/treatments/activities'), 6000); // Redirigir después de 6 segundos
       }
     }, 2000);
   };
 
+  // Función para guardar la actividad en el backend dentro del tratamiento correspondiente
   const saveActivity = async (finalScore, timeUsed) => {
+    // Validar que el usuario está autenticado
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Validar que treatmentId está definido
+    if (!treatmentId) {
+      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
+      return;
+    }
+
+    // Construir el objeto de datos de la actividad
     const activityData = {
-      name: 'Identificar Objetos y Usos',
-      description: 'Juego de identificar el uso correcto de varios objetos.',
-      type: 'identificar_objetos',
+      activityId: activity._id, // ID de la actividad principal
       scoreObtained: finalScore,
       timeUsed: parseFloat(timeUsed),
-      difficultyLevel: 1,
-      observations: 'El usuario completó la actividad satisfactoriamente.',
-      progress: 'mejorando',
-      patientId: 'somePatientId' // Reemplazar con el ID real del paciente
+      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
+      observations: 'El usuario completó la actividad de identificar objetos y sus usos.',
+      // Puedes agregar más campos si es necesario
     };
 
-    try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+    console.log('Guardando actividad con los siguientes datos:', activityData);
 
-      if (response.ok) {
-        toast.success('Actividad guardada correctamente.');
-      } else {
-        toast.error('Error al guardar la actividad.');
-      }
+    try {
+      // Registrar la actividad dentro del tratamiento usando la mutación
+      await recordActivity({ treatmentId, activityData }).unwrap();
+
+      console.log('Actividad guardada correctamente');
+      toast.success('Actividad guardada correctamente');
     } catch (error) {
-      toast.error('Hubo un problema al guardar la actividad.');
+      console.error('Error al guardar la actividad:', error);
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
@@ -183,6 +200,10 @@ const ActivityScreen10 = () => {
           <p>Tiempo total: {timer.toFixed(2)} segundos</p>
         </div>
       )}
+
+      {/* Mostrar estado de guardado de la actividad */}
+      {isRecording && <p>Guardando actividad...</p>}
+      {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
 
       <ToastContainer />
     </div>

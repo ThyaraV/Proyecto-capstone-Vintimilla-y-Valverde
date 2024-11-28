@@ -18,24 +18,34 @@ function Popup({ moods, setSelectedMood }) {
         <h1>¿Cómo se siente hoy?</h1>
         <div className="mood-meter">
           {/* Flecha del velocímetro */}
-          <div className="arrow" style={{ transform: `rotate(${selectedIndex * 45 - 90}deg)` }}></div>
+          <div className="arrow" style={{ transform: `rotate(${selectedIndex * (180 / (moods.length - 1)) - 90}deg)` }}></div>
           
-          {/* Contenedor para los emojis */}
-          {moods.map((mood, index) => (
-            <div
-              key={index}
-              className="mood-wrapper"
-              style={{ transform: `rotate(${index * 45}deg)` }}
-            >
-              <button
-                className="mood-button"
-                onClick={() => handleSelectMood(index)}
-                style={{ color: mood.color }}
-              >
-                {mood.emoji}
-              </button>
-            </div>
-          ))}
+          {/* Contenedor para los emojis con coordenadas personalizadas */}
+          <div className="emojis-container">
+            {moods.map((mood, index) => {
+              const totalAngle = Math.PI; // 180 grados en radianes
+              const stepAngle = totalAngle / (moods.length - 1); // Ajuste para que cubra completamente el arco
+              const angle = stepAngle * index - Math.PI; // Ajusta para que empiece desde el color rojo
+              const radius = 110;
+              const x = radius * Math.cos(angle) + 150;
+              const y = radius * Math.sin(angle) + 130;
+              return (
+                <div
+                  key={index}
+                  className="mood-wrapper"
+                  style={{ left: `${x}px`, top: `${y}px` }}
+                >
+                  <button
+                    className="mood-button"
+                    onClick={() => handleSelectMood(index)}
+                    style={{ color: mood.color }}
+                  >
+                    {mood.emoji}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -43,3 +53,4 @@ function Popup({ moods, setSelectedMood }) {
 }
 
 export default Popup;
+

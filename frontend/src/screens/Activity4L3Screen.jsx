@@ -1,7 +1,13 @@
+// src/screens/ActivityScreen4.jsx
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
+import { useNavigate, useParams } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
+import '../assets/styles/Activity4Screen4.css'; // Importa el archivo CSS
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useSelector } from 'react-redux';
+
 // Importa las imágenes
 import Image1a from '../images/monalisa1.png';
 import Image1b from '../images/monalisa2.png';
@@ -64,6 +70,7 @@ const imagePairs = [
 ];
 
 const ActivityScreen4 = () => {
+  const { treatmentId, activityId } = useParams(); // Extrae treatmentId y activityId de la ruta
   const [currentPairIndex, setCurrentPairIndex] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [correctAnswers, setCorrectAnswers] = useState(0);
@@ -75,6 +82,13 @@ const ActivityScreen4 = () => {
   const [timer, setTimer] = useState(0);
   const [differencesFound, setDifferencesFound] = useState(0);
   const navigate = useNavigate();
+
+  // Obtener información del usuario autenticado desde el estado de Redux
+  const userInfo = useSelector((state) => state.auth.userInfo);
+  const patientId = userInfo?._id;
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
 
   useEffect(() => {
     let interval;
@@ -89,7 +103,7 @@ const ActivityScreen4 = () => {
   useEffect(() => {
     if (gameFinished) {
       const timeout = setTimeout(() => {
-        navigate('/activities');
+        navigate('/api/treatments/activities');
       }, 7000); // Redirige después de 7 segundos
       return () => clearTimeout(timeout);
     }
@@ -145,7 +159,7 @@ const ActivityScreen4 = () => {
   const handleSubmit = () => {
     if (isLastPair) {
       setGameFinished(true);
-      saveActivity(correctAnswers, incorrectAnswers);
+      saveActivity();
     } else if (differencesFound < 10) {
       setShowDialog(true);
     }
@@ -158,35 +172,48 @@ const ActivityScreen4 = () => {
   const handleEndGame = () => {
     setShowDialog(false);
     setGameFinished(true);
-    saveActivity(correctAnswers, incorrectAnswers);
+    saveActivity();
   };
 
   const saveActivity = async () => {
+    // Validar que el usuario está autenticado
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Validar que treatmentId está definido
+    if (!treatmentId) {
+      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
+      return;
+    }
+
+    // Construir el objeto de datos de la actividad
     const activityData = {
-      name: 'Encuentra diferencias',
-      description: 'Actividad para encontrar las diferencias entre dos imágenes.',
-      type: 'diferencias_imagenes',
+      activityId, // ID de la actividad principal desde los parámetros de la ruta
       correctAnswers,
       incorrectAnswers,
       timeUsed: timer,
       scoreObtained: points,
-      patientId: 'somePatientId',
+      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
+      observations: 'El paciente completó la actividad de encontrar diferencias en nivel avanzado.',
+      patientId, // ID del paciente desde el estado de Redux
+      difficultyLevel: 3, // Nivel de dificultad
+      image: '', // No hay imagen asociada en esta actividad
     };
 
-    try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+    console.log('Guardando actividad con los siguientes datos:', activityData);
 
-      if (!response.ok) {
-        setFeedbackMessage('Error al guardar la actividad');
-      }
+    try {
+      // Registrar la actividad dentro del tratamiento usando la mutación
+      await recordActivity({ treatmentId, activityData }).unwrap();
+
+      console.log('Actividad guardada correctamente');
+      toast.success('Actividad guardada correctamente');
     } catch (error) {
-      setFeedbackMessage('Hubo un problema al guardar la actividad');
+      console.error('Error al guardar la actividad:', error);
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
@@ -198,23 +225,21 @@ const ActivityScreen4 = () => {
       <p>Diferencias encontradas: {differencesFound} de 10</p>
       <p>{feedbackMessage}</p>
 
-      <div className="images-container" style={{ position: 'relative' }} onClick={handleImageClick}>
-        <img src={currentPair.image1} alt="Imagen 1" style={{ width: '464px', height: '534px' }} />
-        <div style={{ position: 'relative', display: 'inline-block' }}>
-          <img
-            src={currentPair.image2}
-            alt="Imagen 2"
-            style={{ width: '464px', height: '534px', cursor: 'pointer' }}
-          />
-        </div>
+      <div className="images-container" onClick={handleImageClick}>
+        <img src={currentPair.image1} alt="Imagen 1" />
+        <img src={currentPair.image2} alt="Imagen 2" />
       </div>
 
       {!gameFinished && (
         <div className="button-container">
           {!isLastPair && (
-            <button onClick={handleNextPair} className="next-button" style={{ marginRight: '10px', padding: '10px', fontSize: '16px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Siguiente Par</button>
+            <button onClick={handleNextPair} className="next-button">
+              Siguiente Par
+            </button>
           )}
-          <button onClick={handleSubmit} className="submit-button" style={{ padding: '10px', fontSize: '16px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Enviar Respuesta</button>
+          <button onClick={handleSubmit} className="submit-button">
+            Enviar Respuesta
+          </button>
         </div>
       )}
 
@@ -232,8 +257,12 @@ const ActivityScreen4 = () => {
           <div className="dialog-box">
             <p>Has encontrado {differencesFound} de 10 diferencias.</p>
             <p>¿Quieres terminar el juego o continuar buscando?</p>
-            <button onClick={handleEndGame} style={{ marginRight: '10px', padding: '10px', fontSize: '16px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Terminar</button>
-            <button onClick={handleContinuePlaying} style={{ padding: '10px', fontSize: '16px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Continuar Jugando</button>
+            <button onClick={handleEndGame} className="dialog-button terminate">
+              Terminar
+            </button>
+            <button onClick={handleContinuePlaying} className="dialog-button continue">
+              Continuar Jugando
+            </button>
           </div>
         </div>
       )}

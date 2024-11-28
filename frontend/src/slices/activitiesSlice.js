@@ -60,7 +60,11 @@ export const activitiesApiSlice = apiSlice.injectEndpoints({
                 body: data,
             }),
             invalidatesTags: ['Activity'],
-        })
+        }),
+        getActivityById: builder.query({
+            query: (activityId) => `${ACTIVITIES_URL}/${activityId}`,
+            providesTags: (result, error, activityId) => [{ type: 'Activities', id: activityId }],
+        }),
     }),
 });
 
@@ -72,5 +76,6 @@ export const {
     useUpdateActivityMutation,
     useDeleteActivityMutation,
     useUploadActivityImageMutation,
-    useCreateReviewMutation
+    useCreateReviewMutation,
+    useGetActivityByIdQuery
 } = activitiesApiSlice;

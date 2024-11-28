@@ -1,8 +1,14 @@
+// src/screens/ActivityScreen1.jsx
+
 import React, { useState, useEffect } from 'react'; 
 import { createBoard } from '../utils/createBoard';
 import Cell from '../components/Activity 1/Cell';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
+import { useRecordActivityMutation, useGetActiveTreatmentQuery } from '../slices/treatmentSlice'; // Importar desde treatmentApiSlice
+import { useSelector } from 'react-redux';
+import 'react-toastify/dist/ReactToastify.css'; // Importar estilos de react-toastify
+import io from 'socket.io-client';
 
 const ActivityScreen1 = () => {
   const [board, setBoard] = useState(() => createBoard(1)); // Nivel 1
@@ -10,7 +16,20 @@ const ActivityScreen1 = () => {
   const [timer, setTimer] = useState(0);
   const miliseconds = (timer / 10).toFixed(2);
   const navigate = useNavigate();
-  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+  const { activityId } = useParams(); // Obtener activityId de la ruta
+  console.log('activityId from route:', activityId); // Añade este log
+  const userInfo = useSelector((state) => state.auth.userInfo);
+
+  // Obtener el userId
+  const userId = userInfo?._id;
+
+  // Usar la query para obtener el tratamiento activo
+  const { data: activeTreatment, isLoading: isTreatmentLoading, error: treatmentError } = useGetActiveTreatmentQuery(userId, {
+    skip: !userId, // Omitir la consulta si no hay userId
+  });
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
 
   useEffect(() => {
     if (gamesToWin > 0) {
@@ -28,39 +47,46 @@ const ActivityScreen1 = () => {
         return;
       }
 
-      const assignmentData = {
-        activity: '672bd009a0ad0a5aca7d7d7a', // Reemplaza con el ID real de la actividad
-        completionDate: new Date(),
-        scoreObtained: 100,
+      if (isTreatmentLoading) {
+        toast.error('Cargando tratamiento activo...');
+        return;
+      }
+
+      if (treatmentError) {
+        toast.error(`Error al obtener tratamiento activo: ${treatmentError.message}`);
+        return;
+      }
+
+      if (!activeTreatment) {
+        toast.error('No hay tratamiento activo asociado');
+        return;
+      }
+
+      if (!activityId) {
+        toast.error('No se encontró una actividad seleccionada');
+        return;
+      }
+
+      const activityData = {
+        activityId: activityId,
+        scoreObtained: 5, // Ajusta según cómo calcules el score
         timeUsed: parseFloat(miliseconds),
         progress: 'mejorando',
         observations: 'El paciente completó la actividad satisfactoriamente.',
       };
 
-      console.log('Assignment Data:', assignmentData);
+      console.log('Actividad a registrar:', activityData); // Agrega este log
 
-      const token = localStorage.getItem('token');
-      console.log('Token:', token);
-
-      const response = await fetch('/api/assignments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(assignmentData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al guardar la actividad');
-      }
+      // Registrar la actividad dentro del tratamiento
+      const response = await recordActivity({ treatmentId: activeTreatment._id, activityData }).unwrap();
 
       toast.success('Actividad guardada correctamente');
-      setTimeout(() => navigate('/activities'), 6000);
+      setTimeout(() => navigate('/api/treatments/activities'), 6000);
     } catch (error) {
       console.error('Error al guardar la actividad:', error);
-      toast.error(`Hubo un problema al guardar la actividad: ${error.message}`);
+      // Verificar si error.data existe antes de acceder a error.data.message
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
@@ -76,9 +102,43 @@ const ActivityScreen1 = () => {
     }
   };
 
+  // Manejar la conexión de Socket.io (opcional)
+  useEffect(() => {
+    if (!userInfo || !activeTreatment?._id) {
+      console.warn('El usuario o el tratamiento activo no están definidos');
+      return;
+    }
+
+    // Inicializar el socket
+    const socket = io('http://localhost:5000'); // Asegúrate de que el puerto es correcto
+
+    socket.on('connect', () => {
+      console.log('Conectado al servidor de Socket.io con ID:', socket.id);
+    });
+
+    // Ajusta el evento según cómo esté emitido en el backend
+    socket.on(`treatmentActivitiesUpdated:${activeTreatment._id}`, (data) => {
+      console.log(`Evento treatmentActivitiesUpdated recibido para el tratamiento ${activeTreatment._id}`, data);
+      // Puedes implementar lógica adicional aquí, como actualizar el estado o refetch
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Desconectado del servidor de Socket.io');
+    });
+
+    // Limpiar el socket al desmontar el componente o cuando activeTreatment cambie
+    return () => {
+      socket.disconnect();
+      console.log('Socket desconectado en cleanup');
+    };
+  }, [userInfo, activeTreatment]);
+
   return (
     <div className='activity-screen'>
       <h1>Encuentra la letra (Nivel 1)</h1>
+      {isRecording && <p>Guardando actividad...</p>}
+      {isTreatmentLoading && <p>Cargando tratamiento activo...</p>}
+      {treatmentError && <p>Error: {treatmentError.message}</p>}
       {gamesToWin > 0 && <p>Tiempo: {miliseconds} segundos</p>}
       {gamesToWin === 0 ? (
         <p>Felicidades, tu tiempo fue: {miliseconds} segundos</p>

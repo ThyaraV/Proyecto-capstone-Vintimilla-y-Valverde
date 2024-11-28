@@ -1,5 +1,11 @@
+// src/screens/ActivityScreenLevel3.jsx
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import { useNavigate, useParams } from 'react-router-dom';
+import 'react-toastify/dist/ReactToastify.css';
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useSelector } from 'react-redux';
 
 // Función para barajar opciones
 const shuffleOptions = (options, correctOption) => {
@@ -24,15 +30,32 @@ const proverbsLevel3 = [
 ];
 
 const ActivityScreenLevel3 = () => {
+  const { treatmentId, activityId } = useParams(); // Extrae treatmentId y activityId de la ruta
   const [currentProverbIndex, setCurrentProverbIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState("");
   const [shuffledOptions, setShuffledOptions] = useState([]);
   const [score, setScore] = useState(0);
+  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [incorrectAnswers, setIncorrectAnswers] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
+  // Obtener información del usuario autenticado desde el estado de Redux
+  const userInfo = useSelector((state) => state.auth.userInfo);
+  const patientId = userInfo?._id;
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+
+  // Barajar opciones al cargar cada refrán
+  useEffect(() => {
+    const currentProverb = proverbsLevel3[currentProverbIndex];
+    setShuffledOptions(shuffleOptions(currentProverb.options, currentProverb.correctOption));
+  }, [currentProverbIndex]);
+
+  // Iniciar el temporizador
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -43,30 +66,38 @@ const ActivityScreenLevel3 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
+  // Manejar el guardado de la actividad y la navegación después de finalizar
   useEffect(() => {
     if (gameFinished) {
+      saveActivity();
       const timeout = setTimeout(() => {
-        navigate('/activities');
+        navigate('/api/treatments/activities');
       }, 6000);
       return () => clearTimeout(timeout);
     }
   }, [gameFinished, navigate]);
 
+  // Manejar errores de la mutación
   useEffect(() => {
-    const currentProverb = proverbsLevel3[currentProverbIndex];
-    setShuffledOptions(shuffleOptions(currentProverb.options, currentProverb.correctOption));
-  }, [currentProverbIndex]);
+    if (recordError) {
+      toast.error(`Error al guardar la actividad: ${recordError.data?.message || recordError.message}`);
+    }
+  }, [recordError]);
 
+  // Manejar la selección de una opción
   const handleOptionClick = (option) => {
     setSelectedOption(option);
   };
 
+  // Manejar el envío de la respuesta
   const handleSubmitAnswer = () => {
     const currentProverb = proverbsLevel3[currentProverbIndex];
     if (selectedOption === currentProverb.correctOption) {
+      setCorrectAnswers((prev) => prev + 1);
       setScore((prevScore) => prevScore + 0.5);
       setMessage("¡Correcto! Has ganado 0.5 puntos.");
     } else {
+      setIncorrectAnswers((prev) => prev + 1);
       setMessage(`Incorrecto. La respuesta correcta es: "${currentProverb.correctOption}".`);
     }
 
@@ -77,36 +108,55 @@ const ActivityScreenLevel3 = () => {
         setMessage(""); // Limpia el mensaje para el próximo refrán
       } else {
         setGameFinished(true);
-        saveActivity(score); // Guardar actividad al terminar
+        // saveActivity() se llamará desde el useEffect
       }
     }, 2000);
   };
 
-  const saveActivity = async (finalScore) => {
+  // Función para guardar la actividad utilizando RTK Query
+  const saveActivity = async () => {
+    // Validar que el usuario está autenticado
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Validar que treatmentId está definido
+    if (!treatmentId) {
+      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
+      return;
+    }
+
+    // Calcular las respuestas incorrectas
+    const totalCorrectPoints = score; // Cada respuesta correcta vale 0.5 puntos
+    const totalPossiblePoints = proverbsLevel3.length * 0.5; // Total posible es 5 puntos
+    const calculatedIncorrectAnswers = (totalPossiblePoints - totalCorrectPoints) / 0.5; // Número de respuestas incorrectas
+
+    // Construir el objeto de datos de la actividad
     const activityData = {
-      name: 'Forma las frases correctas - Nivel 3',
-      description: 'Actividad para completar refranes seleccionando la opción correcta.',
-      type: 'completa_refranes',
-      scoreObtained: finalScore,
+      activityId, // ID de la actividad principal desde los parámetros de la ruta
+      correctAnswers: correctAnswers, // Número de respuestas correctas
+      incorrectAnswers: calculatedIncorrectAnswers, // Número de respuestas incorrectas
       timeUsed: timer,
-      difficultyLevel: 3,
-      patientId: 'somePatientId',
+      scoreObtained: score, // Debe ser 3.5, por ejemplo
+      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
+      observations: 'El paciente completó la actividad de completar refranes en nivel avanzado.',
+      patientId, // ID del paciente desde el estado de Redux
+      difficultyLevel: 3, // Nivel de dificultad
+      image: '', // No hay imagen asociada en esta actividad
     };
 
-    try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+    console.log('Guardando actividad con los siguientes datos:', activityData);
 
-      if (!response.ok) {
-        console.error('Error al guardar la actividad');
-      }
+    try {
+      // Registrar la actividad dentro del tratamiento usando la mutación
+      await recordActivity({ treatmentId, activityData }).unwrap();
+
+      console.log('Actividad guardada correctamente');
+      toast.success('Actividad guardada correctamente');
     } catch (error) {
-      console.error('Hubo un problema al guardar la actividad');
+      console.error('Error al guardar la actividad:', error);
+      // El error será manejado por el useEffect anterior
     }
   };
 
@@ -116,6 +166,8 @@ const ActivityScreenLevel3 = () => {
       {!gameFinished ? (
         <>
           <p>Puntaje: {score}</p>
+          <p>Respuestas correctas: {correctAnswers} de {proverbsLevel3.length}</p>
+          <p>Respuestas incorrectas: {incorrectAnswers} de {proverbsLevel3.length}</p>
           <p>Tiempo: {timer} segundos</p>
           <div className="phrase-box">{proverbsLevel3[currentProverbIndex].phrase}...</div>
           <div className="options-container">
@@ -137,10 +189,14 @@ const ActivityScreenLevel3 = () => {
       ) : (
         <div className="results">
           <h2>¡Juego Terminado!</h2>
-          <p>Respuestas correctas: {score} de {proverbsLevel3.length}</p>
+          <p>Respuestas correctas: {correctAnswers} de {proverbsLevel3.length}</p>
+          <p>Respuestas incorrectas: {incorrectAnswers} de {proverbsLevel3.length}</p>
           <p>Tiempo total: {timer} segundos</p>
+          <p>Puntaje final: {score}</p>
         </div>
       )}
+
+      <ToastContainer />
     </div>
   );
 };

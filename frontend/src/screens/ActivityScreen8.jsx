@@ -1,3 +1,5 @@
+// src/screens/ActivityScreen8.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Slider from 'react-slick';
@@ -5,6 +7,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useSelector } from 'react-redux';
 
 const questions = [
   {
@@ -39,13 +43,18 @@ const questions = [
   }
 ];
 
-const ActivityScreen8 = () => {
+const ActivityScreen8 = ({ activity, treatmentId }) => { // Recibe 'activity' y 'treatmentId' como props
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [score, setScore] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
   const navigate = useNavigate();
   const sliderRef = React.useRef(null);
+
+  const userInfo = useSelector((state) => state.auth.userInfo); // Obtener información del usuario autenticado
+
+  // Hook de la mutación para registrar actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
 
   useEffect(() => {
     window.scrollTo(0, 0); // Se asegura de que la página esté en el tope al cargar
@@ -64,7 +73,7 @@ const ActivityScreen8 = () => {
   useEffect(() => {
     if (gameFinished) {
       const timeout = setTimeout(() => {
-        navigate('/activities'); // Navegar a /activities después de 6 segundos
+        navigate('/api/treatments/activities'); // Navegar a /activities después de 6 segundos
       }, 6000);
       return () => clearTimeout(timeout);
     }
@@ -90,32 +99,42 @@ const ActivityScreen8 = () => {
     saveActivity(finalScore, timer);
   };
 
+  // Función para guardar la actividad en el backend dentro del tratamiento correspondiente
   const saveActivity = async (finalScore, timeUsed) => {
+    // Validar que el usuario está autenticado
+    if (!userInfo) {
+      toast.error('Usuario no autenticado');
+      return;
+    }
+
+    // Validar que treatmentId está definido
+    if (!treatmentId) {
+      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
+      return;
+    }
+
+    // Construir el objeto de datos de la actividad
     const activityData = {
-      name: 'Responde Preguntas',
-      description: 'Actividad de preguntas basada en el cuento El paseo de María.',
-      type: 'preguntas',
+      activityId: activity._id, // ID de la actividad principal
       scoreObtained: finalScore,
       timeUsed: timeUsed,
-      patientId: 'somePatientId', // Reemplaza con el ID real del paciente
+      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
+      observations: `El paciente respondió correctamente ${finalScore} de ${questions.length} preguntas.`,
+      // Puedes agregar más campos si es necesario
     };
 
-    try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(activityData),
-      });
+    console.log('Guardando actividad con los siguientes datos:', activityData);
 
-      if (response.ok) {
-        toast.success('Actividad guardada correctamente');
-      } else {
-        toast.error('Error al guardar la actividad');
-      }
+    try {
+      // Registrar la actividad dentro del tratamiento usando la mutación
+      await recordActivity({ treatmentId, activityData }).unwrap();
+
+      console.log('Actividad guardada correctamente');
+      toast.success('Actividad guardada correctamente');
     } catch (error) {
-      toast.error('Hubo un problema al guardar la actividad');
+      console.error('Error al guardar la actividad:', error);
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
@@ -142,7 +161,7 @@ const ActivityScreen8 = () => {
         </div>
         <h1>El paseo de María</h1>
         <p className="story-text">
-        María es una mujer alegre que vive en un pequeño pueblo. Un día soleado, decidió salir a pasear por el parque cercano. Primero, se puso su sombrero azul favorito y tomó su bolso. En el camino, se encontró con su amiga Ana, quien llevaba una bufanda roja. Juntas caminaron hasta la heladería donde compraron un helado de vainilla. Luego, se sentaron en un banco frente al lago y vieron a los patos nadando tranquilamente. Antes de regresar a casa, María compró flores amarillas para decorar su mesa del comedor. Al llegar a su casa, estaba feliz por haber tenido un día tan bonito.
+          María es una mujer alegre que vive en un pequeño pueblo. Un día soleado, decidió salir a pasear por el parque cercano. Primero, se puso su sombrero azul favorito y tomó su bolso. En el camino, se encontró con su amiga Ana, quien llevaba una bufanda roja. Juntas caminaron hasta la heladería donde compraron un helado de vainilla. Luego, se sentaron en un banco frente al lago y vieron a los patos nadando tranquilamente. Antes de regresar a casa, María compró flores amarillas para decorar su mesa del comedor. Al llegar a su casa, estaba feliz por haber tenido un día tan bonito.
         </p>
 
         {!gameFinished ? (
@@ -185,11 +204,15 @@ const ActivityScreen8 = () => {
         ) : (
           <div className="results">
             <h2>¡Juego Terminado!</h2>
-            <p>Puntuación final: {score}</p>
+            <p>Puntuación final: {score} / {questions.length}</p>
             <p>Tiempo total: {timer} segundos</p>
           </div>
         )}
 
+        {/* Mostrar estado de guardado de la actividad */}
+        {isRecording && <p>Guardando actividad...</p>}
+        {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
+        
         <ToastContainer />
       </div>
     </div>

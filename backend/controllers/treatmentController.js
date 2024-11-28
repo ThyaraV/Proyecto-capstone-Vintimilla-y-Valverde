@@ -4,6 +4,7 @@ import Patient from '../models/patientModel.js';
 import Activity from '../models/activityModel.js';
 import Doctor from '../models/doctorModel.js';
 import { io } from 'socket.io-client';
+import { getIO } from '../socket.js';
 
 
 // @desc    Asignar una actividad a un paciente
@@ -83,44 +84,6 @@ const updateAssignmentResults = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Obtener actividades asignadas a un paciente
-// @route   GET /api/assignments/:patientId/activities
-// @access  Privado/Doctor
-const getAssignedActivities = asyncHandler(async (req, res) => {
-  try {
-    const { patientId } = req.params;
-
-    // Verificar si el paciente existe
-    const patient = await Patient.findById(patientId);
-
-    if (!patient) {
-      res.status(404);
-      throw new Error('Paciente no encontrado');
-    }
-
-    // Buscar las asignaciones del paciente
-    const assignments = await Assignment.find({ patient: patientId })
-      .populate('activity')
-      .populate('doctor', 'name email');
-
-    // Mapear las actividades asignadas
-    const activities = assignments.map((assignment) => ({
-      assignmentId: assignment._id,
-      activity: assignment.activity,
-      doctor: assignment.doctor,
-      scoreObtained: assignment.scoreObtained,
-      timeUsed: assignment.timeUsed,
-      progress: assignment.progress,
-      observations: assignment.observations,
-      completionDate: assignment.completionDate,
-    }));
-
-    res.status(200).json(activities);
-  } catch (error) {
-    res.status(500).json({ message: 'Error al obtener las actividades asignadas' });
-  }
-});
-
 
 const unassignActivityFromPatient = asyncHandler(async (req, res) => {
   const { assignmentId } = req.params;
@@ -177,52 +140,13 @@ const getMyAssignedActivities = asyncHandler(async (req, res) => {
 
 // @desc    Crear un nuevo tratamiento
 // @route   POST /api/treatments/create
-// @access  Privado/Doctor
+// @access  Privado/Admin (Doctor)
 const createTreatment = asyncHandler(async (req, res) => {
   const {
-    patientIds,      // Array de IDs de pacientes
     treatmentName,
     description,
-    activities,       // Array de IDs de actividades
-    medications,      // Array de objetos de medicamentos
-    exerciseVideos,   // Array de objetos de videos de ejercicio
-    startDate,
-    endDate,
-    progress,
-    adherence,
-    observations,
-    nextReviewDate,
-  } = req.body;
-
-  // Obtener el ID del doctor desde el token de autenticación
-  const doctorId = req.user._id;
-
-  // Verificar que el usuario autenticado es un doctor
-  const doctor = await Doctor.findOne({ user: doctorId });
-  if (!doctor) {
-    res.status(401);
-    throw new Error('Acceso no autorizado: No es un doctor');
-  }
-
-  // Verificar que los pacientes existen
-  if (patientIds && patientIds.length > 0) {
-    const patients = await Patient.find({ _id: { $in: patientIds } });
-    if (patients.length !== patientIds.length) {
-      res.status(404);
-      throw new Error('Uno o más pacientes no fueron encontrados');
-    }
-  } else {
-    res.status(400);
-    throw new Error('Se requiere al menos un paciente');
-  }
-
-  // Crear el nuevo tratamiento
-  const treatment = await Treatment.create({
-    patients: patientIds,
-    doctor: doctor._id,
-    treatmentName,
-    description,
-    activities,
+    patientIds,
+    assignedActivities,
     medications,
     exerciseVideos,
     startDate,
@@ -231,8 +155,50 @@ const createTreatment = asyncHandler(async (req, res) => {
     adherence,
     observations,
     nextReviewDate,
+  } = req.body;
+
+  console.log('Datos recibidos para crear tratamiento:', req.body); // Depuración
+
+    // Validaciones básicas
+  if (!treatmentName || !description || !patientIds || !Array.isArray(patientIds)) {
+    res.status(400);
+    throw new Error('Por favor, proporciona nombre, descripción y pacientes válidos');
+  }
+
+  // Validar que las actividades existen
+  if (assignedActivities && assignedActivities.length > 0) {
+    const validActivities = await Activity.find({ _id: { $in: assignedActivities } });
+    if (validActivities.length !== assignedActivities.length) {
+      res.status(400);
+      throw new Error('Algunas actividades asignadas no existen');
+    }
+  }
+
+  // Validar que los pacientes existen
+  const validPatients = await Patient.find({ _id: { $in: patientIds } });
+  if (validPatients.length !== patientIds.length) {
+    res.status(400);
+    throw new Error('Algunos pacientes asignados no existen');
+  }
+
+  // Crear el tratamiento y asignar el campo 'doctor' desde el usuario autenticado
+  const treatment = new Treatment({
+    treatmentName,
+    description,
+    patients: patientIds,
+    assignedActivities,
+    medications,
+    exerciseVideos,
+    startDate,
+    endDate,
+    progress,
+    adherence,
+    observations,
+    nextReviewDate,
+    doctor: req.user._id, // Asignar el campo 'doctor'
   });
 
+  const createdTreatment = await treatment.save();
   // Asignar actividades a cada paciente seleccionado
   if (treatment && activities && activities.length > 0) {
     for (const patientId of patientIds) {
@@ -248,15 +214,9 @@ const createTreatment = asyncHandler(async (req, res) => {
     }
   }
 
-  if (treatment) {
-    res.status(201).json({
-      message: 'Tratamiento creado exitosamente',
-      treatment,
-    });
-  } else {
-    res.status(400);
-    throw new Error('Datos inválidos del tratamiento');
-  }
+  console.log('Tratamiento creado:', createdTreatment); // Depuración
+
+  res.status(201).json(createdTreatment);
 });
 
 // @desc    Obtener tratamientos creados por el médico autenticado
@@ -267,10 +227,10 @@ const getMyTreatments = asyncHandler(async (req, res) => {
 
   // Verificar que el usuario autenticado es un doctor
   const doctor = await Doctor.findOne({ user: doctorId });
-  if (!doctor) {
+  /*if (!doctor) {
     res.status(401);
     throw new Error('Acceso no autorizado: No es un doctor');
-  }
+  }*/
 
   // Obtener tratamientos creados por el doctor
   const treatments = await Treatment.find({ doctor: doctor._id })
@@ -284,40 +244,41 @@ const getMyTreatments = asyncHandler(async (req, res) => {
   res.status(200).json(treatments);
 });
 
-// @desc    Obtener detalles de un tratamiento específico
+// @desc    Obtener tratamiento por ID
 // @route   GET /api/treatments/:treatmentId
-// @access  Privado/Doctor
+// @access  Privado/Admin
 const getTreatmentById = asyncHandler(async (req, res) => {
   const { treatmentId } = req.params;
 
   const treatment = await Treatment.findById(treatmentId)
     .populate({
-      path: 'patients',
-      populate: { path: 'user', select: 'name lastName email' },
+      path: 'assignedActivities',
+      select: 'name description', // Campos necesarios de 'Activity'
     })
-    .populate('activities')
     .populate({
       path: 'doctor',
-      populate: { path: 'user', select: 'name lastName email' },
+      select: 'name email', // Campos necesarios de 'User'
+    })
+    .populate({
+      path: 'patients',
+      populate: {
+        path: 'user',
+        select: 'name lastName', // Campos necesarios de 'User' dentro de 'Patient'
+      },
     });
 
-  if (!treatment) {
+  if (treatment) {
+    res.json(treatment);
+  } else {
     res.status(404);
     throw new Error('Tratamiento no encontrado');
   }
-
-  // Verificar que el tratamiento tiene un doctor asignado
-  if (!treatment.doctor) {
-    res.status(400).json({ message: 'Doctor no asignado al tratamiento' });
-    return;
-  }
-
-  res.status(200).json(treatment);
 });
 // @desc    Actualizar un tratamiento existente
 // @route   PUT /api/treatments/:treatmentId
 // @access  Privado/Doctor
 const updateTreatment = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
   const doctorId = req.user._id;
   const { treatmentId } = req.params;
 
@@ -335,8 +296,7 @@ const updateTreatment = asyncHandler(async (req, res) => {
     throw new Error('Tratamiento no encontrado');
   }
 
-  // Verificar que el tratamiento pertenece al doctor
-  if (treatment.doctor.toString() !== doctor._id.toString()) {
+  if (treatment.doctor.toString() !== userId.toString()) {
     res.status(401);
     throw new Error('No autorizado para modificar este tratamiento');
   }
@@ -487,39 +447,254 @@ const getDueMedications = asyncHandler(async (req, res) => {
   res.status(200).json(dueMedications);
 });
 
-// Nuevo controlador para obtener tratamientos por paciente
-// @desc    Obtener tratamientos de un paciente específico
-// @route   GET /api/treatments/patient/:patientId
-// @access  Privado/Doctor
+
+// @desc    Obtener tratamientos por paciente
+// @route   GET /api/treatments/patient/:patientId/treatments
+// @access  Privado/Admin (Doctor)
 const getTreatmentsByPatient = asyncHandler(async (req, res) => {
   const { patientId } = req.params;
 
-  // Verificar que el paciente existe
-  const patient = await Patient.findById(patientId);
+  console.log('Obteniendo tratamientos para el paciente:', patientId);
+
+  // Verificar si el paciente existe
+  const patientExists = await Patient.findById(patientId);
+  if (!patientExists) {
+    res.status(404);
+    throw new Error('Paciente no encontrado');
+  }
+
+  // Buscar tratamientos donde el paciente esté asignado
+  const treatments = await Treatment.find({ patients: patientId })
+    .populate({
+      path: 'assignedActivities',
+      select: 'name description', // Selecciona los campos necesarios
+    })
+    .populate({
+      path: 'doctor',
+      select: 'name email', // Selecciona los campos necesarios
+    })
+    .populate({
+      path: 'patients',
+      populate: {
+        path: 'user',
+        select: 'name lastName', // Selecciona los campos necesarios del usuario
+      },
+    });
+
+  console.log('Tratamientos encontrados:', treatments);
+
+  res.json(treatments);
+});
+
+// @desc    Obtener actividades asignadas a un paciente
+// @route   GET /api/patient/:patientId/activities
+// @access  Privado/Admin
+// @desc    Obtener actividades asignadas a un paciente
+// @route   GET /api/patient/:patientId/activities
+// @access  Privado/Admin
+// @desc    Obtener actividades asignadas al usuario (paciente)
+// @route   GET /api/activities
+// @access  Privado/Paciente o Doctor
+const getActivitiesByUser = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  // Buscar el paciente asociado al userId
+  const patient = await Patient.findOne({ user: userId });
+  if (!patient) {
+    res.status(404);
+    throw new Error('Paciente no encontrado para este usuario');
+  }
+
+  const patientId = patient._id;
+
+  // Buscar todos los tratamientos que incluyen a este paciente y populiar 'assignedActivities'
+  const treatments = await Treatment.find({ patients: patientId }).populate('assignedActivities');
+
+  if (!treatments || treatments.length === 0) {
+    res.status(200).json([]);
+    return;
+  }
+
+  // Extraer todas las actividades asignadas de los tratamientos
+  let activities = [];
+  treatments.forEach((treatment) => {
+    if (treatment.assignedActivities && treatment.assignedActivities.length > 0) {
+      activities = activities.concat(treatment.assignedActivities);
+    }
+  });
+
+  // Eliminar actividades duplicadas basadas en el _id
+  const uniqueActivitiesMap = {};
+  activities.forEach((activity) => {
+    uniqueActivitiesMap[activity._id] = activity;
+  });
+  const uniqueActivities = Object.values(uniqueActivitiesMap);
+
+  res.status(200).json(uniqueActivities);
+});
+
+
+// @desc    Obtener actividades asignadas a un tratamiento específico para un paciente
+// @route   GET /api/treatments/:treatmentId/assignedActivities
+// @access  Privado/Paciente
+const getAssignedActivities = asyncHandler(async (req, res) => {
+  const { treatmentId } = req.params;
+  const userId = req.user._id;
+
+  // Obtener el paciente asociado al usuario autenticado
+  const patient = await Patient.findOne({ user: userId });
   if (!patient) {
     res.status(404);
     throw new Error('Paciente no encontrado');
   }
 
-  // Obtener tratamientos que incluyen al paciente
-  const treatments = await Treatment.find({ patients: patientId })
-    .populate({
-      path: 'patients',
-      populate: { path: 'user', select: 'name lastName email' },
-    })
-    .populate('activities')
-    .populate({
-      path: 'doctor',
-      populate: { path: 'user', select: 'name lastName email' },
-    });
+  // Buscar el tratamiento y verificar que el paciente esté incluido
+  const treatment = await Treatment.findOne({ _id: treatmentId, patients: patient._id })
+    .populate('assignedActivities'); // Esto llenará los detalles de las actividades asignadas
 
-  res.status(200).json(treatments);
+  if (!treatment) {
+    res.status(404);
+    throw new Error('Tratamiento no encontrado para este paciente');
+  }
+
+  res.status(200).json(treatment.assignedActivities);
 });
 
+// @desc    Registrar una actividad realizada por el paciente en su tratamiento
+// @route   POST /api/treatments/:treatmentId/activities
+// @access  Privado/Paciente o Doctor
+const recordActivity = asyncHandler(async (req, res) => {
+  const { treatmentId } = req.params;
+  const { activityId, photoId, scoreObtained, timeUsed, progress, observations } = req.body;
 
+  console.log('Datos recibidos en recordActivity:', req.body);
+  console.log('treatmentId:', treatmentId); // Verificar que no es undefined
+
+  if (!treatmentId) {
+    res.status(400);
+    throw new Error('treatmentId no proporcionado');
+  }
+
+  const userId = req.user._id;
+
+  // Obtener el paciente asociado al usuario autenticado
+  const patient = await Patient.findOne({ user: userId });
+  if (!patient) {
+    res.status(404);
+    throw new Error('Paciente no encontrado');
+  }
+
+  // Buscar el tratamiento y verificar que el paciente esté incluido
+  const treatment = await Treatment.findOne({ _id: treatmentId, patients: patient._id }).populate('assignedActivities');
+  if (!treatment) {
+    res.status(404);
+    throw new Error('Tratamiento no encontrado para este paciente');
+  }
+
+  // Registro de depuración
+  console.log('Actividades asignadas al tratamiento:', treatment.assignedActivities.map(a => a._id.toString()));
+  console.log('ActividadId recibida:', activityId);
+
+  // Verificar que la actividad asignada esté dentro del tratamiento
+  const isAssigned = treatment.assignedActivities.some(activity => activity._id.toString() === activityId);
+  if (!isAssigned) {
+    res.status(400);
+    throw new Error('Actividad no asignada a este tratamiento');
+  }
+
+  // Crear una nueva actividad completada
+  const completedActivity = {
+    activity: activityId,
+    photo: photoId, // Opcional
+    patient: patient._id,
+    dateCompleted: Date.now(),
+    scoreObtained,
+    timeUsed,
+    progress,
+    observations,
+    image: '', // Opcional
+    activeView: false, // Opcional
+  };
+
+  console.log('Datos de la actividad completada:', completedActivity); // Log de la actividad completada
+
+  // Agregar la actividad completada al tratamiento
+  treatment.completedActivities.push(completedActivity);
+  await treatment.save();
+
+  // Emitir un evento para actualizar en tiempo real (si aplica)
+  try {
+    const io = getIO(); // Obtener la instancia de Socket.io
+    io.emit(`treatmentActivitiesUpdated:${treatmentId}`, { message: 'Actividad registrada' });
+    console.log(`Evento treatmentActivitiesUpdated emitido para el tratamiento ${treatmentId}`);
+  } catch (error) {
+    console.error('Error al emitir el evento de Socket.io:', error.message);
+    // Puedes optar por no lanzar un error si el evento falla
+  }
+
+  res.status(201).json({
+    message: 'Actividad registrada exitosamente en el tratamiento',
+    completedActivity,
+  });
+});
+
+// @desc    Obtener actividades realizadas por el paciente en un tratamiento específico
+// @route   GET /api/treatments/:treatmentId/activities
+// @access  Privado/Paciente
+const getCompletedActivities = asyncHandler(async (req, res) => {
+  const { treatmentId } = req.params;
+  const userId = req.user._id;
+
+  // Obtener el paciente asociado al usuario autenticado
+  const patient = await Patient.findOne({ user: userId });
+  if (!patient) {
+    res.status(404);
+    throw new Error('Paciente no encontrado');
+  }
+
+  // Buscar el tratamiento y verificar que el paciente esté incluido
+  const treatment = await Treatment.findOne({ _id: treatmentId, patients: patient._id })
+    .populate('completedActivities.activity');
+
+  if (!treatment) {
+    res.status(404);
+    throw new Error('Tratamiento no encontrado para este paciente');
+  }
+
+  res.status(200).json(treatment.completedActivities);
+});
+
+// @desc    Obtener el tratamiento activo de un usuario
+// @route   GET /api/users/:userId/active-treatment
+// @access  Privado/Paciente o Doctor
+const getActiveTreatment = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  // Obtener el paciente asociado al usuario autenticado
+  const patient = await Patient.findOne({ user: userId });
+  if (!patient) {
+    res.status(404);
+    throw new Error('Paciente no encontrado para este usuario');
+  }
+
+  // Definir qué constituye un tratamiento activo
+  // Por ejemplo, tratamientos que no han finalizado (endDate en el futuro)
+  const currentDate = new Date();
+  const activeTreatment = await Treatment.findOne({
+    patients: patient._id,
+    endDate: { $gte: currentDate },
+  }).populate('assignedActivities');
+
+  if (!activeTreatment) {
+    res.status(404);
+    throw new Error('No hay tratamiento activo para este paciente');
+  }
+
+  res.status(200).json(activeTreatment);
+});
 
 export { assignActivityToPatient, updateAssignmentResults, 
   getAssignedActivities,unassignActivityFromPatient,getMyAssignedActivities, 
-  createTreatment, getMyTreatments, 
+  createTreatment, getMyTreatments, getActivitiesByUser,
   getTreatmentById, updateTreatment, getMyMedications, getDueMedications,
-getTreatmentsByPatient};
+getTreatmentsByPatient,recordActivity,getCompletedActivities, getActiveTreatment};

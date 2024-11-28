@@ -1,9 +1,8 @@
-// src/components/ActivityLevel2.jsx
+// src/components/Activity.jsx
 
 import { Card } from 'react-bootstrap';
-import backgroundImg from '../images/background2.png'; // Imagen específica para nivel 2
 
-const ActivityLevel2 = ({ activity }) => {
+const Activity = ({ activity, backgroundImg, onPlay }) => {
   return (
     <Card className="activity-card my-3 p-3 rounded">
       {/* Imagen de fondo */}
@@ -29,11 +28,11 @@ const ActivityLevel2 = ({ activity }) => {
 
         {/* Botón para jugar */}
         <div className="activity-card__wrapper">
-          <button className="activity-card__btn activity-card__btn-solid">Jugar</button>
+          <button className="activity-card__btn activity-card__btn-solid" onClick={onPlay}>Jugar</button>
         </div>
       </Card.Body>
     </Card>
   );
 };
 
-export default ActivityLevel2;
+export default Activity;
