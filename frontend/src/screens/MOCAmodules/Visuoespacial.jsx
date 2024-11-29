@@ -1,294 +1,353 @@
-// frontend/src/screens/MOCAmodules/Visuoespacial.jsx
-import React, { useState, useEffect, useRef } from "react";
+// src/screens/MOCAmodules/Visuoespacial.jsx
+
+import React, { useState, useRef, useEffect } from "react";
 import { Button, Row, Col, Spinner } from "react-bootstrap";
-import { Stage, Layer, Circle, Text, Line } from "react-konva";
+import { Stage, Layer, Line, Circle, Text } from "react-konva";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import * as tf from "@tensorflow/tfjs";
 
 const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
-  // Estados para puntajes
+  // Estado para almacenar los puntajes de las actividades
   const [diagramScore, setDiagramScore] = useState(null);
   const [cubeScore, setCubeScore] = useState(null);
   const [clockScore, setClockScore] = useState(null);
 
-  // Estados para nodos y conexiones
-  const [nodes, setNodes] = useState([]);
+  // Estado para el dibujo y la evaluación
+  const [drawing, setDrawing] = useState([]);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+
+  // Estado para rastrear las conexiones realizadas
   const [connections, setConnections] = useState([]);
-  const [selectedNodes, setSelectedNodes] = useState([]);
 
-  // Estado para el modelo de IA
-  const [model, setModel] = useState(null);
-  const [loadingModel, setLoadingModel] = useState(true);
-  const [evaluated, setEvaluated] = useState(false);
-  const [evaluationResult, setEvaluationResult] = useState(null);
-
-  // Referencia para Stage
   const stageRef = useRef(null);
 
-  // Secuencia correcta
-  const correctSequence = ["1", "A", "2", "B", "3", "C", "4", "D", "5", "E"];
+  // Definir los marcadores con posiciones dispersas
+  const markers = [
+    { label: '1', x: 100, y: 100 },
+    { label: 'A', x: 300, y: 80 },
+    { label: '2', x: 500, y: 150 },
+    { label: 'B', x: 700, y: 100 },
+    { label: '3', x: 600, y: 300 },
+    { label: 'C', x: 400, y: 250 },
+    { label: '4', x: 200, y: 300 },
+    { label: 'D', x: 350, y: 400 },
+    { label: '5', x: 550, y: 350 },
+    { label: 'E', x: 750, y: 350 },
+  ];
 
-  // Inicializar nodos
-  useEffect(() => {
-    const initialNodes = [
-      { id: "1", x: 100, y: 100 },
-      { id: "A", x: 200, y: 100 },
-      { id: "2", x: 300, y: 100 },
-      { id: "B", x: 400, y: 100 },
-      { id: "3", x: 500, y: 100 },
-      { id: "C", x: 600, y: 100 },
-      { id: "4", x: 700, y: 100 },
-      { id: "D", x: 800, y: 100 },
-      { id: "5", x: 900, y: 100 },
-      { id: "E", x: 1000, y: 100 },
-    ];
-    setNodes(initialNodes);
-  }, []);
-
-  // Cargar el modelo de IA al montar el componente
-  useEffect(() => {
-    const loadModel = async () => {
-      try {
-        console.log("Iniciando la carga y entrenamiento del modelo...");
-
-        // Definir un modelo simple de TensorFlow.js
-        const model = tf.sequential();
-        model.add(tf.layers.dense({ inputShape: [10], units: 16, activation: "relu" }));
-        model.add(tf.layers.dense({ units: 2, activation: "softmax" }));
-
-        // Instanciar el optimizador Adam con una tasa de aprendizaje de 0.001
-        const optimizer = tf.train.adam(0.001);
-
-        // Compilar el modelo con el optimizador instanciado
-        model.compile({
-          optimizer: optimizer,
-          loss: "categoricalCrossentropy",
-          metrics: ["accuracy"],
-        });
-
-        // Definir datos de entrenamiento
-        const xsData = [
-          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // Correct
-          [0, 1, 1, 1, 1, 1, 1, 1, 1, 1], // Incorrect
-          [1, 0, 1, 1, 1, 1, 1, 1, 1, 1], // Incorrect
-          [1, 1, 0, 1, 1, 1, 1, 1, 1, 1], // Incorrect
-          [1, 1, 1, 0, 1, 1, 1, 1, 1, 1], // Incorrect
-          [1, 1, 1, 1, 0, 1, 1, 1, 1, 1], // Incorrect
-          [1, 1, 1, 1, 1, 0, 1, 1, 1, 1], // Incorrect
-          [1, 1, 1, 1, 1, 1, 0, 1, 1, 1], // Incorrect
-          [1, 1, 1, 1, 1, 1, 1, 0, 1, 1], // Incorrect
-          [1, 1, 1, 1, 1, 1, 1, 1, 0, 1], // Incorrect
-          [1, 1, 1, 1, 1, 1, 1, 1, 1, 0], // Incorrect
-        ];
-        const ysData = [
-          [1, 0], // Correct
-          [0, 1], // Incorrect
-          [0, 1], // Incorrect
-          [0, 1], // Incorrect
-          [0, 1], // Incorrect
-          [0, 1], // Incorrect
-          [0, 1], // Incorrect
-          [0, 1], // Incorrect
-          [0, 1], // Incorrect
-          [0, 1], // Incorrect
-          [0, 1], // Incorrect
-        ];
-
-        console.log("Datos de Entrenamiento (xs):", xsData);
-        console.log("Etiquetas de Entrenamiento (ys):", ysData);
-
-        // Verificar cada valor
-        xsData.forEach((row, i) => {
-          row.forEach((value, j) => {
-            if (typeof value !== 'number') {
-              console.error(`Valor inválido en xsData[${i}][${j}]:`, value);
-            }
-          });
-        });
-
-        ysData.forEach((row, i) => {
-          row.forEach((value, j) => {
-            if (typeof value !== 'number') {
-              console.error(`Valor inválido en ysData[${i}][${j}]:`, value);
-            }
-          });
-        });
-
-        // Convertir datos a tensores
-        const xs = tf.tensor2d(xsData);
-        const ys = tf.tensor2d(ysData);
-
-        console.log("xs tensor:", xs);
-        console.log("ys tensor:", ys);
-
-        console.log("Entrenando el modelo...");
-        await model.fit(xs, ys, {
-          epochs: 50, // Puedes aumentar las épocas para un mejor entrenamiento
-          verbose: 1,
-        });
-
-        console.log("Modelo entrenado correctamente.");
-        setModel(model);
-        setLoadingModel(false);
-      } catch (error) {
-        console.error("Error al cargar o entrenar el modelo de IA:", error);
-        setLoadingModel(false);
-      }
+  // Función para convertir una secuencia a vectores numéricos
+  const encodeSequence = (sequence) => {
+    const mapping = {
+      '1': 1,
+      '2': 2,
+      '3': 3,
+      '4': 4,
+      '5': 5,
+      'A': 6,
+      'B': 7,
+      'C': 8,
+      'D': 9,
+      'E': 10,
     };
+    
+    // Map each label to its numeric representation
+    return sequence.map(label => mapping[label] || 0);
+  };
 
-    loadModel();
-  }, []);
+  // Generar datos de entrenamiento
+  const generateTrainingData = () => {
+    const correctSequence = ['1', 'A', '2', 'B', '3', 'C', '4', 'D', '5', 'E'];
+    const incorrectSequences = [
+      ['1', 'A', '2', 'C', '3', 'B', '4', 'D', '5', 'E'], // Error en el paso 4
+      ['A', '1', '2', 'B', '3', 'C', '4', 'D', '5', 'E'], // Inicio incorrecto
+      ['1', 'A', '2', 'B', '3', 'C', '4', 'D', '5'],       // Faltan nodos
+      ['1', 'A', '2', 'B', '4', 'C', '3', 'D', '5', 'E'], // Error en el paso 6
+      // Agrega más secuencias incorrectas según sea necesario
+    ];
 
-  // Manejar clic en un nodo
-  const handleNodeClick = (nodeId) => {
-    if (evaluated) return; // Evitar cambios después de evaluación
+    const sequences = [correctSequence, ...incorrectSequences];
+    const labels = [1, ...Array(incorrectSequences.length).fill(0)];
 
-    if (selectedNodes.includes(nodeId)) return; // Evitar seleccionar el mismo nodo varias veces
+    const encodedSequences = sequences.map(seq => encodeSequence(seq));
 
-    const newSelectedNodes = [...selectedNodes, nodeId];
-    setSelectedNodes(newSelectedNodes);
+    return { encodedSequences, labels };
+  };
 
-    if (newSelectedNodes.length > 1) {
-      const from = newSelectedNodes[newSelectedNodes.length - 2];
-      const to = nodeId;
-      setConnections([...connections, { from, to }]);
-    }
+  // Definir el modelo
+  const createModel = () => {
+    const model = tf.sequential();
+    model.add(tf.layers.dense({ inputShape: [10], units: 16, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 8, activation: 'relu' }));
+    model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
 
-    // Si se ha completado la secuencia, evaluar
-    if (newSelectedNodes.length === correctSequence.length) {
-      evaluateSequence(newSelectedNodes);
+    model.compile({
+      optimizer: tf.train.adam(),
+      loss: 'binaryCrossentropy',
+      metrics: ['accuracy'],
+    });
+
+    return model;
+  };
+
+  // Función para entrenar el modelo
+  const trainModel = async () => {
+    const { encodedSequences, labels } = generateTrainingData();
+
+    const xs = tf.tensor2d(encodedSequences, [encodedSequences.length, 10]);
+    const ys = tf.tensor2d(labels, [labels.length, 1]);
+
+    const model = createModel();
+
+    await model.fit(xs, ys, {
+      epochs: 100,
+      batchSize: 2,
+      shuffle: true,
+      callbacks: tf.callbacks.earlyStopping({ monitor: 'loss', patience: 10 }),
+    });
+
+    // Guardar el modelo
+    await model.save('localstorage://moca_diagram_model');
+    console.log('Modelo entrenado y guardado en el almacenamiento local.');
+  };
+
+  // Cargar el modelo de IA
+  const loadModel = async () => {
+    try {
+      const model = await tf.loadLayersModel('localstorage://moca_diagram_model');
+      return model;
+    } catch (error) {
+      console.error('Error al cargar el modelo de IA:', error);
+      toast.error('Error al cargar el modelo de evaluación.');
+      return null;
     }
   };
 
-  // Evaluar la secuencia usando el modelo de IA
-  const evaluateSequence = async (sequence) => {
-    if (!model) {
-      console.error("Modelo no cargado");
-      return;
-    }
+  // Función para preprocesar el dibujo antes de la evaluación
+  const preprocessDrawing = (connections) => {
+    const sequence = connections.map(conn => conn.from);
+    const inputSequence = [...sequence, connections[connections.length - 1].to || '']; // Completar el último nodo
+    const encodedSequence = encodeSequence(inputSequence.slice(0, 10)); // Limitar a 10 elementos
+    return tf.tensor2d([encodedSequence], [1, 10]);
+  };
 
-    tf.tidy(() => {
-      // Convertir la secuencia en un vector de características
-      const inputVector = correctSequence.map((item, index) => (sequence[index] === item ? 1 : 0));
-      const inputTensor = tf.tensor2d([inputVector]);
+  // Función para evaluar el dibujo utilizando TensorFlow.js
+  const evaluateDrawingWithAI = async (connections) => {
+    const model = await loadModel();
+    if (!model) return 0;
 
-      // Hacer la predicción
-      const prediction = model.predict(inputTensor);
-      const predictedClass = prediction.argMax(-1).dataSync()[0]; // 0: Correct, 1: Incorrect
+    const processedDrawing = preprocessDrawing(connections);
 
-      // Asignar puntaje basado en la predicción
-      if (predictedClass === 0) {
-        setDiagramScore(1);
-        setEvaluationResult("Correcto");
+    const prediction = model.predict(processedDrawing);
+    const score = (prediction.dataSync()[0] > 0.5) ? 1 : 0;
+
+    return score;
+  };
+
+  // Función para evaluar el dibujo
+  const evaluateDrawing = async () => {
+    setIsEvaluating(true);
+
+    try {
+      // Verificar si todas las conexiones necesarias están realizadas
+      if (connections.length === markers.length - 1) {
+        // Evaluar la secuencia con IA
+        const score = await evaluateDrawingWithAI(connections);
+        setDiagramScore(score);
+
+        if (score === 1) {
+          toast.success('Evaluación completada: Correcto');
+        } else {
+          // Identificar el error
+          const correctSequence = ['1', 'A', '2', 'B', '3', 'C', '4', 'D', '5', 'E'];
+          let userSequence = [];
+
+          connections.forEach((conn) => {
+            userSequence.push(conn.from);
+            userSequence.push(conn.to);
+          });
+
+          // Remover duplicados consecutivos
+          userSequence = userSequence.filter((item, index) => index === 0 || item !== userSequence[index - 1]);
+
+          let error = "";
+          for (let i = 0; i < correctSequence.length; i++) {
+            if (userSequence[i] !== correctSequence[i]) {
+              error = `Error en el paso ${i + 1}: Se esperaba "${correctSequence[i]}" pero se obtuvo "${userSequence[i] || 'Ninguno'}".`;
+              break;
+            }
+          }
+
+          toast.error(`Evaluación completada: Incorrecto. ${error}`);
+        }
       } else {
-        setDiagramScore(0);
-        setEvaluationResult("Incorrecto");
+        toast.warn('Aún no has conectado todos los nodos.');
       }
 
-      setEvaluated(true);
-    });
+      /*
+      // Evaluación con IA (descomentar cuando el modelo esté disponible)
+      const score = await evaluateDrawingWithAI(drawing);
+      setDiagramScore(score);
+
+      if (score === 1) {
+        toast.success('Evaluación completada: Correcto');
+      } else {
+        toast.error('Evaluación completada: Incorrecto');
+      }
+      */
+    } catch (error) {
+      console.error('Error al evaluar el dibujo:', error);
+      toast.error('Hubo un problema al evaluar el dibujo.');
+      setDiagramScore(0); // Asignar puntaje 0 en caso de error
+    } finally {
+      setIsEvaluating(false);
+    }
   };
 
-  // Renderizar nodos
-  const renderNodes = () => {
-    return nodes.map((node) => (
-      <React.Fragment key={node.id}>
-        <Circle
-          x={node.x}
-          y={node.y}
-          radius={20}
-          fill={selectedNodes.includes(node.id) ? "green" : "lightblue"}
-          stroke="black"
-          strokeWidth={2}
-          onClick={() => handleNodeClick(node.id)}
-        />
-        <Text
-          x={node.x - 5}
-          y={node.y - 10}
-          text={node.id}
-          fontSize={20}
-          fill="black"
-        />
-      </React.Fragment>
-    ));
+  // Función para manejar el inicio de una conexión
+  const handleStartConnection = (label) => {
+    setConnections([...connections, { from: label, to: null }]);
   };
 
-  // Renderizar líneas de conexión
-  const renderConnections = () => {
-    return connections.map((conn, index) => {
-      const fromNode = nodes.find((node) => node.id === conn.from);
-      const toNode = nodes.find((node) => node.id === conn.to);
-      return (
-        <Line
-          key={index}
-          points={[fromNode.x, fromNode.y, toNode.x, toNode.y]}
-          stroke="black"
-          strokeWidth={2}
-        />
-      );
-    });
+  // Función para manejar la finalización de una conexión
+  const handleEndConnection = (label) => {
+    const lastConnection = connections[connections.length - 1];
+    if (lastConnection && lastConnection.to === null) {
+      // Evitar conexiones duplicadas
+      if (lastConnection.from !== label) {
+        setConnections(connections.slice(0, -1).concat({ ...lastConnection, to: label }));
+      }
+    }
   };
 
-  // Manejar el botón de Continuar
+  // Entrenar el modelo al montar el componente
+  useEffect(() => {
+    trainModel();
+  }, []);
+
+  // Función para manejar el puntaje y avanzar al siguiente módulo
   const handleNext = () => {
-    // Calcular el puntaje total sumando los puntajes de las actividades
+    // Calcular el puntaje total del módulo sumando los puntajes de las actividades
     const totalScore = (diagramScore || 0) + (cubeScore || 0) + (clockScore || 0);
 
-    // Enviar puntajes individuales y total
-    onComplete(totalScore, {
-      diagram: diagramScore,
-      cube: cubeScore,
-      clock: clockScore,
-    });
+    // Enviar puntajes individuales y puntaje total al componente padre
+    onComplete(
+      totalScore, // Puntaje total del módulo
+      {
+        diagram: diagramScore,
+        cube: cubeScore,
+        clock: clockScore,
+      }
+    );
   };
 
   return (
     <div className="module-container">
       {/* Actividad 1: Diagrama */}
       <Row className="justify-content-center mt-3">
-        <Col md={10} className="d-flex flex-column align-items-center">
+        <Col md={12} className="d-flex flex-column align-items-center">
           <p className="instructions-text">
-            Pida al paciente que trace el diagrama en orden | Seguimiento visual | Precisión
+            <strong>Administración:</strong> El examinador da las instrucciones siguientes, indicando el lugar adecuado en la hoja: “Me gustaría que dibuje una línea alternando entre cifras y letras, respetando el orden numérico y el orden alfabético. Comience aquí (señale el 1) y dibuje una línea hacia la letra A, y a continuación hacia el 2, etc. Termine aquí (señale la E).
           </p>
-          <div
-            className="diagram-container mb-3"
-            style={{
-              border: "1px solid #ccc",
-              padding: "10px",
-              width: "1000px",
-              height: "200px",
-              position: "relative",
+          <Button
+            variant="warning"
+            className="mb-3"
+            onClick={() => {
+              setDrawing([]);
+              setConnections([]);
+              setDiagramScore(null);
+              toast.info('Dibujo y conexiones reseteados. Intenta nuevamente.');
             }}
           >
-            <Stage width={1000} height={200} ref={stageRef}>
-              <Layer>
-                {renderConnections()}
-                {renderNodes()}
-              </Layer>
-            </Stage>
-          </div>
-          {!loadingModel ? (
-            evaluated ? (
-              <p>
-                Resultado de la evaluación: <strong>{evaluationResult}</strong>
-              </p>
-            ) : (
-              <p>Seleccione los nodos en el orden correcto.</p>
-            )
-          ) : (
-            <Spinner animation="border" role="status">
-              <span className="visually-hidden">Cargando modelo...</span>
-            </Spinner>
-          )}
-          {evaluated && (
-            <div className="d-flex mt-2">
-              <Button
-                variant={diagramScore === 1 ? "success" : "danger"}
-                className="me-2"
-                disabled
-              >
-                {diagramScore === 1 ? "Completado correctamente +1" : "No completado correctamente 0"}
-              </Button>
-            </div>
+            Resetear Dibujo y Conexiones
+          </Button>
+          <Stage
+            width={1000} // Aumenta el ancho para acomodar todos los marcadores
+            height={400} // Aumenta la altura para mayor espacio de dibujo
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            ref={stageRef}
+            style={{ border: '2px solid #000', marginBottom: '10px' }}
+          >
+            <Layer>
+              {/* Líneas Guía */}
+              {markers.map((marker, index) => {
+                if (index === 0) return null; // No dibujar línea para el primer marcador
+                const previousMarker = markers[index - 1];
+                return (
+                  <React.Fragment key={index}>
+                    <Line
+                      points={[previousMarker.x, previousMarker.y, marker.x, marker.y]}
+                      stroke="#00ff00"
+                      strokeWidth={1}
+                      dash={[4, 4]}
+                    />
+                  </React.Fragment>
+                );
+              })}
+
+              {/* Conexiones del usuario */}
+              {connections.map((conn, index) => {
+                if (!conn.to) return null;
+                const fromMarker = markers.find(m => m.label === conn.from);
+                const toMarker = markers.find(m => m.label === conn.to);
+                if (!fromMarker || !toMarker) return null;
+                return (
+                  <Line
+                    key={index}
+                    points={[fromMarker.x, fromMarker.y, toMarker.x, toMarker.y]}
+                    stroke="#0000ff"
+                    strokeWidth={2}
+                  />
+                );
+              })}
+
+              {/* Dibujo del usuario */}
+              {drawing.map((line, i) => (
+                <Line
+                  key={i}
+                  points={line}
+                  stroke="#000"
+                  strokeWidth={2}
+                  tension={0.5}
+                  lineCap="round"
+                  globalCompositeOperation="source-over"
+                />
+              ))}
+
+              {/* Marcadores */}
+              {markers.map((marker, index) => (
+                <React.Fragment key={index}>
+                  <Circle
+                    x={marker.x}
+                    y={marker.y}
+                    radius={15}
+                    fill={connections.some(conn => conn.from === marker.label || conn.to === marker.label) ? "#00ff00" : "#ff0000"}
+                    onClick={() => {
+                      if (connections.length === 0 || connections[connections.length - 1].to !== null) {
+                        handleStartConnection(marker.label);
+                      } else {
+                        handleEndConnection(marker.label);
+                      }
+                    }}
+                  />
+                  <Text
+                    x={marker.x - 5}
+                    y={marker.y - 8}
+                    text={marker.label}
+                    fontSize={14}
+                    fill="#ffffff"
+                  />
+                </React.Fragment>
+              ))}
+            </Layer>
+          </Stage>
+          {isEvaluating && <Spinner animation="border" variant="primary" />}
+          {diagramScore !== null && (
+            <p className={`score-text ${diagramScore === 1 ? 'text-success' : 'text-danger'}`}>
+              Puntaje: {diagramScore === 1 ? '1' : '0'}
+            </p>
           )}
         </Col>
       </Row>
@@ -366,11 +425,18 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
         <Button
           variant="success"
           onClick={handleNext}
-          disabled={diagramScore === null || cubeScore === null || clockScore === null}
+          disabled={
+            diagramScore === null ||
+            cubeScore === null ||
+            clockScore === null ||
+            isEvaluating
+          }
         >
           Continuar
         </Button>
       </div>
+
+      <ToastContainer />
     </div>
   );
 };

@@ -38,7 +38,6 @@ const ActivityScreenLevel3 = () => {
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
-  const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
   // Obtener información del usuario autenticado desde el estado de Redux
@@ -59,22 +58,25 @@ const ActivityScreenLevel3 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
-  // Navegar de regreso después de terminar el juego
-  useEffect(() => {
-    if (gameFinished) {
-      const timeout = setTimeout(() => {
-        navigate('/api/treatments/activities');
-      }, 6000);
-      return () => clearTimeout(timeout);
-    }
-  }, [gameFinished, navigate]);
-
   // Manejar errores de la mutación
   useEffect(() => {
     if (recordError) {
       toast.error(`Error al guardar la actividad: ${recordError.data?.message || recordError.message}`);
     }
   }, [recordError]);
+
+  // Navegar de regreso después de terminar el juego
+  useEffect(() => {
+    if (gameFinished) {
+      toast.success('Juego terminado. ¡Revisa tus resultados!');
+      saveActivity();
+
+      const timeout = setTimeout(() => {
+        navigate('/activities'); // Asegúrate de que esta ruta sea correcta en tu frontend
+      }, 6000);
+      return () => clearTimeout(timeout);
+    }
+  }, [gameFinished, navigate]);
 
   // Manejar el arrastre y soltar
   const handleDrop = (word, category) => {
@@ -95,7 +97,7 @@ const ActivityScreenLevel3 = () => {
     });
 
     const score = (correctCount * (5 / wordsLevel3.length)).toFixed(2); // Puntaje con dos decimales
-    setCorrectAnswers(score);
+    setCorrectAnswers(parseFloat(score));
     setIncorrectAnswers(wordsLevel3.length - correctCount);
     setGameFinished(true);
   };
@@ -108,19 +110,19 @@ const ActivityScreenLevel3 = () => {
       return;
     }
 
-    // Validar que treatmentId está definido
-    if (!treatmentId) {
-      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
+    // Validar que treatmentId y activityId están definidos
+    if (!treatmentId || !activityId) {
+      toast.error('Tratamiento o actividad no identificado. No se puede guardar la actividad.');
       return;
     }
 
     // Construir el objeto de datos de la actividad
     const activityData = {
       activityId, // ID de la actividad principal desde los parámetros de la ruta
-      correctAnswers: correctAnswers, // Número de respuestas correctas (puntaje)
-      incorrectAnswers: incorrectAnswers, // Número de respuestas incorrectas
+      correctAnswers, // Número de respuestas correctas (puntaje)
+      incorrectAnswers, // Número de respuestas incorrectas
       timeUsed: timer,
-      scoreObtained: parseFloat(correctAnswers), // Asegurar que es un número decimal
+      scoreObtained: parseFloat(correctAnswers.toFixed(2)), // Asegurar que es un número decimal
       progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
       observations: 'El paciente completó la actividad de clasificación de palabras en nivel avanzado.',
       patientId, // ID del paciente desde el estado de Redux
@@ -142,20 +144,13 @@ const ActivityScreenLevel3 = () => {
     }
   };
 
-  // Llamar a saveActivity cuando el juego ha finalizado
-  useEffect(() => {
-    if (gameFinished) {
-      saveActivity();
-    }
-  }, [gameFinished]);
-
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="word-classification">
         <h1>Clasificación de Palabras - Nivel 3</h1>
         <p>Tiempo: {timer} segundos</p>
 
-        <div className="categories-container" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around' }}>
+        <div className="categories-container">
           {categoriesLevel3.map((category) => (
             <Category
               key={category.id}
@@ -168,20 +163,20 @@ const ActivityScreenLevel3 = () => {
           ))}
         </div>
 
-        <div className="words-container" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div className="words-container">
           {wordsLevel3.filter(word => !Object.keys(assignedCategories).includes(word.id.toString())).map((word) => (
             <Word key={word.id} word={word} />
           ))}
         </div>
 
         {!gameFinished && (
-          <button onClick={checkAnswers} className="submit-button" style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px' }}>
+          <button onClick={checkAnswers} className="submit-button">
             Enviar Respuesta
           </button>
         )}
 
         {gameFinished && (
-          <div className="results" style={{ marginTop: '20px' }}>
+          <div className="results">
             <h2>¡Juego Terminado!</h2>
             <p>Respuestas correctas: {correctAnswers} de {wordsLevel3.length}</p>
             <p>Respuestas incorrectas: {incorrectAnswers} de {wordsLevel3.length}</p>
@@ -209,18 +204,9 @@ const Word = ({ word }) => {
   return (
     <div
       ref={drag}
-      className="word"
+      className="word draggable-word"
       style={{
-        ...word.style,
         opacity: isDragging ? 0.5 : 1,
-        width: '100px',
-        height: word.style.clipPath ? '100px' : '50px',
-        fontSize: '20px',
-        textAlign: 'center',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        margin: '10px',
         cursor: 'grab'
       }}
     >
@@ -242,34 +228,14 @@ const Category = ({ category, assignedWords, onDrop }) => {
   return (
     <div
       ref={drop}
-      className="category"
-      style={{
-        backgroundColor: isOver ? '#f0f0f0' : 'white',
-        padding: '20px',
-        border: '2px dashed gray',
-        minHeight: '200px',
-        width: '22%', // Ajuste para cuatro categorías
-        margin: '10px',
-        borderRadius: '8px'
-      }}
+      className={`category ${isOver ? 'category-hover' : ''}`}
     >
       <h3>{category.name}</h3>
-      <div className="assigned-words" style={{ display: 'flex', flexWrap: 'wrap' }}>
+      <div className="assigned-words">
         {assignedWords.map((word) => (
           <div
             key={word.id}
-            className="word"
-            style={{
-              ...word.style,
-              width: '100px',
-              height: word.style.clipPath ? '100px' : '50px',
-              fontSize: '20px',
-              textAlign: 'center',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              margin: '10px'
-            }}
+            className="word assigned-word"
           >
             {word.text}
           </div>

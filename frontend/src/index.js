@@ -107,13 +107,13 @@ const router = createBrowserRouter(
         {/*<Route path="/notifications" element={<Notifications />} />*/}
 
 
-         {/* Actividades de nivel 1 */}
+         
          <Route path="/treatments/:treatmentId/activities/play/:activityId" element={<ActivityPlay />} />
-        {/*<Route path="/activities/play/:activityId" element={<ActivityScreen2 />} />
+        <Route path="/activities/play/:activityId" element={<ActivityScreen2 />} />
 
 
         <Route path="/api/treatments/activities" element={<ActivitiesL2Screen />} />
-
+{/* Actividades
         <Route path="/activity/level2/1" element={<Activity1L2Screen />} />
         <Route path="/activity/level2/2" element={<Activity2L2Screen />} />
         <Route path="/activity/level2/3" element={<Activity3L2Screen />} />

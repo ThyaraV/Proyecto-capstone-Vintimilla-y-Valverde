@@ -141,6 +141,9 @@ const getMyAssignedActivities = asyncHandler(async (req, res) => {
 // @desc    Crear un nuevo tratamiento
 // @route   POST /api/treatments/create
 // @access  Privado/Admin (Doctor)
+// @desc    Crear un nuevo tratamiento
+// @route   POST /api/treatments/create
+// @access  Privado/Admin (Doctor)
 const createTreatment = asyncHandler(async (req, res) => {
   const {
     treatmentName,
@@ -159,7 +162,7 @@ const createTreatment = asyncHandler(async (req, res) => {
 
   console.log('Datos recibidos para crear tratamiento:', req.body); // Depuración
 
-    // Validaciones básicas
+  // Validaciones básicas
   if (!treatmentName || !description || !patientIds || !Array.isArray(patientIds)) {
     res.status(400);
     throw new Error('Por favor, proporciona nombre, descripción y pacientes válidos');
@@ -199,8 +202,9 @@ const createTreatment = asyncHandler(async (req, res) => {
   });
 
   const createdTreatment = await treatment.save();
-  // Asignar actividades a cada paciente seleccionado
-  if (treatment && activities && activities.length > 0) {
+  
+  // Asignar el tratamiento a cada paciente seleccionado
+  if (treatment && assignedActivities && assignedActivities.length > 0) { // <-- Cambiado aquí
     for (const patientId of patientIds) {
       const patient = await Patient.findById(patientId);
 
@@ -218,6 +222,7 @@ const createTreatment = asyncHandler(async (req, res) => {
 
   res.status(201).json(createdTreatment);
 });
+
 
 // @desc    Obtener tratamientos creados por el médico autenticado
 // @route   GET /api/treatments/mytreatments
