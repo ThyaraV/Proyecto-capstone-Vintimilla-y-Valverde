@@ -1,3 +1,5 @@
+// src/screens/MOCAmodules/Visuoespacial.jsx
+
 import React, { useState, useRef, useEffect } from "react";
 import { Button, Row, Col, Spinner } from "react-bootstrap";
 import { Stage, Layer, Line, Circle, Text } from "react-konva";
@@ -6,20 +8,17 @@ import "react-toastify/dist/ReactToastify.css";
 import * as tf from "@tensorflow/tfjs";
 
 const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
-  // Estados para almacenar los puntajes de las actividades
+  // Estado para almacenar los puntajes de las actividades
   const [diagramScore, setDiagramScore] = useState(null);
   const [cubeScore, setCubeScore] = useState(null);
   const [clockScore, setClockScore] = useState(null);
 
-  // Estados para el dibujo y la evaluación
+  // Estado para el dibujo y la evaluación
   const [drawing, setDrawing] = useState([]);
   const [isEvaluating, setIsEvaluating] = useState(false);
 
   // Estado para rastrear las conexiones realizadas
   const [connections, setConnections] = useState([]);
-
-  // Estado para el modelo
-  const [model, setModel] = useState(null);
 
   const stageRef = useRef(null);
 
@@ -37,15 +36,6 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
     { label: 'E', x: 750, y: 350 },
   ];
 
-  // Función auxiliar para padear secuencias
-  const padSequence = (sequence, maxLength) => {
-    const paddedSequence = [...sequence];
-    while (paddedSequence.length < maxLength) {
-      paddedSequence.push(0); // Rellenar con ceros
-    }
-    return paddedSequence;
-  };
-
   // Función para convertir una secuencia a vectores numéricos
   const encodeSequence = (sequence) => {
     const mapping = {
@@ -60,7 +50,8 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
       'D': 9,
       'E': 10,
     };
-
+    
+    // Map each label to its numeric representation
     return sequence.map(label => mapping[label] || 0);
   };
 
@@ -68,35 +59,25 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
   const generateTrainingData = () => {
     const correctSequence = ['1', 'A', '2', 'B', '3', 'C', '4', 'D', '5', 'E'];
     const incorrectSequences = [
-      ['1', 'A', '2', 'C', '3', 'B', '4', 'D', '5', 'E'],
-      ['A', '1', '2', 'B', '3', 'C', '4', 'D', '5', 'E'],
-      ['1', 'A', '2', 'B', '3', 'C', '4', 'D', '5'], // Longitud 9
-      ['1', 'A', '2', 'B', '4', 'C', '3', 'D', '5', 'E'],
+      ['1', 'A', '2', 'C', '3', 'B', '4', 'D', '5', 'E'], // Error en el paso 4
+      ['A', '1', '2', 'B', '3', 'C', '4', 'D', '5', 'E'], // Inicio incorrecto
+      ['1', 'A', '2', 'B', '3', 'C', '4', 'D', '5'],       // Faltan nodos
+      ['1', 'A', '2', 'B', '4', 'C', '3', 'D', '5', 'E'], // Error en el paso 6
+      // Agrega más secuencias incorrectas según sea necesario
     ];
 
     const sequences = [correctSequence, ...incorrectSequences];
     const labels = [1, ...Array(incorrectSequences.length).fill(0)];
 
-    // Determinar la longitud máxima de las secuencias
-    const maxLength = Math.max(...sequences.map(seq => seq.length));
+    const encodedSequences = sequences.map(seq => encodeSequence(seq));
 
-    // Codificar y padear las secuencias
-    const encodedSequences = sequences.map(seq => {
-      const encodedSeq = encodeSequence(seq);
-      return padSequence(encodedSeq, maxLength);
-    });
-
-    console.log('Secuencias codificadas:', encodedSequences);
-    console.log('Longitudes de las secuencias codificadas:', encodedSequences.map(seq => seq.length));
-    console.log('Etiquetas:', labels);
-
-    return { encodedSequences, labels, maxLength };
+    return { encodedSequences, labels };
   };
 
   // Definir el modelo
-  const createModel = (inputShape) => {
+  const createModel = () => {
     const model = tf.sequential();
-    model.add(tf.layers.dense({ inputShape: [inputShape], units: 16, activation: 'relu' }));
+    model.add(tf.layers.dense({ inputShape: [10], units: 16, activation: 'relu' }));
     model.add(tf.layers.dense({ units: 8, activation: 'relu' }));
     model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
 
@@ -111,21 +92,19 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
 
   // Función para entrenar el modelo
   const trainModel = async () => {
-    const { encodedSequences, labels, maxLength } = generateTrainingData();
+    const { encodedSequences, labels } = generateTrainingData();
 
-    const xs = tf.tensor2d(encodedSequences, [encodedSequences.length, maxLength]);
+    const xs = tf.tensor2d(encodedSequences, [encodedSequences.length, 10]);
     const ys = tf.tensor2d(labels, [labels.length, 1]);
 
-    const model = createModel(maxLength);
+    const model = createModel();
 
-    console.log('Iniciando entrenamiento del modelo...');
     await model.fit(xs, ys, {
       epochs: 100,
       batchSize: 2,
       shuffle: true,
       callbacks: tf.callbacks.earlyStopping({ monitor: 'loss', patience: 10 }),
     });
-    console.log('Entrenamiento completado.');
 
     // Guardar el modelo
     await model.save('localstorage://moca_diagram_model');
@@ -135,8 +114,7 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
   // Cargar el modelo de IA
   const loadModel = async () => {
     try {
-      const model = await tf.loadLayersModel('localstorage://moca_diagram_model/model.json');
-      console.log('Modelo cargado exitosamente.');
+      const model = await tf.loadLayersModel('localstorage://moca_diagram_model');
       return model;
     } catch (error) {
       console.error('Error al cargar el modelo de IA:', error);
@@ -146,48 +124,25 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
   };
 
   // Función para preprocesar el dibujo antes de la evaluación
-  const preprocessDrawing = (connections, maxLength) => {
+  const preprocessDrawing = (connections) => {
     const sequence = connections.map(conn => conn.from);
     const inputSequence = [...sequence, connections[connections.length - 1].to || '']; // Completar el último nodo
-    let encodedSequence = encodeSequence(inputSequence.slice(0, maxLength));
-
-    // Rellenar con 0 si la secuencia es más corta de maxLength
-    encodedSequence = padSequence(encodedSequence, maxLength);
-
-    console.log('Secuencia codificada para el modelo:', encodedSequence);
-    const tensor = tf.tensor2d([encodedSequence], [1, maxLength]);
-    console.log('Forma del tensor de entrada:', tensor.shape);
-    return tensor;
+    const encodedSequence = encodeSequence(inputSequence.slice(0, 10)); // Limitar a 10 elementos
+    return tf.tensor2d([encodedSequence], [1, 10]);
   };
 
   // Función para evaluar el dibujo utilizando TensorFlow.js
   const evaluateDrawingWithAI = async (connections) => {
-    if (!model) {
-      console.error('Modelo no cargado aún.');
-      toast.error('El modelo de evaluación aún no está cargado.');
-      return 0;
-    }
+    const model = await loadModel();
+    if (!model) return 0;
 
-    // Determinar la longitud máxima (inputShape) del modelo
-    const inputShape = model.layers[0].inputShape[1];
-
-    const processedDrawing = preprocessDrawing(connections, inputShape);
+    const processedDrawing = preprocessDrawing(connections);
 
     const prediction = model.predict(processedDrawing);
-    const predictionValue = (await prediction.array())[0][0];
-    console.log('Predicción del modelo:', predictionValue);
-    const score = (predictionValue > 0.5) ? 1 : 0;
-    console.log('Puntaje asignado:', score);
-
-    // Liberar memoria
-    processedDrawing.dispose();
-    prediction.dispose();
+    const score = (prediction.dataSync()[0] > 0.5) ? 1 : 0;
 
     return score;
   };
-
-  // ... (resto del componente permanece igual, sin cambios significativos)
-
 
   // Función para evaluar el dibujo
   const evaluateDrawing = async () => {
@@ -228,6 +183,18 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
       } else {
         toast.warn('Aún no has conectado todos los nodos.');
       }
+
+      /*
+      // Evaluación con IA (descomentar cuando el modelo esté disponible)
+      const score = await evaluateDrawingWithAI(drawing);
+      setDiagramScore(score);
+
+      if (score === 1) {
+        toast.success('Evaluación completada: Correcto');
+      } else {
+        toast.error('Evaluación completada: Incorrecto');
+      }
+      */
     } catch (error) {
       console.error('Error al evaluar el dibujo:', error);
       toast.error('Hubo un problema al evaluar el dibujo.');
@@ -253,39 +220,9 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
     }
   };
 
-  // Definición de las funciones de manejo de eventos de dibujo
-  const handleMouseDown = () => {
-    setDrawing([...drawing, []]);
-  };
-
-  const handleMouseMove = () => {
-    if (drawing.length === 0) return;
-    const stage = stageRef.current.getStage();
-    const point = stage.getPointerPosition();
-    const lastLine = drawing[drawing.length - 1];
-    const newLastLine = lastLine.concat([point.x, point.y]);
-    const updatedDrawing = drawing.slice(0, -1).concat([newLastLine]);
-    setDrawing(updatedDrawing);
-  };
-
-  const handleMouseUp = () => {
-    evaluateDrawing();
-  };
-
-  // Entrenar o cargar el modelo al montar el componente
+  // Entrenar el modelo al montar el componente
   useEffect(() => {
-    const initializeModel = async () => {
-      const models = await tf.io.listModels();
-      if (!models['localstorage://moca_diagram_model/model.json']) {
-        console.log('Modelo no encontrado. Iniciando entrenamiento...');
-        await trainModel();
-      } else {
-        console.log('Modelo ya entrenado y cargado desde el almacenamiento local.');
-      }
-      const loadedModel = await loadModel();
-      setModel(loadedModel);
-    };
-    initializeModel();
+    trainModel();
   }, []);
 
   // Función para manejar el puntaje y avanzar al siguiente módulo
