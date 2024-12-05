@@ -13,7 +13,7 @@ import {
   getCompletedActivities,
   getAssignedActivities,
   getActivitiesByUser,
-  getActiveTreatment
+  getActiveTreatment, toggleActivateTreatment
 } from '../controllers/treatmentController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -44,6 +44,8 @@ router.route('/:treatmentId/assignedActivities').get(protect, getAssignedActivit
 
 
 router.route('/activities').get(protect, getActivitiesByUser);
+
+router.route('/:treatmentId/activate').patch(protect, toggleActivateTreatment);
 
 router.route('/:userId/active-treatment').get(protect, getActiveTreatment);
 

@@ -141,9 +141,6 @@ const getMyAssignedActivities = asyncHandler(async (req, res) => {
 // @desc    Crear un nuevo tratamiento
 // @route   POST /api/treatments/create
 // @access  Privado/Admin (Doctor)
-// @desc    Crear un nuevo tratamiento
-// @route   POST /api/treatments/create
-// @access  Privado/Admin (Doctor)
 const createTreatment = asyncHandler(async (req, res) => {
   const {
     treatmentName,
@@ -279,6 +276,7 @@ const getTreatmentById = asyncHandler(async (req, res) => {
     throw new Error('Tratamiento no encontrado');
   }
 });
+
 // @desc    Actualizar un tratamiento existente
 // @route   PUT /api/treatments/:treatmentId
 // @access  Privado/Doctor
@@ -311,7 +309,7 @@ const updateTreatment = asyncHandler(async (req, res) => {
     patientIds,
     treatmentName,
     description,
-    activities,
+    assignedActivities,
     medications,
     exerciseVideos,
     startDate,
@@ -320,11 +318,12 @@ const updateTreatment = asyncHandler(async (req, res) => {
     adherence,
     observations,
     nextReviewDate,
+    active,
   } = req.body;
 
   treatment.treatmentName = treatmentName || treatment.treatmentName;
   treatment.description = description || treatment.description;
-  treatment.activities = activities || treatment.activities;
+  treatment.assignedActivities = assignedActivities || treatment.assignedActivities;
   treatment.medications = medications || treatment.medications;
   treatment.exerciseVideos = exerciseVideos || treatment.exerciseVideos;
   treatment.startDate = startDate || treatment.startDate;
@@ -334,17 +333,28 @@ const updateTreatment = asyncHandler(async (req, res) => {
   treatment.observations = observations || treatment.observations;
   treatment.nextReviewDate = nextReviewDate || treatment.nextReviewDate;
 
+  if (typeof active !== 'undefined') {
+    treatment.active = active;
+
+    if (active) {
+      // Desactivar otros tratamientos para estos pacientes
+      await Treatment.updateMany(
+        {
+          _id: { $ne: treatment._id },
+          patients: { $in: treatment.patients },
+        },
+        { active: false }
+      );
+    }
+  }
+
   if (patientIds) {
     // Actualizar pacientes asignados al tratamiento
     const previousPatientIds = treatment.patients.map((id) => id.toString());
     const newPatientIds = patientIds;
 
-    const patientsToRemove = previousPatientIds.filter(
-      (id) => !newPatientIds.includes(id)
-    );
-    const patientsToAdd = newPatientIds.filter(
-      (id) => !previousPatientIds.includes(id)
-    );
+    const patientsToRemove = previousPatientIds.filter((id) => !newPatientIds.includes(id));
+    const patientsToAdd = newPatientIds.filter((id) => !previousPatientIds.includes(id));
 
     // Remover el tratamiento de los pacientes que ya no están asignados
     await Patient.updateMany(
@@ -363,41 +373,61 @@ const updateTreatment = asyncHandler(async (req, res) => {
 
   await treatment.save();
 
+  // Volver a obtener el tratamiento actualizado con campos poblados
+  const updatedTreatment = await Treatment.findById(treatment._id)
+    .populate({
+      path: 'assignedActivities',
+      select: 'name description',
+    })
+    .populate({
+      path: 'doctor',
+      select: 'name email',
+    })
+    .populate({
+      path: 'patients',
+      populate: {
+        path: 'user',
+        select: 'name lastName',
+      },
+    });
+
   res.status(200).json({
     message: 'Tratamiento actualizado exitosamente',
-    treatment,
+    treatment: updatedTreatment,
   });
 });
 
-// @desc    Obtener los tratamientos asignados al paciente autenticado
+
+// @desc    Obtener medicamentos del paciente (solo del tratamiento activo)
 // @route   GET /api/treatments/my-medications
 // @access  Privado/Paciente
 const getMyMedications = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  // Obtener el paciente asociado al usuario autenticado
+  // Obtener el paciente asociado al usuario
   const patient = await Patient.findOne({ user: userId });
   if (!patient) {
     res.status(404);
     throw new Error('Paciente no encontrado');
   }
 
-  // Buscar tratamientos donde el paciente está incluido
-  const treatments = await Treatment.find({ patients: patient._id })
-    .populate('doctor', 'name email');
-
-  // Extraer los medicamentos de todos los tratamientos
-  const medications = [];
-  treatments.forEach(treatment => {
-    if (treatment.medications && treatment.medications.length > 0) {
-      medications.push(...treatment.medications);
-    }
+  // Obtener el tratamiento activo
+  const activeTreatment = await Treatment.findOne({
+    patients: patient._id,
+    active: true,
   });
+
+  if (!activeTreatment) {
+    res.status(200).json([]); // No hay tratamiento activo
+    return;
+  }
+
+  const medications = activeTreatment.medications || [];
 
   res.status(200).json(medications);
 });
 
-// @desc    Obtener medicamentos que el paciente debe tomar hoy
+// @desc    Obtener medicamentos que el paciente debe tomar hoy (solo del tratamiento activo)
 // @route   GET /api/treatments/due-medications
 // @access  Privado/Paciente
 const getDueMedications = asyncHandler(async (req, res) => {
@@ -411,42 +441,48 @@ const getDueMedications = asyncHandler(async (req, res) => {
   }
 
   const today = new Date();
-  const treatments = await Treatment.find({ patients: patient._id }).populate('doctor', 'name email');
+
+  // Obtener el tratamiento activo
+  const activeTreatment = await Treatment.findOne({
+    patients: patient._id,
+    active: true,
+  });
+
+  if (!activeTreatment) {
+    res.status(200).json([]); // No hay tratamiento activo
+    return;
+  }
 
   let dueMedications = [];
 
-  treatments.forEach(treatment => {
-    treatment.medications.forEach(med => {
-      if (med.startDate <= today && (!med.endDate || med.endDate >= today)) {
-        // Determinar si el medicamento está programado para hoy según su frecuencia
-        const frequency = med.frequency;
-        let isDue = false;
+  activeTreatment.medications.forEach((med) => {
+    if (med.startDate <= today && (!med.endDate || med.endDate >= today)) {
+      // Determinar si el medicamento está programado para hoy según su frecuencia
+      const frequency = med.frequency;
+      let isDue = false;
 
-        switch (frequency) {
-          case 'Diaria':
+      switch (frequency) {
+        case 'Diaria':
+          isDue = true;
+          break;
+        case 'Semanal':
+          if (today.getDay() === new Date(med.startDate).getDay()) {
             isDue = true;
-            break;
-          case 'Semanal':
-            // Verificar si hoy es el mismo día de la semana que la fecha de inicio
-            if (today.getDay() === new Date(med.startDate).getDay()) {
-              isDue = true;
-            }
-            break;
-          case 'Mensual':
-            // Verificar si hoy es el mismo día del mes que la fecha de inicio
-            if (today.getDate() === new Date(med.startDate).getDate()) {
-              isDue = true;
-            }
-            break;
-          default:
-            break;
-        }
-
-        if (isDue) {
-          dueMedications.push(med);
-        }
+          }
+          break;
+        case 'Mensual':
+          if (today.getDate() === new Date(med.startDate).getDate()) {
+            isDue = true;
+          }
+          break;
+        default:
+          break;
       }
-    });
+
+      if (isDue) {
+        dueMedications.push(med);
+      }
+    }
   });
 
   res.status(200).json(dueMedications);
@@ -491,14 +527,8 @@ const getTreatmentsByPatient = asyncHandler(async (req, res) => {
   res.json(treatments);
 });
 
-// @desc    Obtener actividades asignadas a un paciente
-// @route   GET /api/patient/:patientId/activities
-// @access  Privado/Admin
-// @desc    Obtener actividades asignadas a un paciente
-// @route   GET /api/patient/:patientId/activities
-// @access  Privado/Admin
-// @desc    Obtener actividades asignadas al usuario (paciente)
-// @route   GET /api/activities
+// @desc    Obtener actividades asignadas al usuario (solo del tratamiento activo)
+// @route   GET /api/treatments/activities
 // @access  Privado/Paciente o Doctor
 const getActivitiesByUser = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -512,30 +542,20 @@ const getActivitiesByUser = asyncHandler(async (req, res) => {
 
   const patientId = patient._id;
 
-  // Buscar todos los tratamientos que incluyen a este paciente y populiar 'assignedActivities'
-  const treatments = await Treatment.find({ patients: patientId }).populate('assignedActivities');
+  // Obtener el tratamiento activo
+  const activeTreatment = await Treatment.findOne({
+    patients: patientId,
+    active: true,
+  }).populate('assignedActivities');
 
-  if (!treatments || treatments.length === 0) {
-    res.status(200).json([]);
+  if (!activeTreatment) {
+    res.status(200).json([]); // No hay tratamiento activo
     return;
   }
 
-  // Extraer todas las actividades asignadas de los tratamientos
-  let activities = [];
-  treatments.forEach((treatment) => {
-    if (treatment.assignedActivities && treatment.assignedActivities.length > 0) {
-      activities = activities.concat(treatment.assignedActivities);
-    }
-  });
+  const activities = activeTreatment.assignedActivities || [];
 
-  // Eliminar actividades duplicadas basadas en el _id
-  const uniqueActivitiesMap = {};
-  activities.forEach((activity) => {
-    uniqueActivitiesMap[activity._id] = activity;
-  });
-  const uniqueActivities = Object.values(uniqueActivitiesMap);
-
-  res.status(200).json(uniqueActivities);
+  res.status(200).json(activities);
 });
 
 
@@ -643,11 +663,10 @@ const recordActivity = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Obtener actividades realizadas por el paciente en un tratamiento específico
-// @route   GET /api/treatments/:treatmentId/activities
+// @desc    Obtener actividades realizadas por el paciente en el tratamiento activo
+// @route   GET /api/treatments/completed-activities
 // @access  Privado/Paciente
 const getCompletedActivities = asyncHandler(async (req, res) => {
-  const { treatmentId } = req.params;
   const userId = req.user._id;
 
   // Obtener el paciente asociado al usuario autenticado
@@ -657,20 +676,23 @@ const getCompletedActivities = asyncHandler(async (req, res) => {
     throw new Error('Paciente no encontrado');
   }
 
-  // Buscar el tratamiento y verificar que el paciente esté incluido
-  const treatment = await Treatment.findOne({ _id: treatmentId, patients: patient._id })
-    .populate('completedActivities.activity');
+  // Obtener el tratamiento activo
+  const activeTreatment = await Treatment.findOne({
+    patients: patient._id,
+    active: true,
+  }).populate('completedActivities.activity');
 
-  if (!treatment) {
-    res.status(404);
-    throw new Error('Tratamiento no encontrado para este paciente');
+  if (!activeTreatment) {
+    res.status(200).json([]); // No hay tratamiento activo
+    return;
   }
 
-  res.status(200).json(treatment.completedActivities);
+  res.status(200).json(activeTreatment.completedActivities);
 });
 
+
 // @desc    Obtener el tratamiento activo de un usuario
-// @route   GET /api/users/:userId/active-treatment
+// @route   GET /api/treatments/:userId/active-treatment
 // @access  Privado/Paciente o Doctor
 const getActiveTreatment = asyncHandler(async (req, res) => {
   const { userId } = req.params;
@@ -682,12 +704,9 @@ const getActiveTreatment = asyncHandler(async (req, res) => {
     throw new Error('Paciente no encontrado para este usuario');
   }
 
-  // Definir qué constituye un tratamiento activo
-  // Por ejemplo, tratamientos que no han finalizado (endDate en el futuro)
-  const currentDate = new Date();
   const activeTreatment = await Treatment.findOne({
     patients: patient._id,
-    endDate: { $gte: currentDate },
+    active: true,
   }).populate('assignedActivities');
 
   if (!activeTreatment) {
@@ -698,8 +717,54 @@ const getActiveTreatment = asyncHandler(async (req, res) => {
   res.status(200).json(activeTreatment);
 });
 
+
+// @desc    Activar o desactivar un tratamiento
+// @route   PATCH /api/treatments/:treatmentId/activate
+// @access  Privado/Doctor
+const toggleActivateTreatment = asyncHandler(async (req, res) => {
+  const { treatmentId } = req.params;
+  const { active } = req.body; // true para activar, false para desactivar
+
+  // Buscar el tratamiento
+  const treatment = await Treatment.findById(treatmentId).populate('patients');
+  if (!treatment) {
+    res.status(404);
+    throw new Error('Tratamiento no encontrado');
+  }
+
+  // Verificar que el usuario autenticado es el doctor que creó el tratamiento
+  if (treatment.doctor.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('No autorizado para modificar este tratamiento');
+  }
+
+  // Si se está activando, desactivar otros tratamientos del mismo paciente
+  if (active) {
+    await Treatment.updateMany(
+      { 
+        patients: { $in: treatment.patients.map(p => p._id) },
+        active: true,
+        _id: { $ne: treatmentId }
+      },
+      { $set: { active: false } }
+    );
+  }
+
+  // Actualizar el estado activo del tratamiento
+  treatment.active = active;
+  const updatedTreatment = await treatment.save();
+
+  // Emitir evento para actualizar en tiempo real
+  getIO().emit(`treatmentsUpdated:${treatment.doctor}`, { message: 'Tratamiento actualizado', treatment: updatedTreatment });
+
+  res.status(200).json({
+    message: `Tratamiento ${active ? 'activado' : 'desactivado'} correctamente`,
+    treatment: updatedTreatment,
+  });
+});
+
 export { assignActivityToPatient, updateAssignmentResults, 
   getAssignedActivities,unassignActivityFromPatient,getMyAssignedActivities, 
   createTreatment, getMyTreatments, getActivitiesByUser,
   getTreatmentById, updateTreatment, getMyMedications, getDueMedications,
-getTreatmentsByPatient,recordActivity,getCompletedActivities, getActiveTreatment};
+getTreatmentsByPatient,recordActivity,getCompletedActivities, getActiveTreatment,toggleActivateTreatment};

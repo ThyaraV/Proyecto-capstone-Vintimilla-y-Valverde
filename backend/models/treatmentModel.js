@@ -47,6 +47,12 @@ const treatmentSchema = new mongoose.Schema({
   nextReviewDate: { type: Date }, // Próxima revisión
   createdAt: { type: Date, default: Date.now }, // Fecha de creación
   updatedAt: { type: Date, default: Date.now }, // Fecha de actualización
+  active: {
+    type: Boolean,
+    default: false,
+  },
+}, {
+  timestamps: true,
 });
 
 const Treatment = mongoose.model('Treatment', treatmentSchema);

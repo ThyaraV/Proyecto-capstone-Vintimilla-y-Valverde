@@ -1,30 +1,42 @@
-// TreatmentsListScreen.jsx
+// components/TreatmentsListScreen.jsx
 
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useGetTreatmentsByPatientQuery } from '../../slices/treatmentSlice';
+import {
+  useGetTreatmentsByPatientQuery,
+  useUpdateTreatmentMutation,
+} from '../../slices/treatmentSlice';
 import Loader from '../../components/Loader';
 import Message from '../../components/Message';
-import { ListGroup, Card, Row, Col, Button } from 'react-bootstrap';
+import { ListGroup, Card, Row, Col, Button, Form, Badge } from 'react-bootstrap';
 import { FaEdit } from 'react-icons/fa';
-import '../../assets/styles/TreatmentsListScreen.css'; // Opcional: para estilos personalizados
+import '../../assets/styles/TreatmentsListScreen.css';
 
 const TreatmentsListScreen = () => {
-  // Obtener patientId de los parámetros de la ruta
   const { patientId } = useParams();
-  console.log('patientId:', patientId);
 
-  // Usar la consulta para obtener tratamientos por paciente
-  const { data: treatments, isLoading, error } = useGetTreatmentsByPatientQuery(patientId);
-  console.log('Tratamientos obtenidos:', treatments);
+  const { data: treatments, isLoading, error, refetch } = useGetTreatmentsByPatientQuery(patientId);
 
-  // Estado para el tratamiento seleccionado
   const [selectedTreatment, setSelectedTreatment] = useState(null);
 
-  // Función para manejar la selección de un tratamiento
+  const [updateTreatment, { isLoading: isUpdating, error: updateError }] = useUpdateTreatmentMutation();
+
   const handleTreatmentSelect = (treatment) => {
     setSelectedTreatment(treatment);
-    console.log('Tratamiento seleccionado:', treatment);
+  };
+
+  const handleActiveChange = async (e) => {
+    const newActiveStatus = e.target.checked;
+    try {
+      await updateTreatment({
+        treatmentId: selectedTreatment._id,
+        updatedData: { active: newActiveStatus },
+      }).unwrap();
+      // Refetch the treatments list
+      refetch();
+    } catch (error) {
+      console.error('Error al actualizar el estado activo del tratamiento', error);
+    }
   };
 
   return (
@@ -38,7 +50,6 @@ const TreatmentsListScreen = () => {
         </Message>
       ) : treatments && treatments.length > 0 ? (
         <Row>
-          {/* Lista de Tratamientos */}
           <Col md={4}>
             <ListGroup>
               {treatments.map((treatment) => (
@@ -49,41 +60,51 @@ const TreatmentsListScreen = () => {
                   onClick={() => handleTreatmentSelect(treatment)}
                 >
                   {treatment.treatmentName}
+                  {treatment.active && (
+                    <Badge bg="success" className="ms-2">
+                      Activo
+                    </Badge>
+                  )}
                 </ListGroup.Item>
               ))}
             </ListGroup>
           </Col>
 
-          {/* Detalles del Tratamiento Seleccionado */}
           <Col md={8}>
             {selectedTreatment ? (
               <Card className="shadow p-4">
                 <Card.Body>
                   <Card.Title className="d-flex justify-content-between align-items-center">
                     {selectedTreatment.treatmentName}
-                    {/* Botón para Editar el Tratamiento */}
                     <Button
                       as={Link}
                       to={`/admin/treatments/${selectedTreatment._id}/edit`}
                       variant="warning"
                       className="d-flex align-items-center"
-                      state={{ patientId }} // Pasar el patientId mediante el estado de navegación
+                      state={{ patientId }}
                     >
                       <FaEdit className="me-2" />
                       Editar
                     </Button>
                   </Card.Title>
                   <Card.Text>
+                    <Form.Check
+                      type="switch"
+                      id="active-switch"
+                      label="Tratamiento Activo"
+                      checked={selectedTreatment.active}
+                      onChange={handleActiveChange}
+                    />
+                  </Card.Text>
+                  <Card.Text>
                     <strong>Descripción:</strong> {selectedTreatment.description}
                   </Card.Text>
                   <Card.Text>
-                    <strong>Pacientes:</strong>{' '}
+                    <strong>Paciente:</strong>{' '}
                     {selectedTreatment.patients
                       .map(
                         (patient) =>
-                          `${patient.user.name || 'No disponible'} ${
-                            patient.user.lastName || ''
-                          }`
+                          `${patient.user.name || 'No disponible'} ${patient.user.lastName || ''}`
                       )
                       .join(', ')}
                   </Card.Text>

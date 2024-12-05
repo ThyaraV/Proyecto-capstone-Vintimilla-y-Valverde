@@ -110,6 +110,17 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
       query: (userId) => `/api/treatments/${userId}/active-treatment`,
       providesTags: (result, error, userId) => [{ type: 'Treatments', id: userId }],
     }),
+    toggleActivateTreatment: builder.mutation({
+      query: ({ treatmentId, active }) => ({
+        url: `/api/treatments/${treatmentId}/activate`,
+        method: 'PATCH',
+        body: { active },
+      }),
+      invalidatesTags: (result, error, { treatmentId }) => [
+        { type: 'Treatment', id: treatmentId },
+        'Treatments',
+      ],
+    }),
   }),
 });
 
@@ -136,5 +147,6 @@ export const {
   // **Nuevos Hooks para Actividades Completadas**
   useRecordActivityMutation,
   useGetCompletedActivitiesQuery,
-  useGetActiveTreatmentQuery
+  useGetActiveTreatmentQuery,
+  useToggleActivateTreatmentMutation
 } = treatmentApiSlice;
