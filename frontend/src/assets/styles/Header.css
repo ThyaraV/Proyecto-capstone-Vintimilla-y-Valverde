@@ -19,14 +19,14 @@
   font-weight: 600;
   display: flex;
   align-items: center;
-  background: #fcbf6400;
-  color: #f5f5f5;
+  color: #000000;
+  background-color: #f8c74c;
   cursor: pointer;
   position: relative;
 }
 
 .btn:hover {
-  box-shadow: 0 0 20px 0px #2e2e2e3a;
+  box-shadow: 0 0 20px 0px #3f86c0ef;
 }
 
 .btn .icon {
