@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button, Row, Col, Alert, Form, Spinner } from "react-bootstrap";
 import { FaPlay, FaStop } from "react-icons/fa";
 
-// Componente para la primera actividad: Repetición de frases
 const RepeticionFrasesActivity = ({
   onComplete,
   isSpeaking,
@@ -24,7 +23,9 @@ const RepeticionFrasesActivity = ({
   const [manualInput, setManualInput] = useState("");
   const [useVoice, setUseVoice] = useState(true);
   const [confirmation, setConfirmation] = useState(false);
-  const [hasListenedLocal, setHasListenedLocal] = useState(false);
+  const [ttsSupported, setTtsSupported] = useState(true);
+  const [isSpeakingLocal, setIsSpeakingLocal] = useState(false);
+  const [hasHeardPhrase, setHasHeardPhrase] = useState(false);
 
   const recognitionRef = useRef(null);
 
@@ -58,17 +59,19 @@ const RepeticionFrasesActivity = ({
     };
 
     recognitionRef.current = recognition;
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.abort();
-      }
-    };
+    if (!window.speechSynthesis) {
+      setTtsSupported(false);
+    }
   }, []);
 
   const handleListen = () => {
     if (!recognitionRef.current) {
       alert("Reconocimiento de voz no disponible.");
+      return;
+    }
+
+    if (!hasHeardPhrase) {
+      alert("Primero debe escuchar la frase antes de responder.");
       return;
     }
 
@@ -84,6 +87,23 @@ const RepeticionFrasesActivity = ({
     setListening(false);
   };
 
+  const speakPhrase = (text) => {
+    if (!ttsSupported) return;
+    if (isSpeakingLocal) {
+      window.speechSynthesis.cancel();
+      setIsSpeakingLocal(false);
+    } else {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "es-ES";
+      utterance.onend = () => {
+        setIsSpeakingLocal(false);
+        setHasHeardPhrase(true);
+      };
+      window.speechSynthesis.speak(utterance);
+      setIsSpeakingLocal(true);
+    }
+  };
+
   const normalizeText = (text) => {
     return text
       .toLowerCase()
@@ -91,7 +111,7 @@ const RepeticionFrasesActivity = ({
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9 ]/g, "")
       .trim()
-      .replace(/\s+/g, " "); // Remover espacios extras
+      .replace(/\s+/g, " ");
   };
 
   const handleConfirm = () => {
@@ -111,13 +131,10 @@ const RepeticionFrasesActivity = ({
 
     if (currentPhraseIndex < phrases.length - 1) {
       setCurrentPhraseIndex(currentPhraseIndex + 1);
-      setHasListenedLocal(false); // Resetear estado para la próxima frase
-      onComplete(isCorrect ? 1 : 0); // Asignar puntaje por frase
+      setHasHeardPhrase(false);
     } else {
-      // Calcular puntaje total
-      const totalScore =
-        Object.values(scores).reduce((a, b) => a + b, 0) + (isCorrect ? 1 : 0);
-      onComplete(totalScore);
+      const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+      onComplete(totalScore + (isCorrect ? 1 : 0));
     }
   };
 
@@ -125,6 +142,15 @@ const RepeticionFrasesActivity = ({
     setTranscript("");
     setManualInput("");
     setConfirmation(false);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (manualInput.trim() && hasHeardPhrase && !confirmation) {
+        setConfirmation(true);
+      }
+    }
   };
 
   return (
@@ -138,9 +164,9 @@ const RepeticionFrasesActivity = ({
               "Ahora le voy a leer una frase y me gustaría que la repitiera a continuación."
             )
           }
-          disabled={hasListenedLocal}
+          disabled={isSpeakingLocal}
         >
-          {isSpeaking ? <FaStop /> : <FaPlay />}
+          {isSpeakingLocal ? <FaStop /> : <FaPlay />}
         </Button>
       </div>
       <p>“Me gustaría que repita la siguiente frase.”</p>
@@ -149,17 +175,12 @@ const RepeticionFrasesActivity = ({
           <Col md={8} className="text-center">
             {!confirmation && (
               <>
-                <p>
-                  Escuche cuidadosamente la frase y repítala a continuación.
-                </p>
+                <p>Escuche cuidadosamente la frase y repítala a continuación.</p>
                 <Button
                   variant="primary"
-                  onClick={() => {
-                    speakInstructions(phrases[currentPhraseIndex]);
-                    setHasListenedLocal(true);
-                  }}
+                  onClick={() => speakPhrase(phrases[currentPhraseIndex])}
                   className="mb-3"
-                  disabled={hasListenedLocal}
+                  disabled={isSpeakingLocal || hasHeardPhrase}
                 >
                   Escuchar frase
                 </Button>
@@ -168,21 +189,25 @@ const RepeticionFrasesActivity = ({
 
             {!confirmation && (
               <>
-                <Form className="mt-3">
+                <Form
+                  onSubmit={(e) => e.preventDefault()}
+                  className="mt-3"
+                >
                   <Form.Group>
                     <Form.Control
                       type="text"
                       placeholder="Escriba aquí su respuesta"
                       value={manualInput}
                       onChange={(e) => setManualInput(e.target.value)}
-                      disabled={listening}
+                      onKeyPress={handleKeyPress}
+                      disabled={!hasHeardPhrase || listening}
                     />
                   </Form.Group>
                   <Button
                     variant="success"
                     onClick={() => setConfirmation(true)}
                     className="me-2 mt-2"
-                    disabled={!manualInput.trim()}
+                    disabled={!manualInput.trim() || !hasHeardPhrase}
                   >
                     Confirmar
                   </Button>
@@ -203,7 +228,7 @@ const RepeticionFrasesActivity = ({
                 <Button
                   variant="primary"
                   onClick={handleListen}
-                  disabled={hasListenedLocal}
+                  disabled={!hasHeardPhrase}
                 >
                   Hablar
                 </Button>
@@ -244,7 +269,6 @@ const RepeticionFrasesActivity = ({
   );
 };
 
-// Componente para la segunda actividad: Fluidez verbal
 const FluidezVerbalActivity = ({
   onComplete,
   isSpeaking,
@@ -252,20 +276,28 @@ const FluidezVerbalActivity = ({
   onPrevious,
   isFirstModule,
 }) => {
-  const targetLetter = "p";
-  const timeLimit = 60; // 60 segundos
-  const [timeLeft, setTimeLeft] = useState(timeLimit);
-  const [listening, setListening] = useState(false);
-  const [transcript, setTranscript] = useState("");
-  const [manualInput, setManualInput] = useState("");
+  const [timer, setTimer] = useState(60);
+  const [isRunning, setIsRunning] = useState(false);
+  const [wordList, setWordList] = useState([]);
+  const [inputWord, setInputWord] = useState("");
   const [useVoice, setUseVoice] = useState(true);
-  const [words, setWords] = useState([]);
-  const [timerActive, setTimerActive] = useState(false);
-  const [isEvaluated, setIsEvaluated] = useState(false);
-  const [score, setScore] = useState(null);
-  const [hasListenedLocal, setHasListenedLocal] = useState(false);
-
+  const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
+
+  useEffect(() => {
+    let interval = null;
+    if (isRunning && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prevTimer) => prevTimer - 1);
+      }, 1000);
+    } else if (timer === 0) {
+      setIsRunning(false);
+      clearInterval(interval);
+      if (listening) handleStopListening();
+      calculateScore();
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, timer]);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -279,11 +311,24 @@ const FluidezVerbalActivity = ({
     const recognition = new SpeechRecognition();
     recognition.lang = "es-ES";
     recognition.interimResults = false;
+    recognition.continuous = true;
 
     recognition.onresult = (event) => {
-      const result = event.results[0][0].transcript;
-      handleVoiceResult(result);
-      setListening(false);
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          const result = event.results[i][0].transcript.toLowerCase().trim();
+          const words = result
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9\s]/g, "")
+            .split(/\s+/)
+            .filter((w) => w && w[0] === "p" && w.length > 1);
+          setWordList((prevList) => {
+            const combined = [...prevList, ...words];
+            return combined.filter((word, index, self) => self.indexOf(word) === index);
+          });
+        }
+      }
     };
 
     recognition.onerror = () => {
@@ -292,7 +337,7 @@ const FluidezVerbalActivity = ({
     };
 
     recognition.onend = () => {
-      setListening(false);
+      if (listening) recognition.start();
     };
 
     recognitionRef.current = recognition;
@@ -304,20 +349,38 @@ const FluidezVerbalActivity = ({
     };
   }, []);
 
-  const handleVoiceResult = (text) => {
-    const normalizedWords = text
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9\s]/g, "")
-      .trim()
-      .split(/\s+/)
-      .filter(
-        (word, index, self) =>
-          word.startsWith(targetLetter) && self.indexOf(word) === index
-      );
+  const handleStart = () => {
+    setIsRunning(true);
+  };
 
-    setWords((prev) => [...prev, ...normalizedWords]);
+  const handleInputChange = (e) => {
+    setInputWord(e.target.value);
+  };
+
+  const handleAddWord = () => {
+    if (inputWord.trim()) {
+      const word = inputWord
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, "")
+        .trim();
+      if (word && word[0] === "p" && word.length > 1) {
+        setWordList((prevList) =>
+          [...prevList, word].filter(
+            (w, idx, arr) => arr.indexOf(w) === idx
+          )
+        );
+      }
+      setInputWord("");
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddWord();
+    }
   };
 
   const handleListen = () => {
@@ -325,79 +388,25 @@ const FluidezVerbalActivity = ({
       alert("Reconocimiento de voz no disponible.");
       return;
     }
-
-    if (!timerActive) {
+    if (!isRunning) {
       alert("Primero inicie el tiempo antes de hablar.");
       return;
     }
-
     setListening(true);
-    setTranscript("");
     recognitionRef.current.start();
   };
 
-  const handleStop = () => {
-    if (recognitionRef.current && listening) {
+  const handleStopListening = () => {
+    if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
     setListening(false);
   };
 
-  const handleAddWord = () => {
-    if (!timerActive) {
-      alert("Primero inicie el tiempo antes de ingresar palabras.");
-      return;
-    }
-
-    const normalized = manualInput
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9\s]/g, "")
-      .trim()
-      .split(/\s+/)
-      .filter(
-        (word, index, self) =>
-          word.startsWith(targetLetter) && self.indexOf(word) === index
-      );
-
-    setWords((prev) => [...prev, ...normalized]);
-    setManualInput("");
-  };
-
-  const handleStartTimer = () => {
-    setTimerActive(true);
-  };
-
-  useEffect(() => {
-    let interval = null;
-    if (timerActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timerActive && timeLeft === 0) {
-      clearInterval(interval);
-      evaluateWords();
-    }
-    return () => clearInterval(interval);
-  }, [timerActive, timeLeft]);
-
-  const evaluateWords = () => {
-    // Filtrar palabras que empiezan con la letra p y son únicas
-    const filteredWords = words.filter((w) => w.startsWith(targetLetter));
-    const uniqueFilteredWords = [...new Set(filteredWords)];
-
-    // Asignar puntaje: 1 si hay 11 o más palabras, 0 si menos
-    const finalScore = uniqueFilteredWords.length >= 11 ? 1 : 0;
-    setScore(finalScore);
-    setIsEvaluated(true);
-  };
-
-  const handleContinue = () => {
-    if (!isEvaluated) {
-      evaluateWords();
-    }
-    onComplete(score);
+  const calculateScore = () => {
+    const validWords = wordList.filter((w) => w[0] === "p" && w.length > 1);
+    const score = validWords.length >= 11 ? 1 : 0;
+    onComplete(score, { words: validWords, totalWords: wordList });
   };
 
   return (
@@ -408,113 +417,76 @@ const FluidezVerbalActivity = ({
           variant="link"
           onClick={() =>
             speakInstructions(
-              "Me gustaría que me diga el mayor número posible de palabras que comiencen por la letra P. Puede decir cualquier tipo de palabra, excepto nombres propios, números, conjugaciones verbales y palabras de la misma familia. Le pediré que pare al minuto. Está preparado? Ahora, diga el mayor número posible de palabras que comiencen por la letra P."
+              "Me gustaría que me diga el mayor número posible de palabras que comiencen por la letra P. Puede hablar o escribirlas. ¿Está listo? Presione el botón para iniciar."
             )
           }
-          disabled={hasListenedLocal}
         >
           {isSpeaking ? <FaStop /> : <FaPlay />}
         </Button>
       </div>
       <p>
-        “Me gustaría que me diga el mayor número posible de palabras que comiencen por la letra P. Puede decir cualquier tipo de palabra, excepto nombres propios, números, conjugaciones verbales y palabras de la misma familia. Le pediré que pare al minuto. Está preparado? Ahora, diga el mayor número posible de palabras que comiencen por la letra P.”
+        Me gustaría que me diga el mayor número posible de palabras que comiencen por la letra P. Puede hablar o escribirlas. Presione el botón para iniciar.
       </p>
-      {!timerActive && (
-        <div className="text-center mb-3">
-          <Button variant="primary" onClick={handleStartTimer}>
-            Iniciar tiempo
+      {!isRunning ? (
+        <div className="text-center">
+          <Button variant="primary" onClick={handleStart}>
+            Iniciar
           </Button>
         </div>
-      )}
-      {timerActive && (
-        <div className="text-center mb-3">
-          <p>Tiempo restante: {timeLeft}s</p>
-        </div>
-      )}
-      <Row className="justify-content-center mt-3">
-        <Col md={8} className="text-center">
-          {useVoice && timerActive && !isEvaluated && (
-            listening ? (
-              <div>
-                <Spinner animation="grow" variant="primary" />
-                <p className="mt-2">Escuchando...</p>
-                <Button variant="danger" onClick={handleStop}>
+      ) : (
+        <>
+          <div className="text-center mb-3">
+            <h5>Tiempo restante: {timer}s</h5>
+          </div>
+          <div className="d-flex justify-content-center align-items-center mb-4">
+            {useVoice && !listening ? (
+              <Button variant="primary" onClick={handleListen} className="me-3">
+                Hablar
+              </Button>
+            ) : listening ? (
+              <div className="d-flex align-items-center me-3">
+                <Spinner animation="grow" variant="primary" className="me-2" />
+                <Button variant="danger" onClick={handleStopListening}>
                   Detener
                 </Button>
               </div>
-            ) : (
+            ) : null}
+            <Form onSubmit={(e) => e.preventDefault()} className="d-flex">
+              <Form.Control
+                type="text"
+                placeholder="Escriba una palabra"
+                value={inputWord}
+                onChange={handleInputChange}
+                onKeyPress={handleKeyPress}
+              />
               <Button
-                variant="primary"
-                onClick={() => {
-                  handleListen();
-                  setHasListenedLocal(true);
-                }}
-                disabled={isEvaluated || !timerActive || timeLeft === 0 || hasListenedLocal}
+                variant="success"
+                onClick={handleAddWord}
+                className="ms-2"
               >
-                Hablar
+                Agregar
               </Button>
-            )
-          )}
-
-          {!isEvaluated && (
-            <>
-              <Form className="mt-3">
-                <Form.Group>
-                  <Form.Control
-                    type="text"
-                    placeholder="Escriba aquí su palabra"
-                    value={manualInput}
-                    onChange={(e) => setManualInput(e.target.value)}
-                    disabled={!timerActive || timeLeft === 0}
-                  />
-                </Form.Group>
-                <Button
-                  variant="success"
-                  onClick={handleAddWord}
-                  className="me-2 mt-2"
-                  disabled={!manualInput.trim() || !timerActive || timeLeft === 0}
-                >
-                  Añadir palabra
-                </Button>
-              </Form>
-              <div className="mt-3">
-                <p>Palabras registradas: {words.join(", ")}</p>
-              </div>
-            </>
-          )}
-
-          {isEvaluated && (
-            <div className="mt-3">
-              <Alert variant="info">
-                <p>Tiempo finalizado.</p>
-                <p>Palabras registradas: {words.join(", ")}</p>
-                <p>Puntaje: {score}</p>
-              </Alert>
-            </div>
-          )}
-        </Col>
-      </Row>
+            </Form>
+          </div>
+          <div>
+            <h5>Palabras registradas:</h5>
+            <ul>
+              {wordList.map((word, index) => (
+                <li key={index}>{word}</li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
       <div className="d-flex justify-content-between mt-4">
-        <Button
-          variant="secondary"
-          onClick={onPrevious}
-          disabled={isFirstModule}
-        >
+        <Button variant="secondary" onClick={onPrevious} disabled={isFirstModule}>
           Regresar
-        </Button>
-        <Button
-          variant="success"
-          onClick={handleContinue}
-          disabled={!isEvaluated}
-        >
-          Continuar
         </Button>
       </div>
     </div>
   );
 };
 
-// Componente principal que maneja las actividades
 const Lenguaje = ({ onComplete, onPrevious, isFirstModule }) => {
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
@@ -528,7 +500,6 @@ const Lenguaje = ({ onComplete, onPrevious, isFirstModule }) => {
     }
   }, []);
 
-  // Función para hablar instrucciones
   const speakInstructions = (text) => {
     if (!ttsSupported) {
       return;
@@ -547,16 +518,14 @@ const Lenguaje = ({ onComplete, onPrevious, isFirstModule }) => {
     }
   };
 
-  // Manejar la finalización de cada actividad
   const handleActivityComplete = (score) => {
     setTotalScore((prev) => prev + score);
     setCurrentActivityIndex((prev) => prev + 1);
   };
 
-  // Manejar la finalización del módulo
   const handleModuleComplete = (score) => {
-    setTotalScore((prev) => prev + score);
-    onComplete(totalScore + score, { totalScore: totalScore + score });
+    const finalScore = totalScore + score;
+    onComplete(finalScore, { totalScore: finalScore });
   };
 
   return (
@@ -579,6 +548,14 @@ const Lenguaje = ({ onComplete, onPrevious, isFirstModule }) => {
           isFirstModule={isFirstModule}
         />
       )}
+      <div className="d-flex justify-content-center mt-4">
+        <Button variant="info" onClick={() => setCurrentActivityIndex(0)} className="me-2">
+          Ir a Actividad 1
+        </Button>
+        <Button variant="info" onClick={() => setCurrentActivityIndex(1)}>
+          Ir a Actividad 2
+        </Button>
+      </div>
     </div>
   );
 };
