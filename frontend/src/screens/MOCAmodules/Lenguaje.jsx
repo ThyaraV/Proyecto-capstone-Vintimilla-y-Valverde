@@ -134,6 +134,7 @@ const RepeticionFrasesActivity = ({
       setHasHeardPhrase(false);
     } else {
       const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+      // Devolver el puntaje total de esta actividad
       onComplete(totalScore + (isCorrect ? 1 : 0));
     }
   };
@@ -189,10 +190,7 @@ const RepeticionFrasesActivity = ({
 
             {!confirmation && (
               <>
-                <Form
-                  onSubmit={(e) => e.preventDefault()}
-                  className="mt-3"
-                >
+                <Form onSubmit={(e) => e.preventDefault()} className="mt-3">
                   <Form.Group>
                     <Form.Control
                       type="text"
@@ -406,7 +404,7 @@ const FluidezVerbalActivity = ({
   const calculateScore = () => {
     const validWords = wordList.filter((w) => w[0] === "p" && w.length > 1);
     const score = validWords.length >= 11 ? 1 : 0;
-    onComplete(score, { words: validWords, totalWords: wordList });
+    onComplete(score);
   };
 
   return (
@@ -489,8 +487,8 @@ const FluidezVerbalActivity = ({
 
 const Lenguaje = ({ onComplete, onPrevious, isFirstModule }) => {
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
-  const [totalScore, setTotalScore] = useState(0);
-
+  const [activity1Score, setActivity1Score] = useState(null);
+  const [activity2Score, setActivity2Score] = useState(null);
   const [ttsSupported, setTtsSupported] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
@@ -518,21 +516,33 @@ const Lenguaje = ({ onComplete, onPrevious, isFirstModule }) => {
     }
   };
 
-  const handleActivityComplete = (score) => {
-    setTotalScore((prev) => prev + score);
+  const handleActivity1Complete = (score) => {
+    setActivity1Score(score);
     setCurrentActivityIndex((prev) => prev + 1);
   };
 
-  const handleModuleComplete = (score) => {
-    const finalScore = totalScore + score;
-    onComplete(finalScore, { totalScore: finalScore });
+  const handleActivity2Complete = (score) => {
+    setActivity2Score(score);
   };
+
+  const handleNext = () => {
+    const totalScore = (activity1Score || 0) + (activity2Score || 0);
+    onComplete(
+      totalScore,
+      {
+        activity1: activity1Score,
+        activity2: activity2Score,
+      }
+    );
+  };
+
+  const allActivitiesDone = activity1Score !== null && activity2Score !== null;
 
   return (
     <div className="module-container">
       {currentActivityIndex === 0 && (
         <RepeticionFrasesActivity
-          onComplete={handleActivityComplete}
+          onComplete={handleActivity1Complete}
           isSpeaking={isSpeaking}
           speakInstructions={speakInstructions}
           onPrevious={onPrevious}
@@ -541,13 +551,33 @@ const Lenguaje = ({ onComplete, onPrevious, isFirstModule }) => {
       )}
       {currentActivityIndex === 1 && (
         <FluidezVerbalActivity
-          onComplete={handleModuleComplete}
+          onComplete={handleActivity2Complete}
           isSpeaking={isSpeaking}
           speakInstructions={speakInstructions}
           onPrevious={onPrevious}
           isFirstModule={isFirstModule}
         />
       )}
+
+      {currentActivityIndex === 1 && (
+        <div className="d-flex justify-content-between mt-4">
+          <Button
+            variant="secondary"
+            onClick={onPrevious}
+            disabled={isFirstModule}
+          >
+            Regresar
+          </Button>
+          <Button
+            variant="success"
+            onClick={handleNext}
+            disabled={!allActivitiesDone}
+          >
+            Continuar
+          </Button>
+        </div>
+      )}
+
       <div className="d-flex justify-content-center mt-4">
         <Button variant="info" onClick={() => setCurrentActivityIndex(0)} className="me-2">
           Ir a Actividad 1
