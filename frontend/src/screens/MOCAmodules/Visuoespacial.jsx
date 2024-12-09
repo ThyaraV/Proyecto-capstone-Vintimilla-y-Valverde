@@ -1,7 +1,5 @@
-// src/screens/MOCAmodules/Visuoespacial.jsx
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from 'react-bootstrap';
+import { Button, Alert, Spinner} from 'react-bootstrap';
 import { FaPlay, FaStop } from 'react-icons/fa';
 
 const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
@@ -297,11 +295,28 @@ const AlternanciaConceptualActivity = ({ setAlternanciaScore, handleNext, handle
   );
 };
 
-const CuboActivity = ({ cubeScore, setCubeScore, handleNext, handlePrevious, isSpeaking, speakInstructions, isFirstModule }) => {
-  // Drawing state
+
+
+const CuboActivity = ({
+  cubeScore,
+  setCubeScore,
+  handleNext,
+  handlePrevious,
+  isSpeaking,
+  speakInstructions,
+  isFirstModule
+}) => {
+  // Estado de dibujo
   const [isDrawing, setIsDrawing] = useState(false);
   const [lines, setLines] = useState([]);
   const canvasRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false); // Estado para indicar carga
+  const [error, setError] = useState(null); // Estado para manejar errores
+
+  // Estados para el Alert
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertVariant, setAlertVariant] = useState('success');
 
   const handleMouseDown = (e) => {
     setIsDrawing(true);
@@ -327,26 +342,99 @@ const CuboActivity = ({ cubeScore, setCubeScore, handleNext, handlePrevious, isS
     setLines([]);
   };
 
-  const handleContinue = () => {
-    // Here you can implement any evaluation logic if needed
-    handleNext();
+  // Función para dibujar en el canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.strokeStyle = '#000';
+    context.lineWidth = 2;
+    lines.forEach((line) => {
+      context.beginPath();
+      line.forEach((point, index) => {
+        if (index === 0) {
+          context.moveTo(point.x, point.y);
+        } else {
+          context.lineTo(point.x, point.y);
+        }
+      });
+      context.stroke();
+    });
+  }, [lines]);
+
+  const handleContinue = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      setAlertMessage("No se encontró el canvas.");
+      setAlertVariant('danger');
+      setShowAlert(true);
+      return;
+    }
+
+    const imageData = canvas.toDataURL("image/png");
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/evaluate-cube', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ image: imageData })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error en la petición: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data && (data.score === 0 || data.score === 1)) {
+        setCubeScore(data.score);
+        // Configurar mensaje y mostrar alert
+        setAlertMessage(`Puntaje del cubo: ${data.score}`);
+        setAlertVariant(data.score === 1 ? 'success' : 'danger');
+        setShowAlert(true);
+      } else {
+        throw new Error("Respuesta inesperada del servidor.");
+      }
+
+    } catch (err) {
+      console.error("Error al evaluar el cubo:", err);
+      setError("Hubo un problema al evaluar el cubo. Por favor, intenta nuevamente.");
+      setAlertMessage("Hubo un problema al evaluar el cubo. Por favor, intenta nuevamente.");
+      setAlertVariant('danger');
+      setShowAlert(true);
+    } finally {
+      setIsLoading(false);
+      handleNext();
+    }
   };
 
   return (
     <div className="module-container">
       <div className="d-flex align-items-center">
         <h4>Capacidades visuoconstructivas (Cubo)</h4>
-        <Button variant="link" onClick={() => speakInstructions('Me gustaría que copie este dibujo de la manera más precisa posible.')}>
+        <Button
+          variant="link"
+          onClick={() =>
+            speakInstructions('Me gustaría que copie este dibujo de la manera más precisa posible.')
+          }
+        >
           {isSpeaking ? <FaStop /> : <FaPlay />}
         </Button>
       </div>
-      <p>
-        “Me gustaría que copie este dibujo de la manera más precisa posible”.
-      </p>
+      <p>“Me gustaría que copie este dibujo de la manera más precisa posible”.</p>
       <div className="d-flex justify-content-center">
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {/* Imagen del cubo */}
-          <img src="/path/to/cube_image.png" alt="Cubo" style={{ width: '300px', marginRight: '20px' }} />
+          <img
+            src="/path/to/cube_image.png"
+            alt="Cubo"
+            style={{ width: '300px', marginRight: '20px' }}
+          />
           {/* Canvas para dibujar */}
           <canvas
             ref={canvasRef}
@@ -360,25 +448,17 @@ const CuboActivity = ({ cubeScore, setCubeScore, handleNext, handlePrevious, isS
           />
         </div>
       </div>
-      {/* Dibujar las líneas en el canvas */}
-      {useEffect(() => {
-        const canvas = canvasRef.current;
-        const context = canvas.getContext('2d');
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.strokeStyle = '#000';
-        context.lineWidth = 2;
-        lines.forEach((line) => {
-          context.beginPath();
-          line.forEach((point, index) => {
-            if (index === 0) {
-              context.moveTo(point.x, point.y);
-            } else {
-              context.lineTo(point.x, point.y);
-            }
-          });
-          context.stroke();
-        });
-      }, [lines])}
+      {/* Mostrar el Alert */}
+      {showAlert && (
+        <Alert
+          variant={alertVariant}
+          onClose={() => setShowAlert(false)}
+          dismissible
+          className="mt-3"
+        >
+          {alertMessage}
+        </Alert>
+      )}
       <div className="d-flex justify-content-center mt-3">
         <Button variant="warning" onClick={handleClear} className="me-2">
           Borrar dibujo
@@ -386,10 +466,30 @@ const CuboActivity = ({ cubeScore, setCubeScore, handleNext, handlePrevious, isS
         <Button
           variant="success"
           onClick={handleContinue}
+          disabled={isLoading || lines.length === 0}
         >
-          Continuar
+          {isLoading ? (
+            <>
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                aria-hidden="true"
+                className="me-2"
+              />
+              Evaluando...
+            </>
+          ) : (
+            "Continuar"
+          )}
         </Button>
       </div>
+      {error && (
+        <div className="alert alert-danger mt-3" role="alert">
+          {error}
+        </div>
+      )}
       <div className="d-flex flex-column align-items-center mt-3">
         <Button
           variant={cubeScore === 1 ? 'success' : 'outline-success'}
@@ -407,13 +507,14 @@ const CuboActivity = ({ cubeScore, setCubeScore, handleNext, handlePrevious, isS
         </Button>
       </div>
       <div className="d-flex justify-content-between mt-4">
-        <Button variant="secondary" onClick={handlePrevious}>
+        <Button variant="secondary" onClick={handlePrevious} disabled={isFirstModule}>
           Regresar
         </Button>
       </div>
     </div>
   );
 };
+
 
 const RelojActivity = ({ clockScore, setClockScore, handleNext, handlePrevious, isSpeaking, speakInstructions, isFirstModule }) => {
   return (
