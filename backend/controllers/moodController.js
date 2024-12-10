@@ -4,9 +4,6 @@ import asyncHandler from 'express-async-handler';
 import Mood from '../models/moodModel.js';
 import Patient from '../models/patientModel.js';
 
-// @desc    Guardar el estado de ánimo del usuario
-// @route   POST /api/user/mood
-// @access  Privado/Paciente
 const saveUserMood = asyncHandler(async (req, res) => {
   const { mood } = req.body;
 
@@ -15,16 +12,16 @@ const saveUserMood = asyncHandler(async (req, res) => {
     throw new Error('Por favor, proporciona un estado de ánimo válido');
   }
 
-  // Obtener el paciente asociado al usuario autenticado
-  const patient = await Patient.findOne({ user: req.user._id });
+  // Encuentra al paciente asociado al usuario
+  const patient = await Patient.findOne({ user: req.user._id }); // Busca el paciente por user._id
   if (!patient) {
     res.status(404);
     throw new Error('Paciente no encontrado');
   }
 
-  // Crear un nuevo registro de estado de ánimo
+  // Guarda el mood asociado al patient._id
   const newMood = await Mood.create({
-    user: req.user._id,
+    patient: patient._id,
     mood,
   });
 
@@ -34,4 +31,19 @@ const saveUserMood = asyncHandler(async (req, res) => {
   });
 });
 
-export { saveUserMood };
+const getPatientMoods = asyncHandler(async (req, res) => {
+  const { patientId } = req.params;
+
+  // Busca los estados de ánimo del paciente por su ID
+  const moods = await Mood.find({ patient: patientId }).sort({ date: 1 });
+
+  if (!moods || moods.length === 0) {
+    res.status(404);
+    throw new Error('No se encontraron estados de ánimo para este paciente');
+  }
+
+  res.json(moods);
+});
+
+
+export { saveUserMood, getPatientMoods};

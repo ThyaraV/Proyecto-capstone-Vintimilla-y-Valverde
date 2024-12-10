@@ -16,10 +16,10 @@ import {
   enableUser// Importar getFaceData
 } from "../controllers/userController.js";
 import { protect, admin } from "../middleware/authMiddleware.js";
-import { saveUserMood } from '../controllers/moodController.js';
+import { saveUserMood, getPatientMoods } from '../controllers/moodController.js';
 
 router.post('/mood', protect, saveUserMood);
-
+router.route("/:patientId").get(protect, admin, getPatientMoods);
 // Ruta para el registro de usuario y obtener todos los usuarios (solo admin)
 router.route("/").post(registerUser).get(protect, admin, getUsers);
 

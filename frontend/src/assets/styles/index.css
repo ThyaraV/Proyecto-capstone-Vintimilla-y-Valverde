@@ -1161,3 +1161,39 @@ h3 {
   background-color: #ccc;
 }
 
+.mood-screen {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  color: #333;
+}
+
+.patients-list {
+  margin-bottom: 20px;
+}
+
+.patients-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+.patients-list li {
+  cursor: pointer;
+  padding: 10px;
+  background: #f4f4f4;
+  margin: 5px 0;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.patients-list li:hover {
+  background: #007bff;
+  color: white;
+}
+
+.mood-chart {
+  margin-top: 20px;
+}
+
+.mood-chart h3 {
+  margin-bottom: 10px;
+}

@@ -56,6 +56,8 @@ import Activity6L3Screen from "./screens/Activity6L3Screen.jsx";
 import Activity7L3Screen from "./screens/Activity7L3Screen.jsx";
 import Activity8L3Screen from "./screens/Activity8L3Screen.jsx";
 import Activity9L3Screen from "./screens/Activity9L3Screen.jsx";
+import ReportsScreen from "./screens/Reports/ReportsScreen.jsx";
+import MoodScreen from "./screens/Reports/MoodScreen.jsx";
 
 import MocaScreen from "./screens/MocaScreen";
 import MocaRegisterResults from "./screens/MocaRegisterResults";
@@ -104,11 +106,10 @@ const router = createBrowserRouter(
         <Route path="/profile" element={<ProfileScreen />} />
         <Route path="/activities" element={<ActivitiesScreen />} />
         <Route path="/chat" element={<ChatScreen />} />
-        {/*<Route path="/notifications" element={<Notifications />} />*/}
-
-
-         
-         <Route path="/treatments/:treatmentId/activities/play/:activityId" element={<ActivityPlay />} />
+        <Route path="/reports" element={<ReportsScreen />} />
+        <Route path="/estado-animo" element={<MoodScreen />} />
+ 
+        <Route path="/treatments/:treatmentId/activities/play/:activityId" element={<ActivityPlay />} />
         <Route path="/activities/play/:activityId" element={<ActivityScreen2 />} />
 
 

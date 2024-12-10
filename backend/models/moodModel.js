@@ -1,13 +1,11 @@
-// src/models/moodModel.js
-
 import mongoose from 'mongoose';
 
 const moodSchema = mongoose.Schema(
   {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
+    patient: {
+      type: mongoose.Schema.Types.ObjectId, // Cambia de user a patient
       required: true,
-      ref: 'User',
+      ref: 'Patient', // Cambia la referencia de 'User' a 'Patient'
     },
     mood: {
       type: String,

@@ -88,14 +88,6 @@ const Header = () => {
                 <FaComments /> Chat
               </Nav.Link>
 
-              {/* Campanita de Notificaciones
-              <Nav.Link onClick={handleNotificationsClick} className="position-relative">
-                <FaBell size={20} />
-                {totalNotifications > 0 && (
-                  <span className="notification-badge-header">{totalNotifications}</span>
-                )}
-              </Nav.Link>*/}
-
               {/* Enlace de usuario y opciones de administración */}
               {userInfo ? (
                 <NavDropdown title={userInfo.name} id="username">
@@ -134,11 +126,11 @@ const Header = () => {
           <button className={selectedOption === 'config' ? 'active' : ''} onClick={() => navigateTo('/admin/configuration', 'config')}>
             Configuración
           </button>
-          <button className={selectedOption === 'appearance' ? 'active' : ''} onClick={() => navigateTo('/appearance', 'appearance')}>
-            Apariencia
+          <button className={selectedOption === 'appearance' ? 'active' : ''} onClick={() => navigateTo('/reports', 'appearance')}>
+            Reportes
           </button>
           <button className={selectedOption === 'accessibility' ? 'active' : ''} onClick={() => navigateTo('/accessibility', 'accessibility')}>
-            Accesibilidad
+            Actividades
           </button>
           <button className={selectedOption === 'notifications' ? 'active' : ''} onClick={() => navigateTo('/notifications', 'notifications')}>
             Notificaciones
