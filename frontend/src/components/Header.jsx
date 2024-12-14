@@ -104,7 +104,6 @@ const Header = () => {
               {/* Opciones del administrador */}
               {userInfo && userInfo.isAdmin && (
                 <NavDropdown title="Admin" id="adminmenu">
-                  <NavDropdown.Item onClick={() => navigateTo('/activities')}>Lista de Actividades</NavDropdown.Item>
                   <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist')}>Ayuda</NavDropdown.Item>
                   <NavDropdown.Item onClick={() => navigateTo('/admin/productlist')}>Configuración</NavDropdown.Item>
                   <NavDropdown.Item onClick={() => navigateTo('/admin/userlist')}>Usuarios</NavDropdown.Item>
@@ -129,7 +128,7 @@ const Header = () => {
           <button className={selectedOption === 'appearance' ? 'active' : ''} onClick={() => navigateTo('/reports', 'appearance')}>
             Reportes
           </button>
-          <button className={selectedOption === 'accessibility' ? 'active' : ''} onClick={() => navigateTo('/accessibility', 'accessibility')}>
+          <button className={selectedOption === 'accessibility' ? 'active' : ''} onClick={() => navigateTo('/activities', 'accessibility')}>
             Actividades
           </button>
           <button className={selectedOption === 'notifications' ? 'active' : ''} onClick={() => navigateTo('/notifications', 'notifications')}>
