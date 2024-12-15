@@ -340,15 +340,19 @@ const CuboActivity = ({
 
   const handleClear = () => {
     setLines([]);
+    setCubeScore(null);
+    setShowAlert(false);
   };
 
   // Función para dibujar en el canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    // Llenar el fondo con blanco
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
     context.strokeStyle = '#000';
-    context.lineWidth = 2;
+    context.lineWidth = 5; // Aumentar el grosor de la línea
     lines.forEach((line) => {
       context.beginPath();
       line.forEach((point, index) => {
@@ -362,7 +366,8 @@ const CuboActivity = ({
     });
   }, [lines]);
 
-  const handleContinue = async () => {
+  // Función para evaluar el dibujo (Usando IA)
+  const handleEvaluate = async () => {
     const canvas = canvasRef.current;
     if (!canvas) {
       setAlertMessage("No se encontró el canvas.");
@@ -372,12 +377,13 @@ const CuboActivity = ({
     }
 
     const imageData = canvas.toDataURL("image/png");
+    console.log("imageData:", imageData); // Verificar en la consola del navegador
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:5000/api/evaluate-cube', {
+      const response = await fetch('/api/evaluate-cube', { // Usar ruta relativa
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -394,8 +400,13 @@ const CuboActivity = ({
       if (data && (data.score === 0 || data.score === 1)) {
         setCubeScore(data.score);
         // Configurar mensaje y mostrar alert
-        setAlertMessage(`Puntaje del cubo: ${data.score}`);
-        setAlertVariant(data.score === 1 ? 'success' : 'danger');
+        if (data.score === 1) {
+          setAlertMessage("¡Buen trabajo! Has completado correctamente el cubo. +1 Punto");
+          setAlertVariant('success');
+        } else {
+          setAlertMessage("Lo siento, no has completado correctamente el cubo. 0 Puntos");
+          setAlertVariant('danger');
+        }
         setShowAlert(true);
       } else {
         throw new Error("Respuesta inesperada del servidor.");
@@ -409,6 +420,16 @@ const CuboActivity = ({
       setShowAlert(true);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Función para continuar automáticamente (Evaluar antes de continuar)
+  const handleAutoContinue = async () => {
+    await handleEvaluate(); // Evaluar antes de continuar
+    if (cubeScore === 1) {
+      handleNext();
+    } else {
+      // Puedes decidir si quieres permitir continuar incluso si no se obtuvo el punto
       handleNext();
     }
   };
@@ -431,7 +452,7 @@ const CuboActivity = ({
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {/* Imagen del cubo */}
           <img
-            src="/path/to/cube_image.png"
+            src="/images/cube_image.png" // Asegúrate de que esta ruta sea correcta
             alt="Cubo"
             style={{ width: '300px', marginRight: '20px' }}
           />
@@ -463,10 +484,12 @@ const CuboActivity = ({
         <Button variant="warning" onClick={handleClear} className="me-2">
           Borrar dibujo
         </Button>
+        {/* Botón "Continuar" */}
         <Button
           variant="success"
-          onClick={handleContinue}
+          onClick={handleAutoContinue}
           disabled={isLoading || lines.length === 0}
+          className="me-2"
         >
           {isLoading ? (
             <>
@@ -484,6 +507,28 @@ const CuboActivity = ({
             "Continuar"
           )}
         </Button>
+        {/* Nuevo Botón "Evaluar" */}
+        <Button
+          variant="primary"
+          onClick={handleEvaluate}
+          disabled={isLoading || lines.length === 0}
+        >
+          {isLoading ? (
+            <>
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                aria-hidden="true"
+                className="me-2"
+              />
+              Evaluando...
+            </>
+          ) : (
+            "Evaluar"
+          )}
+        </Button>
       </div>
       {error && (
         <div className="alert alert-danger mt-3" role="alert">
@@ -491,20 +536,20 @@ const CuboActivity = ({
         </div>
       )}
       <div className="d-flex flex-column align-items-center mt-3">
-        <Button
-          variant={cubeScore === 1 ? 'success' : 'outline-success'}
-          className={`toggle-button ${cubeScore === 1 ? 'active' : ''} mb-2`}
-          onClick={() => setCubeScore(1)}
-        >
-          Completado correctamente +1
-        </Button>
-        <Button
-          variant={cubeScore === 0 ? 'danger' : 'outline-danger'}
-          className={`toggle-button ${cubeScore === 0 ? 'active' : ''}`}
-          onClick={() => setCubeScore(0)}
-        >
-          No completado correctamente 0
-        </Button>
+        {/* Mostrar el puntaje obtenido */}
+        {cubeScore !== null && (
+          <div>
+            <Button
+              variant={cubeScore === 1 ? 'success' : 'danger'}
+              className={`toggle-button ${cubeScore === 1 ? 'active' : ''} mb-2`}
+              disabled
+            >
+              {cubeScore === 1
+                ? 'Completado correctamente +1'
+                : 'No completado correctamente 0'}
+            </Button>
+          </div>
+        )}
       </div>
       <div className="d-flex justify-content-between mt-4">
         <Button variant="secondary" onClick={handlePrevious} disabled={isFirstModule}>
@@ -514,6 +559,7 @@ const CuboActivity = ({
     </div>
   );
 };
+
 
 
 const RelojActivity = ({ clockScore, setClockScore, handleNext, handlePrevious, isSpeaking, speakInstructions, isFirstModule }) => {
