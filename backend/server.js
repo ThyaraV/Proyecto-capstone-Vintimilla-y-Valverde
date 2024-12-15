@@ -11,9 +11,9 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import doctorRoutes from "./routes/doctorRoutes.js";
 import patientRoutes from "./routes/patientRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
-import treatmentRoutes from "./routes/treatmentRoutes.js"
-import assignmentRoutes from "./routes/assignmentRoutes.js"
-import http from 'http';
+import treatmentRoutes from "./routes/treatmentRoutes.js";
+import assignmentRoutes from "./routes/assignmentRoutes.js";
+import axios from "axios"; // Importar axios para realizar solicitudes HTTP
 import { initSocket } from './socket.js';
 
 import connectDB from "./config/db.js";
@@ -27,8 +27,8 @@ connectDB(); // Conectar a la base de datos MongoDB
 const app = express();
 
 // Middleware para procesar JSON y formularios
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' })); // Aumentar el límite si las imágenes son grandes
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Middleware para manejar cookies
 app.use(cookieParser());
@@ -45,6 +45,46 @@ app.use("/api/chats", chatRoutes);
 app.use('/api/treatments', treatmentRoutes);
 app.use('/api/assignments', assignmentRoutes); // Montar el nuevo router de asignaciones
 
+// NUEVA RUTA para evaluar el cubo con IA
+app.post('/api/evaluate-cube', async (req, res) => {
+  try {
+    const { image } = req.body;
+
+    if (!image) {
+      return res.status(400).json({ error: 'No se proporcionó la imagen.' });
+    }
+
+    // Enviar la imagen al servidor Flask
+    const flaskResponse = await axios.post('http://localhost:5001/api/evaluate-cube', { image }, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 10000 // Tiempo de espera de 10 segundos
+    });
+
+    // Verificar la respuesta del servidor Flask
+    if (flaskResponse.data && typeof flaskResponse.data.score === 'number') {
+      return res.json({ score: flaskResponse.data.score });
+    } else {
+      return res.status(500).json({ error: 'Respuesta inesperada del servidor de IA.' });
+    }
+
+  } catch (error) {
+    console.error('Error al evaluar el cubo:', error.message);
+
+    // Manejar errores específicos de axios
+    if (error.response) {
+      // El servidor respondió con un estado fuera del rango 2xx
+      return res.status(error.response.status).json({ error: error.response.data.error || 'Error en el servidor de IA.' });
+    } else if (error.request) {
+      // La solicitud fue hecha pero no se recibió respuesta
+      return res.status(500).json({ error: 'No se recibió respuesta del servidor de IA.' });
+    } else {
+      // Algo ocurrió al configurar la solicitud
+      return res.status(500).json({ error: 'Error al configurar la solicitud de evaluación.' });
+    }
+  }
+});
 
 // Configurar ruta para archivos estáticos (subidas)
 const __dirname = path.resolve();
@@ -99,9 +139,8 @@ io.on("connection", (socket) => {
   });
 });
 
-const server = http.createServer(app);
-
-initSocket(server);
+// Inicializar Socket.IO
+initSocket(httpServer);
 
 // Iniciar el servidor en el puerto especificado
 httpServer.listen(port, () => {
