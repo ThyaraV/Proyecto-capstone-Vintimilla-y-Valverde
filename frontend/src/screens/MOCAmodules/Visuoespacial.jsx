@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Alert, Spinner} from 'react-bootstrap';
 import { FaPlay, FaStop } from 'react-icons/fa';
+import cubo from '../../images/cubo_image.jpg'
 
 const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
   const [currentActivity, setCurrentActivity] = useState(0);
@@ -452,7 +453,7 @@ const CuboActivity = ({
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {/* Imagen del cubo */}
           <img
-            src="/images/cube_image.png" // Asegúrate de que esta ruta sea correcta
+            src={cubo}// Asegúrate de que esta ruta sea correcta
             alt="Cubo"
             style={{ width: '300px', marginRight: '20px' }}
           />
