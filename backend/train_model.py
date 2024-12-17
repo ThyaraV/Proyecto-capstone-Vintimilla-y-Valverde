@@ -52,7 +52,7 @@ model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
               metrics=['accuracy'])
 
 # Entrenar
-epochs = 5
+epochs = 10
 history = model.fit(train_ds, validation_data=val_ds, epochs=epochs)
 
 # Guardar el modelo
