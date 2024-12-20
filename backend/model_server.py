@@ -11,11 +11,11 @@ import time
 app = Flask(__name__)
 CORS(app)
 
-# Crear una carpeta para guardar las imágenes recibidas (si no existe)
+# Carpeta para imágenes recibidas (opcional)
 if not os.path.exists('received_images'):
     os.makedirs('received_images')
 
-# Cargar el modelo al iniciar la app
+# Cargar el modelo
 try:
     model = tf.keras.models.load_model('model.h5')
     print("Modelo cargado correctamente.")
@@ -27,10 +27,12 @@ img_height = 224
 img_width = 224
 
 def preprocess_image(img):
+    # Ajuste y normalización consistente con el entrenamiento
     img = img.convert('RGB')
-    img = img.resize((img_width, img_height))  # Redimensionar la imagen
-    img_array = np.array(img)  
-    img_array = np.expand_dims(img_array, axis=0) 
+    img = img.resize((img_width, img_height))
+    img_array = np.array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    # Preprocesamiento MobileNetV2
     img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)
     return img_array
 
@@ -45,21 +47,22 @@ def evaluate():
     try:
         header, encoded = image_data.split(',', 1)
         img_bytes = base64.b64decode(encoded)
-        
-        # Guardar la imagen recibida para inspección (opcional)
+
+        # Guardar imagen recibida (opcional, para debug)
         image_filename = f"received_images/cube_{int(time.time())}.png"
         with open(image_filename, "wb") as f:
             f.write(img_bytes)
         print(f"Imagen recibida y guardada como {image_filename}")
 
+        # Procesar la imagen
         img = Image.open(io.BytesIO(img_bytes))
         img_array = preprocess_image(img)
 
-        # Realizar inferencia con el modelo
+        # Realizar inferencia
         preds = model.predict(img_array)
         print(f"Predicciones del modelo: {preds}")
 
-        # Asumiendo que correct = 1 y incorrect = 0, umbral = 0.5
+        # Umbral 0.5: >= 0.5 se considera correcto, de lo contrario incorrecto
         score = 1 if preds[0][0] >= 0.5 else 0
 
         print(f"Puntaje asignado: {score}")

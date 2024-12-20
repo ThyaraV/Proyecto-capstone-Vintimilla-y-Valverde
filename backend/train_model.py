@@ -1,7 +1,7 @@
 import tensorflow as tf
 import os
 
-# Ruta a tus datos
+# Rutas
 base_dir = "data"
 train_dir = os.path.join(base_dir, "train")
 val_dir = os.path.join(base_dir, "val")
@@ -26,7 +26,7 @@ val_ds = tf.keras.preprocessing.image_dataset_from_directory(
     seed=123
 )
 
-# Preprocesamiento consistente: mapear preprocess_input a los datasets
+# Aplica la misma normalización que espera MobileNetV2
 def preprocess(image, label):
     image = tf.keras.applications.mobilenet_v2.preprocess_input(image)
     return image, label
@@ -38,21 +38,18 @@ AUTOTUNE = tf.data.AUTOTUNE
 train_ds = train_ds.shuffle(1000).prefetch(buffer_size=AUTOTUNE)
 val_ds = val_ds.prefetch(buffer_size=AUTOTUNE)
 
-# Crear el modelo base con MobileNetV2 preentrenada
+# Crear modelo base preentrenado
 base_model = tf.keras.applications.MobileNetV2(
     input_shape=(img_height, img_width, 3),
     include_top=False,
     weights='imagenet'
 )
-base_model.trainable = False  # Congelamos las capas base
-
-global_average_layer = tf.keras.layers.GlobalAveragePooling2D()
-prediction_layer = tf.keras.layers.Dense(1, activation='sigmoid')  # Para clasificación binaria
+base_model.trainable = False  # Congelamos la base
 
 model = tf.keras.Sequential([
     base_model,
-    global_average_layer,
-    prediction_layer
+    tf.keras.layers.GlobalAveragePooling2D(),
+    tf.keras.layers.Dense(1, activation='sigmoid')  # salida binaria
 ])
 
 model.compile(

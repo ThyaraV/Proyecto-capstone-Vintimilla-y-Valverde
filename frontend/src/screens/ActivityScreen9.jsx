@@ -1,182 +1,212 @@
-// src/screens/ActivityScreen9.jsx
-
-import React, { useState, useEffect } from 'react';
-import Fuse from 'fuse.js';
+import React, { useState, useEffect, useRef } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
-import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useRecordActivityMutation } from '../slices/treatmentSlice';
 import { useSelector } from 'react-redux';
+import { Button, Form, Spinner } from 'react-bootstrap';
 
-// Listas de validaciones específicas
-const validFruitsP = ['piña', 'pera', 'papaya', 'plátano', 'paraguayo'];
-const validAnimalsT = ['tiburón', 'tortuga', 'tapir', 'ternero', 'toro', 'tarantula'];
-const validCitiesM = ['madrid', 'manta', 'montevideo', 'miami', 'monpiche', 'muisne', 'manabi'];
-
-// Configuración de Fuse.js para coincidencias aproximadas
-const fuseOptions = { includeScore: true, threshold: 0.4 };
-
-// Instancias de Fuse para cada lista
-const fruitFuse = new Fuse(validFruitsP, fuseOptions);
-const animalFuse = new Fuse(validAnimalsT, fuseOptions);
-const cityFuse = new Fuse(validCitiesM, fuseOptions);
-
-// Instrucciones del juego
-const instructions = [
-  { 
-    id: 1, 
-    type: 'input', 
-    prompt: 'Escribe una palabra que empiece por la letra A', 
-    validator: (response) => response.trim().toLowerCase().startsWith('a') 
-  },
-  { 
-    id: 2, 
-    type: 'input', 
-    prompt: 'Escribe una ciudad que empiece con la letra M', 
-    validator: (response) => cityFuse.search(response.trim().toLowerCase()).length > 0 
-  },
-  { 
-    id: 3, 
-    type: 'multiple', 
-    prompt: '¿Cuál de estas es un color?', 
-    options: ['Perro', 'Rojo', 'Mesa'], 
-    correctAnswer: 'Rojo' 
-  },
-  { 
-    id: 4, 
-    type: 'multiple', 
-    prompt: '¿Cuál de estos es un animal acuático?', 
-    options: ['Pez', 'Gato', 'Elefante'], 
-    correctAnswer: 'Pez' 
-  },
-  { 
-    id: 5, 
-    type: 'multiple', 
-    prompt: '¿Cuál de estas es una fruta roja?', 
-    options: ['Manzana', 'Banana', 'Kiwi'], 
-    correctAnswer: 'Manzana' 
-  },
-  { 
-    id: 6, 
-    type: 'input', 
-    prompt: 'Escribe una palabra que empiece con la letra S', 
-    validator: (response) => response.trim().toLowerCase().startsWith('s') 
-  },
-  { 
-    id: 7, 
-    type: 'multiple', 
-    prompt: '¿Cuál de estas es una estación del año?', 
-    options: ['Invierno', 'Marzo', 'Casa'], 
-    correctAnswer: 'Invierno' 
-  },
-  { 
-    id: 8, 
-    type: 'input', 
-    prompt: 'Escribe un animal que comience con la letra T', 
-    validator: (response) => animalFuse.search(response.trim().toLowerCase()).length > 0 
-  },
-  { 
-    id: 9, 
-    type: 'multiple', 
-    prompt: '¿Cuál de estas opciones es un día de la semana?', 
-    options: ['Martes', 'Abril', 'Plato'], 
-    correctAnswer: 'Martes' 
-  },
-  { 
-    id: 10, 
-    type: 'input', 
-    prompt: 'Escribe una fruta que empiece con la letra P', 
-    validator: (response) => fruitFuse.search(response.trim().toLowerCase()).length > 0 
-  }
-];
-
-const ActivityScreen9 = ({ activity, treatmentId }) => { // Recibe 'activity' y 'treatmentId' como props
-  const [responses, setResponses] = useState({});
-  const [score, setScore] = useState(0);
+const ActivityScreen9 = ({ activity, treatmentId }) => {
+  const [timer, setTimer] = useState(60);
+  const [isRunning, setIsRunning] = useState(false);
+  const [wordList, setWordList] = useState([]);
+  const [inputWord, setInputWord] = useState("");
+  const [useVoice, setUseVoice] = useState(true);
+  const [listening, setListening] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
-  const [timer, setTimer] = useState(0);
-  const navigate = useNavigate();
-  
-  // Obtener información del usuario autenticado
-  const userInfo = useSelector((state) => state.auth.userInfo);
+  const [score, setScore] = useState(null);
+  const [timeUsed, setTimeUsed] = useState(0);
 
-  // Hook de la mutación para registrar actividad
+  const recognitionRef = useRef(null);
+  const navigate = useNavigate();
+
+  const userInfo = useSelector((state) => state.auth.userInfo);
   const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
 
   useEffect(() => {
-    window.scrollTo(0, 0); 
+    window.scrollTo(0,0);
   }, []);
 
   useEffect(() => {
-    let interval;
-    if (!gameFinished) {
-      interval = setInterval(() => setTimer((prevTimer) => prevTimer + 0.1), 100);
+    let interval = null;
+    if (isRunning && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prevTimer) => prevTimer - 1);
+      }, 1000);
+    } else if (timer === 0 && isRunning) {
+      handleStopListening();
+      setIsRunning(false);
+      endGame();
     }
     return () => clearInterval(interval);
-  }, [gameFinished]);
+  }, [isRunning, timer]);
 
   useEffect(() => {
-    if (gameFinished) {
-      const timeout = setTimeout(() => {
-        navigate('/api/treatments/activities'); 
-      }, 6000);
-      return () => clearTimeout(timeout);
-    }
-  }, [gameFinished, navigate]);
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  const handleChange = (id, value) => {
-    setResponses((prev) => ({ ...prev, [id]: value }));
+    if (!SpeechRecognition) {
+      console.warn("Este navegador no soporta SpeechRecognition");
+      setUseVoice(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "es-ES";
+    recognition.interimResults = false;
+    recognition.continuous = true;
+
+    recognition.onstart = () => {
+      console.log("Reconocimiento de voz iniciado");
+    };
+
+    recognition.onresult = (event) => {
+      console.log("onresult disparado");
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          const result = event.results[i][0].transcript.toLowerCase().trim();
+          console.log("Texto reconocido:", result);
+          const words = result
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9\s]/g, "")
+            .split(/\s+/)
+            .filter((w) => w && w[0] === "m" && w.length > 1);
+
+          console.log("Palabras filtradas con M:", words);
+
+          if (words.length > 0) {
+            setWordList((prevList) => {
+              const combined = [...prevList, ...words];
+              return combined.filter((word, index, self) => self.indexOf(word) === index);
+            });
+          }
+        }
+      }
+    };
+
+    recognition.onerror = (e) => {
+      console.error("Error en reconocimiento de voz:", e);
+      if (listening && isRunning) {
+        toast.error("Error al reconocer la voz. Intente nuevamente.");
+      }
+    };
+
+    recognition.onend = () => {
+      console.log("Reconocimiento de voz finalizado");
+      // Si sigue la actividad en curso y estamos en modo listening, reiniciamos
+      if (listening && isRunning) {
+        console.log("Reiniciando reconocimiento continuo...");
+        recognition.start();
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, [isRunning, listening]);
+
+  const handleStart = () => {
+    if (gameFinished) return;
+    setIsRunning(true);
+    setTimer(60);
+    setWordList([]);
+    setScore(null);
+    setTimeUsed(0);
   };
 
-  const handleSubmit = () => {
-    let finalScore = 0;
+  const handleInputChange = (e) => {
+    setInputWord(e.target.value);
+  };
 
-    instructions.forEach((instruction) => {
-      const userResponse = responses[instruction.id] || ''; 
-
-      if (instruction.type === 'input' && instruction.validator(userResponse)) {
-        finalScore += 0.50;
-      } else if (instruction.type === 'multiple' && userResponse.toLowerCase() === instruction.correctAnswer.toLowerCase()) {
-        finalScore += 0.50;
+  const handleAddWord = () => {
+    if (inputWord.trim()) {
+      const word = inputWord
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, "")
+        .trim();
+      if (word && word[0] === "m" && word.length > 1) {
+        setWordList((prevList) =>
+          [...prevList, word].filter(
+            (w, idx, arr) => arr.indexOf(w) === idx
+          )
+        );
       }
-    });
+      setInputWord("");
+    }
+  };
 
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddWord();
+    }
+  };
+
+  const handleListen = () => {
+    if (!recognitionRef.current) {
+      alert("Reconocimiento de voz no disponible.");
+      return;
+    }
+    if (!isRunning) {
+      alert("Primero inicie la actividad antes de hablar.");
+      return;
+    }
+    setListening(true);
+    console.log("Iniciando reconocimiento de voz...");
+    recognitionRef.current.start();
+  };
+
+  const handleStopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setListening(false);
+  };
+
+  const endGame = () => {
+    const validWords = wordList.filter((w) => w[0] === "m" && w.length > 1);
+    const finalScore = validWords.length >= 11 ? 1 : 0;
     setScore(finalScore);
     setGameFinished(true);
-    toast.success('Juego terminado. ¡Revisa tus resultados!');
-    saveActivity(finalScore, timer.toFixed(2));
+
+    const totalTimeUsed = 60 - timer;
+    setTimeUsed(totalTimeUsed);
+
+    saveActivity(finalScore, totalTimeUsed);
+
+    toast.success("Actividad finalizada. Se han guardado los resultados.");
+    setTimeout(() => {
+      navigate('/api/treatments/activities');
+    }, 6000);
   };
 
-  // Función para guardar la actividad en el backend dentro del tratamiento correspondiente
   const saveActivity = async (finalScore, timeUsed) => {
-    // Validar que el usuario está autenticado
     if (!userInfo) {
       toast.error('Usuario no autenticado');
       return;
     }
-
-    // Validar que treatmentId está definido
     if (!treatmentId) {
       toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
       return;
     }
 
-    // Construir el objeto de datos de la actividad
     const activityData = {
-      activityId: activity._id, // ID de la actividad principal
+      activityId: activity._id, 
       scoreObtained: finalScore,
       timeUsed: parseFloat(timeUsed),
-      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
-      observations: 'El usuario completó la actividad de seguir instrucciones.',
-      // Puedes agregar más campos si es necesario
+      progress: 'mejorando',
+      observations: 'El usuario completó la actividad de fluidez verbal con la letra M.'
     };
 
-    console.log('Guardando actividad con los siguientes datos:', activityData);
-
     try {
-      // Registrar la actividad dentro del tratamiento usando la mutación
       await recordActivity({ treatmentId, activityData }).unwrap();
-
       console.log('Actividad guardada correctamente');
       toast.success('Actividad guardada correctamente');
     } catch (error) {
@@ -187,59 +217,74 @@ const ActivityScreen9 = ({ activity, treatmentId }) => { // Recibe 'activity' y 
   };
 
   return (
-    <div className="follow-instructions-container">
-      <h1>Juego de Seguir Instrucciones</h1>
-      <p className="timer-text">Tiempo: {timer.toFixed(2)} segundos</p>
-
-      <div className="instructions-container">
-        {instructions.map((instruction) => (
-          <div key={instruction.id} className="instruction">
-            <p>{instruction.prompt}</p>
-            {instruction.type === 'input' ? (
-              <input
-                type="text"
-                value={responses[instruction.id] || ''}
-                onChange={(e) => handleChange(instruction.id, e.target.value)}
-                disabled={gameFinished}
-                className="instruction-input"
-                placeholder="Escribe tu respuesta"
-              />
-            ) : (
-              <div className="options-group">
-                {instruction.options.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleChange(instruction.id, option)}
-                    className={`option-button ${
-                      responses[instruction.id] === option ? 'selected' : ''
-                    }`}
-                    disabled={gameFinished}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {!gameFinished ? (
-        <button onClick={handleSubmit} className="submit-button">
-          Enviar Respuestas
-        </button>
-      ) : (
-        <div className="results">
-          <h2>¡Juego Terminado!</h2>
-          <p>Puntuación final: {score.toFixed(2)} / 5</p>
-          <p>Tiempo total: {timer.toFixed(2)} segundos</p>
+    <div className="module-container">
+      <h1>Fluidez Verbal - Letra M</h1>
+      {!isRunning && !gameFinished && (
+        <div className="text-center">
+          <p>Me gustaría que me diga el mayor número posible de palabras que comiencen por la letra M. Puede hablar o escribirlas. Presione el botón para iniciar.</p>
+          <Button variant="primary" onClick={handleStart}>Iniciar</Button>
         </div>
       )}
 
-      {/* Mostrar estado de guardado de la actividad */}
+      {isRunning && (
+        <>
+          <div className="text-center mb-3">
+            <h5>Tiempo restante: {timer}s</h5>
+          </div>
+          <div className="d-flex justify-content-center align-items-center mb-4">
+            {useVoice && !listening ? (
+              <Button variant="primary" onClick={handleListen} className="me-3">
+                Hablar
+              </Button>
+            ) : null}
+            {listening && (
+              <div className="d-flex align-items-center me-3">
+                <Spinner animation="grow" variant="primary" className="me-2" />
+                <Button variant="danger" onClick={handleStopListening}>
+                  Detener
+                </Button>
+              </div>
+            )}
+            <Form onSubmit={(e) => e.preventDefault()} className="d-flex">
+              <Form.Control
+                type="text"
+                placeholder="Escriba una palabra"
+                value={inputWord}
+                onChange={handleInputChange}
+                onKeyPress={handleKeyPress}
+              />
+              <Button
+                variant="success"
+                onClick={handleAddWord}
+                className="ms-2"
+              >
+                Agregar
+              </Button>
+            </Form>
+          </div>
+          <div>
+            <h5>Palabras registradas:</h5>
+            <ul>
+              {wordList.map((word, index) => (
+                <li key={index}>{word}</li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
+
+      {gameFinished && (
+        <div className="results text-center mt-4">
+          <h2>¡Actividad Terminada!</h2>
+          <p>Puntaje: {score} / 1</p>
+          <p>Tiempo utilizado: {timeUsed} segundos</p>
+          <p>Serás redirigido en breve...</p>
+        </div>
+      )}
+
       {isRecording && <p>Guardando actividad...</p>}
       {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
-      
+
       <ToastContainer />
     </div>
   );
