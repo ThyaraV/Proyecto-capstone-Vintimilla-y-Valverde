@@ -1,295 +1,393 @@
-// src/screens/ActivityScreenLevel3.jsx
+// FluidezVerbalActivityLevel3.jsx
 
-import React, { useState, useEffect } from 'react';
-import Fuse from 'fuse.js';
+import React, { useState, useEffect, useRef } from "react";
+import { Button, Form, Spinner } from "react-bootstrap";
+import { FaPlay, FaStop } from "react-icons/fa";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación RTK Query
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Asegúrate de que la ruta sea correcta
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 
-const fuseOptions = { includeScore: true, threshold: 0.4 };
-const validProfessions = ['científico', 'ingeniero', 'matemático', 'arquitecto', 'doctor'];
-const validCountries = ['brasil', 'canadá', 'argentina', 'colombia', 'venezuela'];
-const validColors = ['rojo', 'azul', 'verde', 'amarillo', 'morado'];
-const validSeasons = ['primavera', 'verano', 'otoño', 'invierno'];
-
-const professionFuse = new Fuse(validProfessions, fuseOptions);
-const countryFuse = new Fuse(validCountries, fuseOptions);
-const colorFuse = new Fuse(validColors, fuseOptions);
-const seasonFuse = new Fuse(validSeasons, fuseOptions);
-
-const instructionsLevel3 = [
-  { 
-    id: 1, 
-    type: 'input', 
-    prompt: 'Escribe el nombre de una ciudad con más de seis letras', 
-    validator: (response) => response.trim().length > 6 && ['montevideo', 'buenos aires', 'guatemala'].includes(response.trim().toLowerCase()),
-    correctAnswer: 'Ej: Montevideo'
-  },
-  { 
-    id: 2, 
-    type: 'input', 
-    prompt: 'Escribe una profesión científica que contenga la letra "e"', 
-    validator: (response) => professionFuse.search(response.trim().toLowerCase()).length > 0 && response.includes('e'),
-    correctAnswer: 'Ej: Científico'
-  },
-  { 
-    id: 3, 
-    type: 'multiple', 
-    prompt: '¿Cuál de estas es una fruta que contiene semillas?', 
-    options: ['Manzana', 'Pera', 'Pan'], 
-    correctAnswer: 'Manzana' 
-  },
-  { 
-    id: 4, 
-    type: 'multiple', 
-    prompt: '¿Cuál de estas es un fenómeno natural?', 
-    options: ['Huracán', 'Silla', 'Feliz'], 
-    correctAnswer: 'Huracán' 
-  },
-  { 
-    id: 5, 
-    type: 'input', 
-    prompt: 'Escribe un color que tenga exactamente cinco letras', 
-    validator: (response) => colorFuse.search(response.trim().toLowerCase()).length > 0 && response.trim().length === 5,
-    correctAnswer: 'Ej: Verde' 
-  },
-  { 
-    id: 6, 
-    type: 'input', 
-    prompt: 'Escribe un país de América del Sur que contenga la letra "a"', 
-    validator: (response) => countryFuse.search(response.trim().toLowerCase()).some(result => result.item.includes('a')),
-    correctAnswer: 'Ej: Argentina'
-  },
-  { 
-    id: 7, 
-    type: 'multiple', 
-    prompt: '¿Cuál de estos es un aparato que se usa para medir el tiempo?', 
-    options: ['Reloj', 'Libro', 'Mesa'], 
-    correctAnswer: 'Reloj' 
-  },
-  { 
-    id: 8, 
-    type: 'multiple', 
-    prompt: '¿Cuál de estas es una estación del año?', 
-    options: ['Primavera', 'Lunes', 'Vaso'], 
-    correctAnswer: 'Primavera' 
-  },
-  { 
-    id: 9, 
-    type: 'input', 
-    prompt: 'Escribe una estación del año que empiece con la letra "i"', 
-    validator: (response) => seasonFuse.search(response.trim().toLowerCase()).some(result => result.item.startsWith('i')),
-    correctAnswer: 'Invierno'
-  },
-  { 
-    id: 10, 
-    type: 'input', 
-    prompt: 'Escribe un animal que tenga la letra "o" y que sea terrestre', 
-    validator: (response) => ['toro', 'leopardo', 'jaguar', 'lobo'].includes(response.trim().toLowerCase()),
-    correctAnswer: 'Ej: Toro'
-  }
-];
-
-const ActivityScreenLevel3 = () => {
-  const { treatmentId, activityId } = useParams(); // Extrae treatmentId y activityId de la ruta
+const FluidezVerbalActivityLevel3 = ({
+  onComplete = () => {}, 
+  isSpeaking,
+  speakInstructions,
+  onPrevious,
+  isFirstModule,
+  activity,
+  treatmentId
+}) => {
+  // Estado para el temporizador
+  const [timer, setTimer] = useState(60);
+  
+  // Estado para controlar si la actividad está corriendo
+  const [isRunning, setIsRunning] = useState(false);
+  
+  // Lista de palabras ingresadas
+  const [wordList, setWordList] = useState([]);
+  
+  // Estado para el input de palabras
+  const [inputWord, setInputWord] = useState("");
+  
+  // Estado para controlar el uso de voz
+  const [useVoice, setUseVoice] = useState(true);
+  
+  // Estado para controlar si está escuchando
+  const [listening, setListening] = useState(false);
+  
+  // Estado para la combinación de tres letras
+  const [currentPrefix, setCurrentPrefix] = useState("ACE"); // Inicialización con una combinación válida
+  
+  // Referencia para el reconocimiento de voz
+  const recognitionRef = useRef(null);
+  
+  // Referencia para evitar doble guardado
+  const scoreCalculatedRef = useRef(false);
+  
+  // Información del usuario desde Redux
+  const userInfo = useSelector((state) => state.auth.userInfo);
+  
+  // Hook para registrar la actividad
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+  
+  // Hook de navegación
   const navigate = useNavigate();
 
-  const [responses, setResponses] = useState({});
-  const [score, setScore] = useState(0);
-  const [gameFinished, setGameFinished] = useState(false);
-  const [timer, setTimer] = useState(0);
-  const [feedback, setFeedback] = useState({});
+  // Arreglo de combinaciones de tres letras válidas en español
+  const threeLetterCombinations = [
+    "ACE", "ACT", "ADE", "AGI", "ALE", "ALI", "AMA", "AME", "AMI", "ANA",
+    "ANE", "ANI", "ANO", "ARA", "ARE", "ARI", "ARO", "ASA", "ASE", "ASI",
+    "ATO", "AVA", "AVE", "AVI", "AZU", "CAL", "CAN", "CAR", "CAS", "CAT",
+    "CEL", "CER", "CIM", "CIN", "CIR", "CIT", "COC", "COL", "COM", "CON",
+    "COR", "COS", "COT", "CRE", "CRI", "CUL", "CUN", "CUR", "DAL", "DAM",
+    "DAN", "DAR", "DAS", "DEL", "DEN", "DES", "DIU", "DOM", "DOR", "DOS",
+    "DUL", "ECO", "ELI", "ELA", "EMA", "EMI", "ENO", "ERA", "ERE", "ERI",
+    "ERO", "ESA", "ESC", "ESI", "EST", "ETI", "EVA", "EVE", "EVI",
+    "FAC", "FAL", "FAN", "FAR", "FAS", "FAT", "FIL", "FIN", "FIR", "FIT",
+    "FLA", "FON", "FOR", "FOT", "FRA", "FRE", "FRI", "FRO", "FUA", "GAC",
+    "GAL", "GAM", "GAR", "GAS", "GAT", "GEL", "GEN", "GER", "GIM", "GIR",
+    "GIT", "GLA", "GOL", "GOR", "GRA", "GRE", "GRI", "GRO", "GUA", "GUE",
+    "GUI", "GUL", "GUR", "HAC", "HAL", "HAM", "HAR", "HAS", "HAT", "HEL",
+    "HEM", "HER", "HET", "HIL", "HIN", "HIS", "HIT", "HOL", "HOR", "HOS",
+    "HUM", "HUR", "HUS", "JAC", "JAL", "JAM", "JAR", "JAS", "JAT", "JER",
+    "JES", "JET", "JIL", "JIM", "JIN", "JIR", "JIT", "JOL", "JOR", "JOS",
+    "JUT", "KAC", "KAN", "KAR", "KAS", "KAT", "KEN", "KER", "KIL", "KIN",
+    "KIR", "KIT", "KOL", "KON", "KOR", "KOT", "KUL", "KUR", "LAB", "LAC",
+    "LAM", "LAN", "LAR", "LAS", "LAT", "LEC", "LEI", "LEN", "LER", "LES",
+    "LET", "LIA", "LIM", "LIN", "LIR", "LIT", "LOM", "LON", "LOR", "LOS",
+    "LOT", "LUC", "LUL", "LUM", "LUN", "LUR", "LUS", "MAC", "MAL", "MAN",
+    "MAR", "MAS", "MAT", "MEC", "MEI", "MEN", "MER", "MES", "MET", "MIC",
+    "MIL", "MIN", "MIR", "MIT", "MOC", "MOL", "MON", "MOR", "MOS", "MOT",
+    "MUC", "MUL", "MUN", "MUR", "MUS", "NAC", "NAL", "NAM", "NAN", "NAR",
+    "NAS", "NAT", "NEL", "NEM", "NER", "NES", "NET", "NIA", "NIM", "NIN",
+    "NIR", "NIT", "NOC", "NOL", "NOR", "NOS", "NOT", "NUC", "NUL", "NUM",
+    "NUN", "NUR", "NUS", "OCE", "OCI", "OCO", "ODA", "ODE", "ODI", "ODO",
+    "OLA", "OLE", "OLI", "OLM", "OLN", "OLP", "OLR", "OLS", "OLU", "OMA",
+    "OME", "OMI", "ONO", "ORA", "ORE", "ORI", "ORO", "ORS", "ORT", "OSA",
+    "OSE", "OSI", "OSM", "OSN", "OSR", "OST", "OTA", "OTE", "OTI", "OTO",
+    "OTU", "OVA", "OVE", "OVI", "PAC", "PAL", "PAM", "PAN", "PAR", "PAS",
+    "PAT", "PEC", "PEL", "PEN", "PER", "PES", "PET", "PIC", "PIL", "PIN",
+    "PIR", "PIT", "PLO", "POL", "PON", "POR", "POS", "POT", "PUC", "PUL",
+    "PUN", "PUR", "PUS", "QUA", "QUE", "QUI", "QUO", "RAL", "RAM", "RAN",
+    "RAR", "RAS", "RAT", "REC", "REL", "REM", "REN", "REP", "RET", "RIC",
+    "RIM", "RIN", "RIR", "RIT", "ROC", "ROL", "RON", "ROR", "ROS", "ROT",
+    "RUC", "RUL", "RUM", "RUN", "RUR", "RUS", "SAL", "SAM", "SAN", "SAR",
+    "SAS", "SAT", "SEC", "SEL", "SEM", "SEN", "SER", "SES", "SET", "SIC",
+    "SIL", "SIM", "SIN", "SIR", "SIS", "SIT", "SOC", "SOL", "SON", "SOR",
+    "SOS", "SOT", "SUC", "SUL", "SUM", "SUN", "SUR", "SUS", "TAC", "TAL",
+    "TAM", "TAN", "TAR", "TAS", "TAT", "TEC", "TEL", "TEM", "TEN", "TER",
+    "TES", "TET", "TIC", "TIL", "TIM", "TIN", "TIR", "TIS", "TIT", "TOC",
+    "TOL", "TON", "TOR", "TOS", "TOT", "TUC", "TUL", "TUM", "TUN", "TUR",
+    "TUS", "ULM", "UMA", "UME", "UMI", "UMO", "UNA", "UNE", "UNI", "UNO",
+    "URA", "URE", "URI", "URO", "URS", "UTA", "UTE", "UTI", "UTO", "UVA",
+    "UVE", "UVI", "VAC", "VAL", "VAN", "VAR", "VAS", "VAT", "VEL", "VEN",
+    "VER", "VES", "VET", "VIC", "VIL", "VIN", "VIR", "VIT", "VOL", "VON",
+    "VOR", "VOS", "VOT", "VUC", "VUL", "VUM", "VUN", "VUR", "VUS",
+  ];
 
-  // Obtener información del usuario autenticado desde el estado de Redux
-  const userInfo = useSelector((state) => state.auth.userInfo);
-  const patientId = userInfo?._id;
+  // Función para seleccionar una combinación de tres letras aleatoria
+  const getRandomPrefix = () => {
+    const randomIndex = Math.floor(Math.random() * threeLetterCombinations.length);
+    return threeLetterCombinations[randomIndex];
+  };
 
-  // Hook de la mutación para registrar actividad
-  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
-
-  // Scroll al inicio al montar el componente
+  // Efecto para manejar el temporizador
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  // Iniciar el temporizador
-  useEffect(() => {
-    let interval;
-    if (!gameFinished) {
-      interval = setInterval(() => setTimer((prevTimer) => prevTimer + 0.1), 100);
+    let interval = null;
+    if (isRunning && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prevTimer) => prevTimer - 1);
+      }, 1000);
+    } else if (timer === 0) {
+      setIsRunning(false);
+      clearInterval(interval);
+      if (listening) handleStopListening();
+      if (!scoreCalculatedRef.current) { // Verificación de la bandera
+        calculateScore();
+        scoreCalculatedRef.current = true; // Actualización de la bandera
+      }
     }
     return () => clearInterval(interval);
-  }, [gameFinished]);
+  }, [isRunning, timer, listening]);
 
-  // Manejar errores de la mutación
+  // Efecto para configurar el reconocimiento de voz
   useEffect(() => {
-    if (recordError) {
-      toast.error(`Error al guardar la actividad: ${recordError.data?.message || recordError.message}`);
-    }
-  }, [recordError]);
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  // Verificar si el juego ha finalizado y guardar la actividad
-  useEffect(() => {
-    if (gameFinished) {
-      toast.success('Juego terminado. ¡Revisa tus resultados!');
-      saveActivity();
-
-      // Navegar de regreso después de 6 segundos
-      const timeout = setTimeout(() => {
-        navigate('/api/treatments/activities'); // Asegúrate de que esta ruta sea correcta
-      }, 6000);
-      return () => clearTimeout(timeout);
-    }
-  }, [gameFinished, navigate]);
-
-  const handleChange = (id, value) => {
-    if (gameFinished) return; // Evitar cambiar respuestas después de finalizar el juego
-
-    setResponses((prev) => ({ ...prev, [id]: value }));
-  };
-
-  const handleSubmit = () => {
-    let finalScore = 0;
-    let newFeedback = {};
-
-    instructionsLevel3.forEach((instruction) => {
-      const userResponse = responses[instruction.id] || ''; 
-
-      if (instruction.type === 'input' && instruction.validator(userResponse)) {
-        finalScore += 0.50;
-        newFeedback[instruction.id] = { correct: true };
-      } else if (instruction.type === 'multiple' && userResponse.toLowerCase() === instruction.correctAnswer.toLowerCase()) {
-        finalScore += 0.50;
-        newFeedback[instruction.id] = { correct: true };
-      } else {
-        newFeedback[instruction.id] = { 
-          correct: false, 
-          correctAnswer: instruction.correctAnswer 
-        };
-      }
-    });
-
-    setScore(finalScore);
-    setFeedback(newFeedback);
-    setGameFinished(true);
-  };
-
-  // Función para guardar la actividad utilizando RTK Query
-  const saveActivity = async () => {
-    // Validar que el usuario está autenticado
-    if (!userInfo) {
-      toast.error('Usuario no autenticado');
+    if (!SpeechRecognition) {
+      setUseVoice(false);
       return;
     }
 
-    // Validar que treatmentId y activityId están definidos
-    if (!treatmentId || !activityId) {
-      toast.error('Tratamiento o actividad no identificado. No se puede guardar la actividad.');
-      return;
-    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "es-ES";
+    recognition.interimResults = false;
+    recognition.continuous = true;
 
-    // Calcula respuestas correctas e incorrectas
-    const correctAnswers = instructionsLevel3.filter(
-      (instruction) => {
-        const userResponse = responses[instruction.id] || '';
-        if (instruction.type === 'input') {
-          return instruction.validator(userResponse);
-        } else if (instruction.type === 'multiple') {
-          return userResponse.toLowerCase() === instruction.correctAnswer.toLowerCase();
+    recognition.onresult = (event) => {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          const result = event.results[i][0].transcript.toLowerCase().trim();
+          const words = result
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9\sÑñ]/g, "") // Incluir la letra 'Ñ'
+            .split(/\s+/)
+            .filter((w) => w && w.startsWith(currentPrefix.toLowerCase()) && w.length > 2); // Uso de currentPrefix y longitud > 2
+          setWordList((prevList) => {
+            const combined = [...prevList, ...words];
+            // Eliminar duplicados
+            return combined.filter((word, index, self) => self.indexOf(word) === index);
+          });
         }
-        return false;
       }
-    ).length;
-
-    const incorrectAnswers = instructionsLevel3.length - correctAnswers;
-
-    // Construir el objeto de datos de la actividad
-    const activityData = {
-      activityId, // ID de la actividad principal desde los parámetros de la ruta
-      correctAnswers, // Número de respuestas correctas
-      incorrectAnswers, // Número de respuestas incorrectas
-      timeUsed: timer,
-      scoreObtained: parseFloat(score.toFixed(2)), // Asegurar que es un número decimal
-      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
-      observations: 'El usuario completó la actividad satisfactoriamente.',
-      patientId, // ID del paciente desde el estado de Redux
-      difficultyLevel: 3, // Nivel de dificultad
-      image: '', // No hay imagen asociada en esta actividad
     };
 
-    console.log('Guardando actividad con los siguientes datos:', activityData);
+    recognition.onerror = () => {
+      setListening(false);
+      alert("Error al reconocer la voz. Intente de nuevo.");
+    };
 
-    try {
-      // Registrar la actividad dentro del tratamiento usando la mutación RTK Query
-      await recordActivity({ treatmentId, activityData }).unwrap();
+    recognition.onend = () => {
+      if (listening) recognition.start();
+    };
 
-      console.log('Actividad guardada correctamente');
-      toast.success('Actividad guardada correctamente');
-    } catch (error) {
-      console.error('Error al guardar la actividad:', error);
-      // El error será manejado por el useEffect anterior
+    recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, [currentPrefix]); // Dependencia agregada para reiniciar reconocimiento al cambiar prefijo
+
+  // Función para iniciar la actividad
+  const handleStart = () => {
+    setIsRunning(true);
+    scoreCalculatedRef.current = false; // Reiniciar la bandera al iniciar
+    const prefix = getRandomPrefix();
+    setCurrentPrefix(prefix); // Establecer la combinación aleatoria
+    setWordList([]); // Reiniciar la lista de palabras
+    setTimer(60); // Reiniciar el temporizador
+  };
+
+  // Manejo del cambio en el input de palabras
+  const handleInputChange = (e) => {
+    setInputWord(e.target.value);
+  };
+
+  // Función para agregar una palabra manualmente
+  const handleAddWord = () => {
+    if (inputWord.trim()) {
+      const word = inputWord
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\sÑñ]/g, "") // Incluir la letra 'Ñ'
+        .trim();
+      if (word.startsWith(currentPrefix.toLowerCase()) && word.length > 2) { // Uso de currentPrefix y longitud > 2
+        setWordList((prevList) =>
+          [...prevList, word].filter(
+            (w, idx, arr) => arr.indexOf(w) === idx
+          )
+        );
+      } else {
+        // Mostrar una advertencia si la palabra no cumple con el prefijo
+        toast.warn(`La palabra "${word}" no comienza con "${currentPrefix}".`);
+      }
+      setInputWord("");
     }
+  };
+
+  // Manejo de la tecla Enter para agregar palabras
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddWord();
+    }
+  };
+
+  // Función para iniciar el reconocimiento de voz
+  const handleListen = () => {
+    if (!recognitionRef.current) {
+      alert("Reconocimiento de voz no disponible.");
+      return;
+    }
+    if (!isRunning) {
+      alert("Primero inicie el tiempo antes de hablar.");
+      return;
+    }
+    setListening(true);
+    recognitionRef.current.start();
+  };
+
+  // Función para detener el reconocimiento de voz
+  const handleStopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setListening(false);
+  };
+
+  // Función para calcular y guardar el puntaje
+  const calculateScore = async () => {
+    // Filtrar palabras válidas que comienzan con la combinación de tres letras
+    const validWords = wordList.filter((w) => 
+      w.startsWith(currentPrefix.toLowerCase()) && 
+      w.length > 2
+    );
+    const correctAnswers = validWords.length;
+    const incorrectAnswers = 0; // Puedes ajustar esto si tienes lógica para respuestas incorrectas
+    const timeUsed = 60 - timer;
+    const patientId = userInfo ? userInfo._id : null;
+    const activityId = activity ? activity._id : null;
+
+    // Construir el objeto con la cantidad real de palabras en scoreObtained
+    const activityData = {
+      activityId: activityId,
+      correctAnswers: correctAnswers,
+      incorrectAnswers: incorrectAnswers,
+      timeUsed: timeUsed,
+      scoreObtained: parseFloat(correctAnswers.toFixed(2)), 
+      progress: 'mejorando',
+      observations: 'El paciente completó la actividad de clasificación de palabras en nivel avanzado.',
+      patientId: patientId,
+      difficultyLevel: 3,
+      image: '',
+    };
+
+    if (treatmentId && activityId && patientId) {
+      try {
+        await recordActivity({ treatmentId, activityData }).unwrap();
+        toast.success("Actividad guardada correctamente");
+      } catch (error) {
+        console.error("Error al guardar la actividad:", error);
+        const errorMessage = error?.data?.message || error.message || "Error desconocido";
+        toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
+      }
+    } else {
+      console.warn("No se pudo guardar la actividad: faltan datos (treatmentId, activityId o patientId).");
+    }
+
+    // Llamar a onComplete con la cantidad de palabras correctas
+    onComplete(correctAnswers);
   };
 
   return (
-    <div className="follow-instructions-container">
-      <h1>Juego de Seguir Instrucciones - Nivel 3</h1>
-      <p className="timer-text">Tiempo: {timer.toFixed(2)} segundos</p>
-
-      <div className="instructions-container">
-        {instructionsLevel3.map((instruction) => (
-          <div key={instruction.id} className="instruction">
-            <p>{instruction.prompt}</p>
-            {instruction.type === 'input' ? (
-              <>
-                <input
-                  type="text"
-                  value={responses[instruction.id] || ''}
-                  onChange={(e) => handleChange(instruction.id, e.target.value)}
-                  disabled={gameFinished}
-                  className="instruction-input"
-                  placeholder="Escribe tu respuesta"
-                />
-                {gameFinished && feedback[instruction.id] && !feedback[instruction.id].correct && (
-                  <p className="feedback-text">Respuesta correcta: {feedback[instruction.id].correctAnswer}</p>
-                )}
-              </>
-            ) : (
-              <div className="options-group">
-                {instruction.options.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleChange(instruction.id, option)}
-                    className={`option-button ${responses[instruction.id] === option ? 'selected' : ''} 
-                      ${gameFinished && feedback[instruction.id] && !feedback[instruction.id].correct && option === instruction.correctAnswer ? 'correct-answer' : ''}`}
-                    disabled={gameFinished}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+    <div className="module-container">
+      {/* Título y Botón de Instrucciones */}
+      <div className="d-flex align-items-center">
+        <h4>
+          Fluidez verbal - Combinación "{currentPrefix}" {/* Mostrar la combinación de tres letras */}
+        </h4>
+        <Button
+          variant="link"
+          onClick={() =>
+            speakInstructions(
+              `Me gustaría que me diga el mayor número posible de palabras que comiencen por la combinación "${currentPrefix}". Puede hablar o escribirlas. ¿Está listo? Presione el botón para iniciar.`
+            )
+          }
+        >
+          {isSpeaking ? <FaStop /> : <FaPlay />}
+        </Button>
       </div>
 
-      {!gameFinished ? (
-        <button onClick={handleSubmit} className="submit-button">
-          Enviar Respuestas
-        </button>
-      ) : (
-        <div className="results">
-          <h2>¡Juego Terminado!</h2>
-          <p>Puntuación final: {score.toFixed(2)} / {instructionsLevel3.length * 0.5}</p>
-          <p>Tiempo total: {timer.toFixed(2)} segundos</p>
+      {/* Instrucciones */}
+      <p>
+        Me gustaría que me diga el mayor número posible de palabras que comiencen por la combinación "{currentPrefix}". Puede hablar o escribirlas. Presione el botón para iniciar.
+      </p>
+
+      {/* Botón de Iniciar o Contenido de la Actividad */}
+      {!isRunning ? (
+        <div className="text-center">
+          <Button variant="primary" onClick={handleStart}>
+            Iniciar
+          </Button>
         </div>
+      ) : (
+        <>
+          {/* Temporizador */}
+          <div className="text-center mb-3">
+            <h5>Tiempo restante: {timer}s</h5>
+          </div>
+
+          {/* Opciones de Hablar y Agregar Palabras */}
+          <div className="d-flex justify-content-center align-items-center mb-4">
+            {useVoice && !listening ? (
+              <Button variant="primary" onClick={handleListen} className="me-3">
+                Hablar
+              </Button>
+            ) : listening ? (
+              <div className="d-flex align-items-center me-3">
+                <Spinner animation="grow" variant="primary" className="me-2" />
+                <Button variant="danger" onClick={handleStopListening}>
+                  Detener
+                </Button>
+              </div>
+            ) : null}
+            <Form onSubmit={(e) => e.preventDefault()} className="d-flex">
+              <Form.Control
+                type="text"
+                placeholder={`Escriba una palabra que comience con "${currentPrefix}"`}
+                value={inputWord}
+                onChange={handleInputChange}
+                onKeyPress={handleKeyPress}
+              />
+              <Button
+                variant="success"
+                onClick={handleAddWord}
+                className="ms-2"
+              >
+                Agregar
+              </Button>
+            </Form>
+          </div>
+
+          {/* Lista de Palabras Registradas */}
+          <div>
+            <h5>Palabras registradas:</h5>
+            <ul>
+              {wordList.map((word, index) => (
+                <li key={index}>{word}</li>
+              ))}
+            </ul>
+          </div>
+        </>
       )}
 
+      {/* Botón de Regresar */}
+      <div className="d-flex justify-content-between mt-4">
+        <Button variant="secondary" onClick={onPrevious} disabled={isFirstModule}>
+          Regresar
+        </Button>
+      </div>
+
+      {/* Contenedor de Toasts */}
       <ToastContainer />
     </div>
   );
 };
 
-export default ActivityScreenLevel3;
+export default FluidezVerbalActivityLevel3;

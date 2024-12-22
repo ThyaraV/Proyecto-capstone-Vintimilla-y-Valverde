@@ -1,31 +1,43 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
+import { Button, Form, Spinner } from "react-bootstrap";
+import { FaPlay, FaStop } from "react-icons/fa";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useNavigate } from 'react-router-dom';
 import { useRecordActivityMutation } from '../slices/treatmentSlice';
 import { useSelector } from 'react-redux';
-import { Button, Form, Spinner } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 
-const ActivityScreen9 = ({ activity, treatmentId }) => {
+const FluidezVerbalActivityM = ({
+  onComplete = () => {}, 
+  isSpeaking,
+  speakInstructions,
+  onPrevious,
+  isFirstModule,
+  activity,
+  treatmentId
+}) => {
   const [timer, setTimer] = useState(60);
   const [isRunning, setIsRunning] = useState(false);
   const [wordList, setWordList] = useState([]);
   const [inputWord, setInputWord] = useState("");
   const [useVoice, setUseVoice] = useState(true);
   const [listening, setListening] = useState(false);
-  const [gameFinished, setGameFinished] = useState(false);
-  const [score, setScore] = useState(null);
-  const [timeUsed, setTimeUsed] = useState(0);
-
+  const [currentLetter, setCurrentLetter] = useState("M"); // <-- Nueva variable de estado para la letra
   const recognitionRef = useRef(null);
-  const navigate = useNavigate();
+  const scoreCalculatedRef = useRef(false); // Bandera para evitar doble guardado
 
   const userInfo = useSelector((state) => state.auth.userInfo);
   const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    window.scrollTo(0,0);
-  }, []);
+  // Definir el alfabeto (puedes ajustar este arreglo según tus necesidades)
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+  // Función para seleccionar una letra aleatoria
+  const getRandomLetter = () => {
+    const randomIndex = Math.floor(Math.random() * alphabet.length);
+    return alphabet[randomIndex];
+  };
 
   useEffect(() => {
     let interval = null;
@@ -33,10 +45,14 @@ const ActivityScreen9 = ({ activity, treatmentId }) => {
       interval = setInterval(() => {
         setTimer((prevTimer) => prevTimer - 1);
       }, 1000);
-    } else if (timer === 0 && isRunning) {
-      handleStopListening();
+    } else if (timer === 0) {
       setIsRunning(false);
-      endGame();
+      clearInterval(interval);
+      if (listening) handleStopListening();
+      if (!scoreCalculatedRef.current) { // Verificación de la bandera
+        calculateScore();
+        scoreCalculatedRef.current = true; // Actualización de la bandera
+      }
     }
     return () => clearInterval(interval);
   }, [isRunning, timer]);
@@ -46,7 +62,6 @@ const ActivityScreen9 = ({ activity, treatmentId }) => {
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      console.warn("Este navegador no soporta SpeechRecognition");
       setUseVoice(false);
       return;
     }
@@ -56,49 +71,31 @@ const ActivityScreen9 = ({ activity, treatmentId }) => {
     recognition.interimResults = false;
     recognition.continuous = true;
 
-    recognition.onstart = () => {
-      console.log("Reconocimiento de voz iniciado");
-    };
-
     recognition.onresult = (event) => {
-      console.log("onresult disparado");
       for (let i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
           const result = event.results[i][0].transcript.toLowerCase().trim();
-          console.log("Texto reconocido:", result);
           const words = result
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
             .replace(/[^a-z0-9\s]/g, "")
             .split(/\s+/)
-            .filter((w) => w && w[0] === "m" && w.length > 1);
-
-          console.log("Palabras filtradas con M:", words);
-
-          if (words.length > 0) {
-            setWordList((prevList) => {
-              const combined = [...prevList, ...words];
-              return combined.filter((word, index, self) => self.indexOf(word) === index);
-            });
-          }
+            .filter((w) => w && w[0] === currentLetter.toLowerCase() && w.length > 1); // <-- Uso de currentLetter
+          setWordList((prevList) => {
+            const combined = [...prevList, ...words];
+            return combined.filter((word, index, self) => self.indexOf(word) === index);
+          });
         }
       }
     };
 
-    recognition.onerror = (e) => {
-      console.error("Error en reconocimiento de voz:", e);
-      if (listening && isRunning) {
-        toast.error("Error al reconocer la voz. Intente nuevamente.");
-      }
+    recognition.onerror = () => {
+      setListening(false);
+      alert("Error al reconocer la voz. Intente de nuevo.");
     };
 
     recognition.onend = () => {
-      console.log("Reconocimiento de voz finalizado");
-      // Si sigue la actividad en curso y estamos en modo listening, reiniciamos
-      if (listening && isRunning) {
-        console.log("Reiniciando reconocimiento continuo...");
-        recognition.start();
-      }
+      if (listening) recognition.start();
     };
 
     recognitionRef.current = recognition;
@@ -108,15 +105,16 @@ const ActivityScreen9 = ({ activity, treatmentId }) => {
         recognitionRef.current.abort();
       }
     };
-  }, [isRunning, listening]);
+  }, [currentLetter]); // <-- Dependencia agregada
 
   const handleStart = () => {
-    if (gameFinished) return;
     setIsRunning(true);
-    setTimer(60);
+    scoreCalculatedRef.current = false; // Reiniciar la bandera al iniciar
+    const letter = getRandomLetter();
+    setCurrentLetter(letter); // Establecer la letra aleatoria
+    // Opcional: Reiniciar wordList y timer si es necesario
     setWordList([]);
-    setScore(null);
-    setTimeUsed(0);
+    setTimer(60);
   };
 
   const handleInputChange = (e) => {
@@ -131,7 +129,7 @@ const ActivityScreen9 = ({ activity, treatmentId }) => {
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9\s]/g, "")
         .trim();
-      if (word && word[0] === "m" && word.length > 1) {
+      if (word && word[0] === currentLetter.toLowerCase() && word.length > 1) { // <-- Uso de currentLetter
         setWordList((prevList) =>
           [...prevList, word].filter(
             (w, idx, arr) => arr.indexOf(w) === idx
@@ -155,11 +153,10 @@ const ActivityScreen9 = ({ activity, treatmentId }) => {
       return;
     }
     if (!isRunning) {
-      alert("Primero inicie la actividad antes de hablar.");
+      alert("Primero inicie el tiempo antes de hablar.");
       return;
     }
     setListening(true);
-    console.log("Iniciando reconocimiento de voz...");
     recognitionRef.current.start();
   };
 
@@ -170,63 +167,71 @@ const ActivityScreen9 = ({ activity, treatmentId }) => {
     setListening(false);
   };
 
-  const endGame = () => {
-    const validWords = wordList.filter((w) => w[0] === "m" && w.length > 1);
-    const finalScore = validWords.length >= 11 ? 1 : 0;
-    setScore(finalScore);
-    setGameFinished(true);
+  const calculateScore = async () => {
+    // Ahora correctAnswers será la cantidad de palabras dichas, no 0/1
+    const validWords = wordList.filter((w) => w[0] === currentLetter.toLowerCase() && w.length > 1); // <-- Uso de currentLetter
+    const correctAnswers = validWords.length;
+    const incorrectAnswers = 0;
+    const timeUsed = 60 - timer;
+    const patientId = userInfo ? userInfo._id : null;
+    const activityId = activity ? activity._id : null;
 
-    const totalTimeUsed = 60 - timer;
-    setTimeUsed(totalTimeUsed);
-
-    saveActivity(finalScore, totalTimeUsed);
-
-    toast.success("Actividad finalizada. Se han guardado los resultados.");
-    setTimeout(() => {
-      navigate('/api/treatments/activities');
-    }, 6000);
-  };
-
-  const saveActivity = async (finalScore, timeUsed) => {
-    if (!userInfo) {
-      toast.error('Usuario no autenticado');
-      return;
-    }
-    if (!treatmentId) {
-      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
-      return;
-    }
-
+    // Construir el objeto con la cantidad real de palabras en scoreObtained
     const activityData = {
-      activityId: activity._id, 
-      scoreObtained: finalScore,
-      timeUsed: parseFloat(timeUsed),
+      activityId: activityId,
+      correctAnswers: correctAnswers,
+      incorrectAnswers: incorrectAnswers,
+      timeUsed: timeUsed,
+      scoreObtained: parseFloat(correctAnswers.toFixed(2)), 
       progress: 'mejorando',
-      observations: 'El usuario completó la actividad de fluidez verbal con la letra M.'
+      observations: 'El paciente completó la actividad de clasificación de palabras en nivel avanzado.',
+      patientId: patientId,
+      difficultyLevel: 1,
+      image: '',
     };
 
-    try {
-      await recordActivity({ treatmentId, activityData }).unwrap();
-      console.log('Actividad guardada correctamente');
-      toast.success('Actividad guardada correctamente');
-    } catch (error) {
-      console.error('Error al guardar la actividad:', error);
-      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
-      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
+    if (treatmentId && activityId && patientId) {
+      try {
+        await recordActivity({ treatmentId, activityData }).unwrap();
+        toast.success("Actividad guardada correctamente");
+      } catch (error) {
+        console.error("Error al guardar la actividad:", error);
+        const errorMessage = error?.data?.message || error.message || "Error desconocido";
+        toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
+      }
+    } else {
+      console.warn("No se pudo guardar la actividad: faltan datos (treatmentId, activityId o patientId).");
     }
+
+    // onComplete con la cantidad de palabras
+    onComplete(correctAnswers);
   };
 
   return (
     <div className="module-container">
-      <h1>Fluidez Verbal - Letra M</h1>
-      {!isRunning && !gameFinished && (
+      <div className="d-flex align-items-center">
+        <h4>Fluidez verbal - Letra {currentLetter}</h4> {/* <-- Uso de currentLetter */}
+        <Button
+          variant="link"
+          onClick={() =>
+            speakInstructions(
+              `Me gustaría que me diga el mayor número posible de palabras que comiencen por la letra ${currentLetter}. Puede hablar o escribirlas. ¿Está listo? Presione el botón para iniciar.`
+            )
+          }
+        >
+          {isSpeaking ? <FaStop /> : <FaPlay />}
+        </Button>
+      </div>
+      <p>
+        Me gustaría que me diga el mayor número posible de palabras que comiencen por la letra {currentLetter}. Puede hablar o escribirlas. Presione el botón para iniciar.
+      </p>
+      {!isRunning ? (
         <div className="text-center">
-          <p>Me gustaría que me diga el mayor número posible de palabras que comiencen por la letra M. Puede hablar o escribirlas. Presione el botón para iniciar.</p>
-          <Button variant="primary" onClick={handleStart}>Iniciar</Button>
+          <Button variant="primary" onClick={handleStart}>
+            Iniciar
+          </Button>
         </div>
-      )}
-
-      {isRunning && (
+      ) : (
         <>
           <div className="text-center mb-3">
             <h5>Tiempo restante: {timer}s</h5>
@@ -236,19 +241,18 @@ const ActivityScreen9 = ({ activity, treatmentId }) => {
               <Button variant="primary" onClick={handleListen} className="me-3">
                 Hablar
               </Button>
-            ) : null}
-            {listening && (
+            ) : listening ? (
               <div className="d-flex align-items-center me-3">
                 <Spinner animation="grow" variant="primary" className="me-2" />
                 <Button variant="danger" onClick={handleStopListening}>
                   Detener
                 </Button>
               </div>
-            )}
+            ) : null}
             <Form onSubmit={(e) => e.preventDefault()} className="d-flex">
               <Form.Control
                 type="text"
-                placeholder="Escriba una palabra"
+                placeholder={`Escriba una palabra que comience con la letra ${currentLetter}`}
                 value={inputWord}
                 onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
@@ -272,22 +276,14 @@ const ActivityScreen9 = ({ activity, treatmentId }) => {
           </div>
         </>
       )}
-
-      {gameFinished && (
-        <div className="results text-center mt-4">
-          <h2>¡Actividad Terminada!</h2>
-          <p>Puntaje: {score} / 1</p>
-          <p>Tiempo utilizado: {timeUsed} segundos</p>
-          <p>Serás redirigido en breve...</p>
-        </div>
-      )}
-
-      {isRecording && <p>Guardando actividad...</p>}
-      {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
-
+      <div className="d-flex justify-content-between mt-4">
+        <Button variant="secondary" onClick={onPrevious} disabled={isFirstModule}>
+          Regresar
+        </Button>
+      </div>
       <ToastContainer />
     </div>
   );
 };
 
-export default ActivityScreen9;
+export default FluidezVerbalActivityM;

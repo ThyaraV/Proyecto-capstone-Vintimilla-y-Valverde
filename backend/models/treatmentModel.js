@@ -7,6 +7,7 @@ const completedActivitySchema = new mongoose.Schema({
   dateCompleted: { type: Date, default: Date.now }, // Fecha de completación
   scoreObtained: { type: Number }, // Puntaje obtenido
   timeUsed: { type: Number }, // Tiempo utilizado en segundos
+  difficultyLevel:{type: Number},
   progress: { type: String, enum: ['mejorando', 'estable', 'deteriorando'] }, // Progreso
   observations: { type: String }, // Observaciones
   image: { type: String, required: false }, // URL de la imagen
