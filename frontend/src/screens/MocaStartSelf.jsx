@@ -1,3 +1,5 @@
+// src/screens/MOCAmodules/MocaStartSelf.jsx
+
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Button, Container, ProgressBar, Row, Col, ListGroup } from "react-bootstrap";
@@ -37,7 +39,7 @@ const MocaStartSelf = () => {
   const [currentScore, setCurrentScore] = useState(0);
   const [individualScores, setIndividualScores] = useState({});
   const [moduleScores, setModuleScores] = useState({});
-  const [selectedModuleIndex, setSelectedModuleIndex] = useState(null); // Índice del módulo seleccionado manualmente
+  const [selectedModuleIndex, setSelectedModuleIndex] = useState(null);
 
   useEffect(() => {
     let interval;
@@ -59,11 +61,13 @@ const MocaStartSelf = () => {
   };
 
   const handleCompleteModule = (moduleId, moduleScore, activityScores) => {
+    // Guardar puntaje del módulo
     setModuleScores((prevModuleScores) => ({
       ...prevModuleScores,
       [moduleId]: moduleScore,
     }));
 
+    // Calcular puntaje actual
     const newCurrentScore = Object.values({
       ...moduleScores,
       [moduleId]: moduleScore,
@@ -71,19 +75,23 @@ const MocaStartSelf = () => {
 
     setCurrentScore(newCurrentScore);
 
+    // Guardar respuestas del modulo actual
     setIndividualScores((prevScores) => ({
       ...prevScores,
       [MODULES[moduleId].name]: { ...activityScores, total: moduleScore },
     }));
 
     if (selectedModuleIndex !== null) {
-      // Si se ha seleccionado un módulo manualmente, no avanzar automáticamente
+      // Si se seleccionó un módulo manualmente, no avanzar automáticamente
       setSelectedModuleIndex(null);
     } else {
+      // Si no, avanzar al siguiente módulo automáticamente
       if (currentModuleIndex < MODULES.length - 1) {
         setCurrentModuleIndex(currentModuleIndex + 1);
       } else {
         alert(`¡Prueba completada! Puntaje final: ${newCurrentScore}`);
+        // Aquí podrías mandar todo a un backend o guardar los resultados
+        // individualScores contiene todas las respuestas y puntajes por módulo.
       }
     }
   };
@@ -162,9 +170,8 @@ const MocaStartSelf = () => {
             </div>
           </div>
 
-          {/* Mostrar los puntajes individuales para depuración */}
           <pre className="mt-4">
-            <strong>Puntajes por Módulo:</strong>
+            <strong>Puntajes por Módulo y Respuestas:</strong>
             {Object.entries(individualScores).map(([moduleName, scores]) => (
               <div key={moduleName}>
                 <strong>{moduleName}:</strong> {JSON.stringify(scores)}
@@ -172,7 +179,6 @@ const MocaStartSelf = () => {
             ))}
           </pre>
 
-          {/* Lista de módulos para selección directa */}
           <div className="mt-5">
             <h4 className="text-center">Selecciona un Módulo para Probar:</h4>
             <ListGroup horizontal className="flex-wrap justify-content-center">

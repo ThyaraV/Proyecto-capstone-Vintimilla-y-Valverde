@@ -591,3 +591,4 @@ const Lenguaje = ({ onComplete, onPrevious, isFirstModule }) => {
 };
 
 export default Lenguaje;
+
