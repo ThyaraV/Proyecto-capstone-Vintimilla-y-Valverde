@@ -6,6 +6,7 @@ import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa
 import { useSelector } from 'react-redux';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import styles from '../assets/styles/ActivityScreen3.module.css'; // Importa los estilos específicos
 
 // Función para generar ecuaciones de suma o resta
 const generateEquation = (type) => {
@@ -138,52 +139,61 @@ const ActivityScreen3 = ({ activity, treatmentId }) => { // Recibe 'activity' y 
   };
 
   return (
-    <div className="game-screen">
-      <h1>Juego de Sumas y Restas - Nivel 1</h1>
-      <p style={{ fontWeight: 'bold' }}>Puntaje: {score}</p>
-      <p style={{ fontWeight: 'bold' }}>Tiempo: {timer} segundos</p>
-
-      {/* Mostrar estado de guardado de la actividad */}
-      {isRecording && <p>Guardando actividad...</p>}
-      {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
-
-      {/* Mostrar contenido del juego o mensaje de finalización */}
-      {gameFinished ? (
-        <div className="game-finished">
-          <h2 style={{ fontWeight: 'bold' }}>¡Juego terminado!</h2>
-          <p>Tiempo total: {timer} segundos</p>
-          <p>Puntaje final: {score}</p>
-        </div>
-      ) : (
-        <>
-          <div className="equation" style={{ textAlign: 'center', fontSize: '28px', fontWeight: 'bold' }}>
-            <div style={{ marginBottom: '10px' }}>
-              <div>{equations[currentEquationIndex]?.num1}</div>
-              <div>{equations[currentEquationIndex]?.operator} {equations[currentEquationIndex]?.num2}</div>
-              <hr style={{ width: '50px', margin: '10px auto' }} />
-              <input
-                type="number"
-                value={userAnswer}
-                onChange={(e) => setUserAnswer(e.target.value)}
-                placeholder="?"
-                style={{ fontSize: '32px', textAlign: 'center', width: '80px', height: '50px' }}
-                disabled={gameFinished}
-              />
-            </div>
-            <button onClick={handleSubmitAnswer} disabled={gameFinished} style={{ fontSize: '18px', fontWeight: 'bold' }}>
-              Responder
-            </button>
+    <div className={styles.background}>
+      <div className={styles.container}>
+        <h1 className={styles.title}>Juego de Sumas y Restas - Nivel 1</h1>
+        <div className={styles.infoContainer}>
+          <div className={styles.infoBox}>
+            <span>Puntaje: </span>
+            <span className={styles.score}>{score}</span>
           </div>
+          <div className={styles.infoBox}>
+            <span>Tiempo: </span>
+            <span className={styles.timer}>{timer} segundos</span>
+          </div>
+        </div>
 
-          {/* Mostrar mensaje de retroalimentación */}
-          {message && (
-            <div className="message-box" style={{ marginTop: '20px', fontSize: '22px', color: 'black', fontWeight: 'bold' }}>
-              <p>{message}</p>
+        {/* Mostrar estado de guardado de la actividad */}
+        {isRecording && <p className={styles.recording}>Guardando actividad...</p>}
+        {recordError && <p className={styles.error}>Error: {recordError?.data?.message || recordError.message}</p>}
+
+        {/* Mostrar contenido del juego o mensaje de finalización */}
+        {gameFinished ? (
+          <div className={styles.gameFinished}>
+            <h2 className={styles.gameTitle}>¡Juego terminado!</h2>
+            <p>Tiempo total: {timer} segundos</p>
+            <p>Puntaje final: {score}</p>
+          </div>
+        ) : (
+          <>
+            <div className={styles.equation}>
+              <div className={styles.equationContent}>
+                <div className={styles.number}>{equations[currentEquationIndex]?.num1}</div>
+                <div className={styles.operator}>{equations[currentEquationIndex]?.operator} {equations[currentEquationIndex]?.num2}</div>
+                <hr className={styles.line} />
+                <input
+                  type="number"
+                  value={userAnswer}
+                  onChange={(e) => setUserAnswer(e.target.value)}
+                  placeholder="?"
+                  className={styles.answerInput}
+                  disabled={gameFinished}
+                />
+              </div>
+              <button onClick={handleSubmitAnswer} disabled={gameFinished} className={styles.submitButton}>
+                Responder
+              </button>
             </div>
-          )}
-        </>
-      )}
 
+            {/* Mostrar mensaje de retroalimentación */}
+            {message && (
+              <div className={styles.messageBox}>
+                <p>{message}</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
       <ToastContainer />
     </div>
   );

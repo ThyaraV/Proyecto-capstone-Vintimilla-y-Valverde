@@ -6,11 +6,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
 import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
 import { useSelector } from 'react-redux';
+import styles from '../assets/styles/Activity4L2Screen.module.css'; // Importa los estilos específicos
 
 // Importa las imágenes
 import Image1 from '../images/imagen1.png'; 
 import Image2 from '../images/imagen2.png'; 
 
+// Define las diferencias que deben ser encontradas
 const differences = [
   { id: 1, name: 'Ala gallo', x: 150, y: 290, width: 70, height: 70 },
   { id: 2, name: 'Gato', x: 67, y: 40, width: 50, height: 80 },
@@ -44,6 +46,7 @@ const ActivityScreen4 = () => {
   // Hook de la mutación para registrar actividad
   const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
 
+  // Iniciar el temporizador al montar el componente
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -54,14 +57,17 @@ const ActivityScreen4 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
+  // Navegar a la lista de actividades una vez que el juego haya terminado
   useEffect(() => {
-    if (gameFinished && !differencesFound) { // Ajusta la condición si es necesario
-      setTimeout(() => {
+    if (gameFinished) {
+      const timeout = setTimeout(() => {
         navigate('/api/treatments/activities');
-      }, 6000);
+      }, 6000); // Esperar 6 segundos antes de navegar
+      return () => clearTimeout(timeout);
     }
   }, [gameFinished, navigate]);
 
+  // Manejar el clic en la imagen para encontrar diferencias
   const handleImageClick = (e) => {
     const rect = e.target.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -94,25 +100,29 @@ const ActivityScreen4 = () => {
     }
   };
 
+  // Manejar el envío de la respuesta del usuario
   const handleSubmit = () => {
     if (selectedOptions.length < 10) {
-      setShowDialog(true);
+      setShowDialog(true); // Mostrar diálogo si no se han encontrado todas las diferencias
     } else {
       setGameFinished(true);
       saveActivity(correctAnswers, incorrectAnswers);
     }
   };
 
+  // Continuar jugando después de decidir en el diálogo
   const handleContinuePlaying = () => {
     setShowDialog(false);
   };
 
+  // Terminar el juego después de decidir en el diálogo
   const handleEndGame = () => {
     setShowDialog(false);
     setGameFinished(true);
     saveActivity(correctAnswers, incorrectAnswers);
   };
 
+  // Función para guardar la actividad en el backend dentro del tratamiento correspondiente
   const saveActivity = async (correct, incorrect) => {
     // Validar que el usuario está autenticado
     if (!userInfo) {
@@ -156,48 +166,69 @@ const ActivityScreen4 = () => {
   };
 
   return (
-    <div className="find-differences-game">
-      <h1>Encuentra las 10 diferencias</h1>
-      <p>Tiempo: {timer} segundos</p>
-      <p>Puntaje: {points}</p>
-      <p>Diferencias encontradas: {differencesFound} de 10</p>
-      <p>{feedbackMessage}</p>
-
-      <div className="images-container" style={{ position: 'relative' }} onClick={handleImageClick}>
-        <img src={Image1} alt="Imagen 1" style={{ width: '464px', height: '534px' }} />
-        <div style={{ position: 'relative', display: 'inline-block' }}>
-          <img
-            src={Image2}
-            alt="Imagen 2"
-            style={{ width: '464px', height: '534px', cursor: 'pointer' }}
-          />
-        </div>
-      </div>
-
-      {!gameFinished && (
-        <button onClick={handleSubmit} className="submit-button">Enviar Respuesta</button>
-      )}
-
-      {gameFinished && (
-        <div className="results">
-          <p>Correctas: {correctAnswers}</p>
-          <p>Incorrectas: {incorrectAnswers}</p>
-          <p>Tiempo total: {timer} segundos</p>
-          <p>Puntaje final: {points}</p>
-        </div>
-      )}
-
-      {showDialog && (
-        <div className="dialog-box-overlay">
-          <div className="dialog-box">
-            <p>Has encontrado {differencesFound} de 10 diferencias.</p>
-            <p>¿Quieres terminar el juego o continuar buscando?</p>
-            <button onClick={handleEndGame}>Terminar</button>
-            <button onClick={handleContinuePlaying}>Continuar Jugando</button>
+    <div className={styles.background}>
+      <div className={styles.container}>
+        <h1 className={styles.title}>Encuentra las 10 diferencias</h1>
+        <div className={styles.infoContainer}>
+          <div className={styles.infoBox}>
+            <span>Puntaje: </span>
+            <span className={styles.score}>{points}</span>
+          </div>
+          <div className={styles.infoBox}>
+            <span>Tiempo: </span>
+            <span className={styles.timer}>{timer} segundos</span>
+          </div>
+          <div className={styles.infoBox}>
+            <span>Diferencias encontradas: </span>
+            <span className={styles.differencesFound}>{differencesFound} de 10</span>
           </div>
         </div>
-      )}
 
+        {/* Mostrar estado de guardado de la actividad */}
+        {isRecording && <p className={styles.recording}>Guardando actividad...</p>}
+        {recordError && <p className={styles.error}>Error: {recordError?.data?.message || recordError.message}</p>}
+
+        {/* Mostrar contenido del juego o mensaje de finalización */}
+        {gameFinished ? (
+          <div className={styles.gameFinished}>
+            <h2 className={styles.gameTitle}>¡Juego terminado!</h2>
+            <p>Tiempo total: {timer} segundos</p>
+            <p>Puntaje final: {points}</p>
+            <p>Correctas: {correctAnswers}</p>
+            <p>Incorrectas: {incorrectAnswers}</p>
+          </div>
+        ) : (
+          <>
+            <div className={styles.imagesContainer} onClick={handleImageClick}>
+              <img src={Image1} alt="Imagen de juego Parte 1" className={styles.image} />
+              <img src={Image2} alt="Imagen de juego Parte 2" className={styles.image} />
+            </div>
+
+            <button onClick={handleSubmit} className={styles.submitButton}>Enviar Respuesta</button>
+
+            {/* Mostrar mensaje de retroalimentación */}
+            {feedbackMessage && (
+              <div className={styles.feedbackBox}>
+                <p>{feedbackMessage}</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Diálogo de confirmación */}
+        {showDialog && (
+          <div className={styles.dialogOverlay}>
+            <div className={styles.dialogBox}>
+              <p>Has encontrado {differencesFound} de 10 diferencias.</p>
+              <p>¿Quieres terminar el juego o continuar buscando?</p>
+              <div className={styles.dialogButtons}>
+                <button onClick={handleEndGame} className={styles.dialogButton}>Terminar</button>
+                <button onClick={handleContinuePlaying} className={styles.dialogButton}>Continuar Jugando</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
       <ToastContainer />
     </div>
   );

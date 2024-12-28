@@ -1,59 +1,115 @@
-// src/screens/ActivityScreenLevel1.jsx
+// src/screens/ActivityScreen5.jsx
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useRecordActivityMutation } from '../slices/treatmentSlice';
 import { useSelector } from 'react-redux';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { proverbsLevel1 } from '../components/proverbsLevel1';
 
-// Función para barajar opciones
-const shuffleOptions = (options, correctOption) => {
-  const shuffledOptions = [...options];
-  if (!shuffledOptions.includes(correctOption)) {
-    shuffledOptions.push(correctOption);
-  }
-  return shuffledOptions.sort(() => Math.random() - 0.5);
+// Importaciones para react-dnd
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+
+// Importa el CSS Module
+import styles from '../assets/styles/ActivityScreen5.module.css';
+
+// Tipo de ítem para react-dnd
+const ItemTypes = {
+  OPTION: 'option',
 };
 
-const proverbsLevel1 = [
-  { id: 1, phrase: "A buen entendedor...", options: ["más vale tarde que nunca", "el que mucho abarca poco aprieta"], correctOption: "pocas palabras bastan" },
-  { id: 2, phrase: "Al mal tiempo...", options: ["quien mal anda mal acaba", "más vale prevenir que lamentar"], correctOption: "buena cara" },
-  { id: 3, phrase: "Más vale pájaro en mano...", options: ["que nada", "que mil sueños"], correctOption: "que cien volando" },
-  { id: 4, phrase: "No por mucho madrugar...", options: ["se llega primero", "se consigue lo que se quiere"], correctOption: "amanece más temprano" },
-  { id: 5, phrase: "El que mucho abarca...", options: ["todo lo pierde", "nada sostiene"], correctOption: "poco aprieta" },
-  { id: 6, phrase: "Ojos que no ven...", options: ["no hay mal que por bien no venga", "al mal tiempo buena cara"], correctOption: "corazón que no siente" },
-  { id: 7, phrase: "Perro que ladra...", options: ["poco aprieta", "corre más"], correctOption: "no muerde" },
-  { id: 8, phrase: "No hay mal...", options: ["que dure cien años", "que sea eterno"], correctOption: "que por bien no venga" },
-  { id: 9, phrase: "Más vale tarde...", options: ["que pronto", "que rápido"], correctOption: "que nunca" },
-  { id: 10, phrase: "El que ríe último...", options: ["no ríe más", "pierde"], correctOption: "ríe mejor" }
-];
+// Función para mezclar arrays (Fisher-Yates Shuffle)
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for(let i = shuffled.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
-const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activity' y 'treatmentId' como props
+// Componente para las opciones arrastrables
+const DraggableOption = ({ option, isPlaced }) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: ItemTypes.OPTION,
+    item: { option },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  });
+
+  return (
+    <button
+      ref={drag}
+      className={`${styles.optionButton} ${isPlaced ? styles.placed : ''}`}
+      style={{
+        opacity: isDragging ? 0.5 : 1,
+        cursor: isPlaced ? 'not-allowed' : 'move',
+        transform: isDragging ? 'scale(0.8)' : 'scale(1)',
+        transition: 'transform 0.2s, opacity 0.2s',
+      }}
+      disabled={isPlaced}
+    >
+      {option}
+    </button>
+  );
+};
+
+// Componente para la zona de soltar
+const DropZone = ({ onDrop, placedOption, setPlacedOption }) => {
+  const [{ isOver, canDrop }, drop] = useDrop({
+    accept: ItemTypes.OPTION,
+    drop: (item) => onDrop(item.option),
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+      canDrop: !!monitor.canDrop(),
+    }),
+  });
+
+  return (
+    <span
+      ref={drop}
+      className={`${styles.dropZone} ${isOver && canDrop ? styles.activeDropZone : ''}`}
+    >
+      {placedOption || '___'}
+    </span>
+  );
+};
+
+const ActivityScreen5 = ({ activity, treatmentId }) => {
+  const navigate = useNavigate();
+  const userInfo = useSelector((state) => state.auth.userInfo);
+  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+
+  const [selectedProverbs, setSelectedProverbs] = useState([]);
   const [currentProverbIndex, setCurrentProverbIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState("");
+  const [placedOption, setPlacedOption] = useState(null);
   const [shuffledOptions, setShuffledOptions] = useState([]);
   const [score, setScore] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
   const [message, setMessage] = useState('');
-  const navigate = useNavigate();
+  const [showDialog, setShowDialog] = useState(false); // Definición del estado showDialog
 
-  const userInfo = useSelector((state) => state.auth.userInfo); // Obtener información del usuario autenticado
-
-  // Hook de la mutación para registrar actividad
-  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+  // Seleccionar 10 frases aleatorias al montar el componente
+  useEffect(() => {
+    const shuffledProverbs = shuffleArray(proverbsLevel1);
+    const selected = shuffledProverbs.slice(0, 10);
+    setSelectedProverbs(selected);
+  }, []);
 
   // Iniciar el temporizador al montar el componente
   useEffect(() => {
     let interval;
-    if (!gameFinished) {
+    if (!gameFinished && selectedProverbs.length > 0) {
       interval = setInterval(() => {
         setTimer((prevTimer) => prevTimer + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [gameFinished]);
+  }, [gameFinished, selectedProverbs]);
 
   // Navegar a la lista de actividades una vez que el juego haya terminado
   useEffect(() => {
@@ -67,19 +123,34 @@ const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activit
 
   // Barajar las opciones al cambiar de refrán
   useEffect(() => {
-    const currentProverb = proverbsLevel1[currentProverbIndex];
-    setShuffledOptions(shuffleOptions(currentProverb.options, currentProverb.correctOption));
-  }, [currentProverbIndex]);
+    if (selectedProverbs.length > 0 && currentProverbIndex < selectedProverbs.length) {
+      const currentProverb = selectedProverbs[currentProverbIndex];
+      const shuffled = shuffleArray(currentProverb.options);
+      setShuffledOptions(shuffled);
+      setPlacedOption(null);
+      setMessage('');
+    }
+  }, [currentProverbIndex, selectedProverbs]);
 
-  // Manejar la selección de una opción
-  const handleOptionClick = (option) => {
-    setSelectedOption(option);
+  // Función para manejar el soltar una opción
+  const handleDrop = (option) => {
+    // Si ya hay una opción colocada, permitir reemplazarla
+    if (placedOption) {
+      // Si la opción colocada es la misma que se está intentando soltar, no hacer nada
+      if (placedOption === option) {
+        return;
+      }
+      // Reemplazar la opción colocada con la nueva
+      setPlacedOption(option);
+    } else {
+      setPlacedOption(option);
+    }
   };
 
-  // Manejar el envío de la respuesta del usuario
+  // Función para manejar el envío de la respuesta
   const handleSubmitAnswer = () => {
-    const currentProverb = proverbsLevel1[currentProverbIndex];
-    if (selectedOption === currentProverb.correctOption) {
+    const currentProverb = selectedProverbs[currentProverbIndex];
+    if (placedOption === currentProverb.correctOption) {
       setScore((prevScore) => prevScore + 0.5);
       setMessage("¡Correcto! Has ganado 0.5 puntos.");
     } else {
@@ -87,47 +158,39 @@ const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activit
     }
 
     setTimeout(() => {
-      if (currentProverbIndex + 1 < proverbsLevel1.length) {
+      if (currentProverbIndex + 1 < selectedProverbs.length) {
         setCurrentProverbIndex((prevIndex) => prevIndex + 1);
-        setSelectedOption("");
-        setMessage(""); // Limpia el mensaje para el próximo refrán
       } else {
         setGameFinished(true);
-        saveActivity(score); // Guardar actividad al terminar
+        saveActivity(score + (placedOption === selectedProverbs[currentProverbIndex].correctOption ? 0.5 : 0));
       }
     }, 2000);
   };
 
   // Función para guardar la actividad en el backend dentro del tratamiento correspondiente
   const saveActivity = async (finalScore) => {
-    // Validar que el usuario está autenticado
     if (!userInfo) {
       toast.error('Usuario no autenticado');
       return;
     }
 
-    // Validar que treatmentId está definido
     if (!treatmentId) {
       toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
       return;
     }
 
-    // Construir el objeto de datos de la actividad
     const activityData = {
-      activityId: activity._id, // ID de la actividad principal
+      activityId: activity._id,
       scoreObtained: finalScore,
       timeUsed: timer,
       progress: 'mejorando',
       observations: `El paciente completó la actividad de completar refranes en Nivel 1.`,
-      // Puedes agregar más campos si es necesario
     };
 
     console.log('Guardando actividad con los siguientes datos:', activityData);
 
     try {
-      // Registrar la actividad dentro del tratamiento usando la mutación
       await recordActivity({ treatmentId, activityData }).unwrap();
-
       console.log('Actividad guardada correctamente');
       toast.success('Actividad guardada correctamente');
     } catch (error) {
@@ -137,44 +200,109 @@ const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activit
     }
   };
 
+  // Función para renderizar la frase con el espacio
+  const renderPhrase = (phrase) => {
+    return phrase.split('___').map((part, index) => (
+      <span key={index}>
+        {part}
+        {index < phrase.split('___').length - 1 && (
+          <DropZone onDrop={handleDrop} placedOption={placedOption} setPlacedOption={setPlacedOption} />
+        )}
+      </span>
+    ));
+  };
+
+  // Definir las funciones faltantes
+  const handleEndGame = () => {
+    setShowDialog(false);
+    setGameFinished(true);
+    saveActivity(score); // Asegúrate de pasar el puntaje correcto
+  };
+
+  const handleContinuePlaying = () => {
+    setShowDialog(false);
+    // Puedes agregar lógica adicional aquí si es necesario
+  };
+
   return (
-    <div className="phrase-game">
-      <h1>Completa los Refranes - Nivel 1</h1>
-      {!gameFinished ? (
-        <>
-          <p>Puntaje: {score}</p>
-          <p>Tiempo: {timer} segundos</p>
-          <div className="phrase-box">{proverbsLevel1[currentProverbIndex].phrase}...</div>
-          <div className="options-container">
-            {shuffledOptions.map((option, index) => (
-              <button
-                key={index}
-                className={`option-button ${selectedOption === option ? 'selected' : ''}`}
-                onClick={() => handleOptionClick(option)}
-              >
-                {option}
-              </button>
-            ))}
+    <DndProvider backend={HTML5Backend}>
+      <div className={styles.background}>
+        <div className={styles.container}>
+          <h1 className={styles.title}>Completa los Refranes - Nivel 1</h1>
+          <div className={styles.infoContainer}>
+            <div className={styles.infoBox}>
+              <span>Puntaje:</span>
+              <span className={styles.score}>{score}</span>
+            </div>
+            <div className={styles.infoBox}>
+              <span>Tiempo:</span>
+              <span className={styles.timer}>{timer} segundos</span>
+            </div>
           </div>
-          <button onClick={handleSubmitAnswer} className="submit-button" disabled={!selectedOption}>
-            Enviar Respuesta
-          </button>
-          {message && <p className="message-box">{message}</p>}
 
           {/* Mostrar estado de guardado de la actividad */}
-          {isRecording && <p>Guardando actividad...</p>}
-          {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
-        </>
-      ) : (
-        <div className="results">
-          <h2>¡Juego Terminado!</h2>
-          <p>Respuestas correctas: {score} / 5</p>
-          <p>Tiempo total: {timer} segundos</p>
+          {isRecording && <p className={styles.recording}>Guardando actividad...</p>}
+          {recordError && <p className={styles.error}>Error: {recordError?.data?.message || recordError.message}</p>}
+
+          {!gameFinished ? (
+            <>
+              <div className={styles.phraseBox}>
+                {selectedProverbs.length > 0 && renderPhrase(selectedProverbs[currentProverbIndex].phrase)}
+              </div>
+              <div className={styles.optionsContainer}>
+                {shuffledOptions.map((option, index) => (
+                  <DraggableOption
+                    key={index}
+                    option={option}
+                    isPlaced={placedOption === option}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={handleSubmitAnswer}
+                className={styles.submitButton}
+                disabled={!placedOption}
+              >
+                Enviar Respuesta
+              </button>
+              {message && <p className={styles.messageBox}>{message}</p>}
+            </>
+          ) : (
+            <div className={styles.gameFinished}>
+            <h2>¡Juego terminado!</h2>
+            <p>Tiempo total: <strong>{timer}</strong> segundos</p>
+            <p>Puntaje final: <strong>{score}</strong></p>
+            <button 
+              className={styles.finishButton}
+              onClick={() => navigate('/api/treatments/activities')}
+            >
+              Volver a Actividades
+            </button>
+          </div>
+          )}
+
+          {/* Diálogo de confirmación */}
+          {showDialog && (
+            <div className={styles.dialogOverlay}>
+              <div className={styles.dialogBox}>
+                <p>Has encontrado {score} puntos.</p>
+                <p>¿Quieres terminar el juego o continuar buscando?</p>
+                <div className={styles.dialogButtons}>
+                  <button onClick={handleEndGame} className={`${styles.dialogButton} ${styles.terminate}`}>
+                    Terminar
+                  </button>
+                  <button onClick={handleContinuePlaying} className={`${styles.dialogButton} ${styles.continue}`}>
+                    Continuar Jugando
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
-      <ToastContainer />
-    </div>
+        <ToastContainer />
+      </div>
+    </DndProvider>
   );
 };
 
-export default ActivityScreenLevel1;
+export default ActivityScreen5;

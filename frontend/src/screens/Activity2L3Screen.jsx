@@ -4,26 +4,216 @@ import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom'; 
 import 'react-toastify/dist/ReactToastify.css';
-import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Asegúrate de que la ruta sea correcta
 import { useSelector } from 'react-redux';
+import styles from '../assets/styles/Activity2L3Screen.module.css'; // Importa los estilos específicos
 
-// Lista de fotos y sus opciones
-const photos = [
-  { src: require('../images/lentes.png'), name: 'Lentes', options: ['Lentes', 'Vidrio de una lupa', 'Reloj de bolsillo', 'Pantalla de un teléfono móvil', 'Visor de una cámara'] },
-  { src: require('../images/silla.png'), name: 'Silla', options: ['Silla', 'Banco de madera', 'Taburete', 'Silla plegable', 'Sofá'] },
-  { src: require('../images/ventana.png'), name: 'Ventana', options: ['Ventana', 'Espejo', 'Pantalla de una tablet', 'Cristal de automóvil', 'Marco de cuadro'] },
-  { src: require('../images/plantas.png'), name: 'Plantas', options: ['Plantas', 'Musgo', 'Césped', 'Alga marina', 'Ramas secas'] },
-  { src: require('../images/copa.png'), name: 'Copa', options: ['Copa', 'Jarra de vidrio', 'Botella de vino', 'Tazón de cerámica', 'Taza de té'] },
-  { src: require('../images/persona.png'), name: 'Persona', options: ['Persona', 'Estatua de cera', 'Figura de acción', 'Maniquí', 'Escultura de algún animal'] },
-  { src: require('../images/camaraFotos.png'), name: 'Cámara de fotos', options: ['Cámara de fotos', 'Mirilla de puerta', 'Lente de un telescopio', 'Cámara de seguridad', 'Foco de un proyector'] },
-  { src: require('../images/corazon.png'), name: 'Corazón', options: ['Corazón', 'Pulmón', 'Riñón', 'Estómago', 'Cerebro'] },
-  { src: require('../images/foco.png'), name: 'Foco', options: ['Foco', 'Linterna', 'Luz de emergencia', 'Lámpara de escritorio', 'Proyector'] },
-  { src: require('../images/palmera.png'), name: 'Palmera', options: ['Palmera', 'Árbol de plátano', 'Bambú', 'Tronco de cocotero', 'Árbol de eucalipto'] },
+// Importa las imágenes al inicio para evitar usar require dentro del componente
+import lentesImg from '../images/lentes.png';
+import ventanaImg from '../images/ventana.png';
+import copaImg from '../images/copa.png';
+import personaImg from '../images/persona.png';
+import camaraFotosImg from '../images/camara.png';
+import corazonImg from '../images/corazon.png';
+import focoImg from '../images/foco.png';
+import palmeraImg from '../images/palmera.png';
+import audifonosImg from '../images/audifono.png';
+import camaImg from '../images/cama.png';
+import caraImg from '../images/cara.png';
+import carteraImg from '../images/cartera.png';
+import collarImg from '../images/collar.png';
+import computadoraImg from '../images/computadora.png';
+import elefanteImg from '../images/elefante.png';
+import lamparaImg from '../images/lampara.png';
+import leonImg from '../images/leon.png';
+import puertaImg from '../images/puerta.png';
+import relojImg from '../images/reloj.png';
+import vasoImg from '../images/vaso.png';
+
+// Función de barajado usando el algoritmo de Fisher-Yates para mayor aleatoriedad
+const shuffle = (array) => {
+  if (!Array.isArray(array)) {
+    console.error('La función shuffle esperaba un arreglo, pero recibió:', array);
+    return [];
+  }
+
+  let currentIndex = array.length, randomIndex;
+
+  // Mientras queden elementos a barajar
+  while (currentIndex !== 0) {
+    // Seleccionar un elemento restante
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // Intercambiarlo con el elemento actual
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex],
+    ];
+  }
+
+  return array;
+};
+
+// Definir el arreglo completo de fotos con opciones y IDs únicos
+const allPhotos = [
+  {
+    _id: 'photo1',
+    src: lentesImg,
+    name: 'Lentes',
+    options: ['Lentes', 'Vidrio de una lupa', 'Reloj de bolsillo', 'Pantalla de un teléfono móvil', 'Visor de una cámara']
+  },
+  {
+    _id: 'photo2',
+    src: audifonosImg,
+    name: 'Audífonos',
+    options: ['Audífonos', 'Casco', 'Gorra', 'Diadema', 'Airpods']
+  },
+  {
+    _id: 'photo3',
+    src: ventanaImg,
+    name: 'Ventana',
+    options: ['Marco de cuadro', 'Espejo', 'Mueble', 'Cristal de automóvil', 'Ventana']
+  },
+  {
+    _id: 'photo4',
+    src: camaImg,
+    name: 'Cama',
+    options: ['Sofá', 'Cama', 'Sillón', 'Mesa', 'Velador']
+  },
+  {
+    _id: 'photo5',
+    src: copaImg,
+    name: 'Copa',
+    options: ['Copa', 'Jarra de vidrio', 'Botella de vino', 'Tazón de cerámica', 'Taza de té']
+  },
+  {
+    _id: 'photo6',
+    src: personaImg,
+    name: 'Persona',
+    options: ['Persona', 'Estatua de cera', 'Figura de acción', 'Maniquí', 'Escultura de algún animal']
+  },
+  {
+    _id: 'photo7',
+    src: camaraFotosImg,
+    name: 'Cámara de fotos',
+    options: ['Cámara de fotos', 'Mirilla de puerta', 'Lente de un telescopio', 'Cámara de seguridad', 'Foco de un proyector']
+  },
+  {
+    _id: 'photo8',
+    src: corazonImg,
+    name: 'Corazón',
+    options: ['Corazón', 'Pulmón', 'Riñón', 'Estómago', 'Cerebro']
+  },
+  {
+    _id: 'photo9',
+    src: focoImg,
+    name: 'Foco',
+    options: ['Foco', 'Linterna', 'Luz de emergencia', 'Lámpara de escritorio', 'Proyector']
+  },
+  {
+    _id: 'photo10',
+    src: palmeraImg,
+    name: 'Palmera',
+    options: ['Palmera', 'Árbol de plátano', 'Bambú', 'Tronco de cocotero', 'Árbol de eucalipto']
+  },
+  {
+    _id: 'photo11',
+    src: caraImg,
+    name: 'Cara',
+    options: ['Pelo', 'Cara', 'Brazo', 'Caderas', 'Piernas']
+  },
+  {
+    _id: 'photo12',
+    src: carteraImg,
+    name: 'Cartera',
+    options: ['Mochila', 'Cartuchera', 'Cartera', 'Bolsa de plástico', 'Cangurera']
+  },
+  {
+    _id: 'photo13',
+    src: collarImg,
+    name: 'Collar',
+    options: ['Pulsera', 'Cinturón', 'Collar', 'Anillos', 'Aretes']
+  },
+  {
+    _id: 'photo14',
+    src: elefanteImg,
+    name: 'Elefante',
+    options: ['Jirafa', 'Koala', 'Elefante', 'Cocodrilo', 'Oso panda']
+  },
+  {
+    _id: 'photo15',
+    src: computadoraImg,
+    name: 'Computadora',
+    options: ['Teléfono', 'Control remoto', 'Computadora', 'Tablet', 'Smartwatch']
+  },
+  {
+    _id: 'photo16',
+    src: lamparaImg,
+    name: 'Lámpara',
+    options: ['Jarro', 'Lámpara', 'Adorno', 'Vela', 'Escultura']
+  },
+  {
+    _id: 'photo17',
+    src: leonImg,
+    name: 'León',
+    options: ['León', 'Oso', 'Leopardo', 'Perro', 'Gato']
+  },
+  {
+    _id: 'photo18',
+    src: puertaImg,
+    name: 'Puerta',
+    options: ['Portón', 'Garage', 'Puerta', 'Ventana', 'Balcón']
+  },
+  {
+    _id: 'photo19',
+    src: relojImg,
+    name: 'Reloj',
+    options: ['Juguete', 'Plato', 'Cuadro decorativo', 'Reloj', 'Balón de basket']
+  },
+  {
+    _id: 'photo20',
+    src: vasoImg,
+    name: 'Vaso',
+    options: ['Tomatodo', 'Jarra', 'Bambú', 'Cafetera', 'Vaso']
+  },
 ];
 
-// Barajar las opciones de manera aleatoria
-const shuffle = (array) => {
-  return array.sort(() => Math.random() - 0.5);
+// Función para obtener las imágenes utilizadas desde localStorage
+const getUsedImageIds = () => {
+  const used = localStorage.getItem('usedImageIds_L3'); // Usar una clave única para el Nivel 3
+  return used ? JSON.parse(used) : [];
+};
+
+// Función para guardar las imágenes utilizadas en localStorage
+const setUsedImageIds = (ids) => {
+  localStorage.setItem('usedImageIds_L3', JSON.stringify(ids)); // Usar una clave única para el Nivel 3
+};
+
+// Función para seleccionar imágenes aleatorias sin repetición
+const selectRandomPhotos = (allPhotos, numberOfPhotos) => {
+  let usedImageIds = getUsedImageIds();
+  
+  // Filtrar las fotos que no han sido utilizadas
+  let availablePhotos = allPhotos.filter(photo => !usedImageIds.includes(photo._id));
+  
+  // Si no hay suficientes fotos disponibles, reiniciar la lista de usadas
+  if (availablePhotos.length < numberOfPhotos) {
+    usedImageIds = [];
+    availablePhotos = [...allPhotos];
+    toast.info('Se ha reiniciado la selección de imágenes para evitar repeticiones.');
+  }
+  
+  // Barajar las fotos disponibles
+  const shuffled = shuffle([...availablePhotos]);
+  
+  // Seleccionar el número deseado de fotos
+  const selectedPhotos = shuffled.slice(0, numberOfPhotos);
+  
+  // Actualizar la lista de imágenes utilizadas
+  const newUsedImageIds = [...usedImageIds, ...selectedPhotos.map(photo => photo._id)];
+  setUsedImageIds(newUsedImageIds);
+  
+  return selectedPhotos;
 };
 
 const Activity2L3Screen = () => {
@@ -47,19 +237,32 @@ const Activity2L3Screen = () => {
   // Hook de la mutación para registrar actividad
   const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
 
+  // Inicializar la cola de fotos barajadas al montar el componente
   useEffect(() => {
-    // Barajar las imágenes al inicio
-    setPhotoQueue(shuffle([...photos]));
-  }, []);
+    console.log('Objeto activity recibido:', activityId);
+    console.log('Received treatmentId:', treatmentId); // Verificar que treatmentId no es undefined
 
+    if (!activityId) {
+      toast.error('Actividad inválida o no encontrada');
+      navigate('/api/treatments/activities'); // Redirige si la actividad no es válida
+      return;
+    }
+
+    // Seleccionar diez fotos aleatorias sin repetición
+    const selectedPhotos = selectRandomPhotos(allPhotos, 10); // Ajusta el número según la cantidad de preguntas
+    setPhotoQueue(selectedPhotos);
+  }, [activityId, treatmentId, navigate]);
+
+  // Seleccionar la siguiente foto y opciones
   useEffect(() => {
-    if (answeredPhotos < 10 && !gameFinished && photoQueue.length > 0) {
+    if (answeredPhotos < photoQueue.length && !gameFinished && photoQueue.length > 0) {
       const nextPhoto = photoQueue[answeredPhotos];
       setCurrentPhoto(nextPhoto);
       setOptions(shuffle(nextPhoto.options));  // Mostrar cinco opciones aleatorias
     }
   }, [answeredPhotos, gameFinished, photoQueue]);
 
+  // Iniciar el temporizador
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -70,6 +273,7 @@ const Activity2L3Screen = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
+  // Función para manejar el clic en una opción
   const handleOptionClick = (selectedName) => {
     if (answeredPhotos >= 10 || gameFinished) return;
 
@@ -107,6 +311,7 @@ const Activity2L3Screen = () => {
     }
   }, [gameFinished, activitySaved, score]);
 
+  // Función para guardar la actividad en el backend
   const saveActivity = async (finalScore) => {
     // Validar que el usuario está autenticado
     if (!userInfo) {
@@ -149,42 +354,70 @@ const Activity2L3Screen = () => {
   };
 
   return (
-    <div className="photo-association-game">
-      <h1>Juego de Asociación de Fotos (Nivel 3)</h1>
-      <p>Puntaje: {score}</p>
-      <p>Tiempo: {timer} segundos</p>
-
-      {gameFinished ? (
-        <div className="game-finished">
-          <h2>¡Juego terminado!</h2>
-          <p>Tiempo total: {timer} segundos</p>
-          <p>Puntaje final: {score}</p>
-        </div>
-      ) : (
-        <>
-          {currentPhoto && (
-            <div className="photo-container">
-              <img src={currentPhoto.src} alt="Imagen actual" style={{ width: '300px', height: '300px' }} />
-            </div>
-          )}
-
-          <div className="options-container">
-            {options.map((option, index) => (
-              <button key={index} onClick={() => handleOptionClick(option)} className="option-button">
-                {option}
-              </button>
-            ))}
+    <div className={styles.background}>
+      <div className={styles.container}>
+        <h1 className={styles.title}>Juego de Asociación de Fotos (Nivel 3)</h1>
+        
+        <div className={styles.infoContainer}>
+          <div className={styles.infoBox}>
+            <span>Puntaje: </span>
+            <span className={styles.score}>{score}</span>
           </div>
+          <div className={styles.infoBox}>
+            <span>Tiempo: </span>
+            <span className={styles.timer}>{timer} segundos</span>
+          </div>
+        </div>
 
-          {showAnswer && (
-            <div className="answer-message">
-              <p>{message}</p>
+        {isRecording && <p className={styles.recording}>Guardando actividad...</p>}
+        {recordError && <p className={styles.error}>Error: {recordError?.data?.message || recordError.message}</p>}
+
+        {gameFinished ? (
+          <div className={styles.gameFinished}>
+            <h2>¡Juego terminado!</h2>
+            <p>Tiempo total: <strong>{timer}</strong> segundos</p>
+            <p>Puntaje final: <strong>{score}</strong></p>
+            <button 
+              className={styles.finishButton}
+              onClick={() => navigate('/api/treatments/activities')}
+            >
+              Volver a Actividades
+            </button>
+          </div>
+        ) : (
+          <>
+            {currentPhoto && (
+              <div className={styles.photoContainer}>
+                <img
+                  src={currentPhoto.src}
+                  alt={`Imagen de ${currentPhoto.name}`}
+                  className={styles.photo}
+                />
+              </div>
+            )}
+
+            <div className={styles.optionsContainer}>
+              {options.map((option, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleOptionClick(option)}
+                  className={styles.optionButton}
+                >
+                  {option}
+                </button>
+              ))}
             </div>
-          )}
-        </>
-      )}
 
-      <ToastContainer />
+            {showAnswer && (
+              <div className={styles.answerMessage}>
+                <p>{message}</p>
+              </div>
+            )}
+          </>
+        )}
+
+        <ToastContainer />
+      </div>
     </div>
   );
 };

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
-import '../assets/styles/Activity4Screen4.css'; // Importa el archivo CSS
+import styles from '../assets/styles/Activity4L3Screen.module.css'; // Importa el archivo CSS Module
 import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
 import { useSelector } from 'react-redux';
 
@@ -27,7 +27,7 @@ const imagePairs = [
     image1: Image1a,
     image2: Image1b,
     differences: [
-      { id: 1, name: 'dedo', x: 215, y: 390, width: 70, height: 60 },
+      { id: 1, name: 'dedo', x: 215, y: 460, width: 50, height: 60 },
       { id: 2, name: 'arboles', x: 68, y: 150, width: 85, height: 85 },
     ],
   },
@@ -36,7 +36,7 @@ const imagePairs = [
     image1: Image2a,
     image2: Image2b,
     differences: [
-      { id: 3, name: 'nube', x: 343, y: 157, width: 75, height: 75 },
+      { id: 3, name: 'nube', x: 410, y: 166, width: 60, height: 60 },
       { id: 4, name: 'puerta', x: 248, y: 425, width: 75, height: 75 },
     ],
   },
@@ -54,8 +54,8 @@ const imagePairs = [
     image1: Image4a,
     image2: Image4b,
     differences: [
-      { id: 7, name: 'piedra', x: 376, y: 140, width: 60, height: 60 },
-      { id: 8, name: 'lampara', x: 145, y: 165, width: 60, height: 60 },
+      { id: 7, name: 'piedra', x: 450, y: 140, width: 50, height: 50 },
+      { id: 8, name: 'lampara', x: 70, y: 165, width: 50, height: 50 },
     ],
   },
   {
@@ -63,7 +63,7 @@ const imagePairs = [
     image1: Image5a,
     image2: Image5b,
     differences: [
-      { id: 9, name: 'tela', x: 360, y: 330, width: 70, height: 70 },
+      { id: 9, name: 'tela', x: 400, y: 310, width: 50, height: 80 },
       { id: 10, name: 'pelo', x: 210, y: 10, width: 80, height: 55 },
     ],
   },
@@ -136,6 +136,8 @@ const ActivityScreen4 = () => {
 
           if (selectedOptions.length + 1 === currentPair.differences.length && !isLastPair) {
             setTimeout(() => handleNextPair(), 500);
+          } else if (isLastPair && selectedOptions.length + 1 === currentPair.differences.length) {
+            setTimeout(() => handleSubmit(), 500);
           }
         }
       }
@@ -157,11 +159,11 @@ const ActivityScreen4 = () => {
   };
 
   const handleSubmit = () => {
-    if (isLastPair) {
+    if (differencesFound < 10) {
+      setShowDialog(true);
+    } else {
       setGameFinished(true);
       saveActivity();
-    } else if (differencesFound < 10) {
-      setShowDialog(true);
     }
   };
 
@@ -218,55 +220,82 @@ const ActivityScreen4 = () => {
   };
 
   return (
-    <div className="find-differences-game">
-      <h1>Encuentra las 10 diferencias</h1>
-      <p>Tiempo: {timer} segundos</p>
-      <p>Puntaje: {points}</p>
-      <p>Diferencias encontradas: {differencesFound} de 10</p>
-      <p>{feedbackMessage}</p>
-
-      <div className="images-container" onClick={handleImageClick}>
-        <img src={currentPair.image1} alt="Imagen 1" />
-        <img src={currentPair.image2} alt="Imagen 2" />
-      </div>
-
-      {!gameFinished && (
-        <div className="button-container">
-          {!isLastPair && (
-            <button onClick={handleNextPair} className="next-button">
-              Siguiente Par
-            </button>
-          )}
-          <button onClick={handleSubmit} className="submit-button">
-            Enviar Respuesta
-          </button>
-        </div>
-      )}
-
-      {gameFinished && (
-        <div className="results">
-          <p>Correctas: {correctAnswers}</p>
-          <p>Incorrectas: {incorrectAnswers}</p>
-          <p>Tiempo total: {timer} segundos</p>
-          <p>Puntaje final: {points}</p>
-        </div>
-      )}
-
-      {showDialog && (
-        <div className="dialog-box-overlay">
-          <div className="dialog-box">
-            <p>Has encontrado {differencesFound} de 10 diferencias.</p>
-            <p>¿Quieres terminar el juego o continuar buscando?</p>
-            <button onClick={handleEndGame} className="dialog-button terminate">
-              Terminar
-            </button>
-            <button onClick={handleContinuePlaying} className="dialog-button continue">
-              Continuar Jugando
-            </button>
+    <div className={styles.background}>
+      <div className={styles.container}>
+        <h1 className={styles.title}>Encuentra las 10 diferencias</h1>
+        <div className={styles.infoContainer}>
+          <div className={styles.infoBox}>
+            <span>Puntaje:</span>
+            <span className={styles.score}>{points}</span>
+          </div>
+          <div className={styles.infoBox}>
+            <span>Tiempo:</span>
+            <span className={styles.timer}>{timer} segundos</span>
+          </div>
+          <div className={styles.infoBox}>
+            <span>Diferencias encontradas:</span>
+            <span className={styles.differencesFound}>{differencesFound} de 10</span>
           </div>
         </div>
-      )}
 
+        {/* Mostrar estado de guardado de la actividad */}
+        {isRecording && <p className={styles.recording}>Guardando actividad...</p>}
+        {recordError && <p className={styles.error}>Error: {recordError?.data?.message || recordError.message}</p>}
+
+        {/* Mostrar contenido del juego o mensaje de finalización */}
+        {gameFinished ? (
+          <div className={styles.gameFinished}>
+            <h2 className={styles.gameTitle}>¡Juego terminado!</h2>
+            <p>Tiempo total: {timer} segundos</p>
+            <p>Puntaje final: {points}</p>
+            <p>Correctas: {correctAnswers}</p>
+            <p>Incorrectas: {incorrectAnswers}</p>
+          </div>
+        ) : (
+          <>
+            <div className={styles.imagesContainer} onClick={handleImageClick}>
+              <img src={currentPair.image1} alt={`Imagen ${currentPair.id} Parte 1`} className={styles.image} />
+              <img src={currentPair.image2} alt={`Imagen ${currentPair.id} Parte 2`} className={styles.image} />
+            </div>
+
+            <div className={styles.buttonContainer}>
+              {!isLastPair && (
+                <button onClick={handleNextPair} className={styles.nextButton}>
+                  Siguiente Par
+                </button>
+              )}
+              <button onClick={handleSubmit} className={styles.submitButton}>
+                Enviar Respuesta
+              </button>
+            </div>
+
+            {/* Mostrar mensaje de retroalimentación */}
+            {feedbackMessage && (
+              <div className={styles.feedbackBox}>
+                <p>{feedbackMessage}</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Diálogo de confirmación */}
+        {showDialog && (
+          <div className={styles.dialogOverlay}>
+            <div className={styles.dialogBox}>
+              <p>Has encontrado {differencesFound} de 10 diferencias.</p>
+              <p>¿Quieres terminar el juego o continuar buscando?</p>
+              <div className={styles.dialogButtons}>
+                <button onClick={handleEndGame} className={`${styles.dialogButton} ${styles.terminate}`}>
+                  Terminar
+                </button>
+                <button onClick={handleContinuePlaying} className={`${styles.dialogButton} ${styles.continue}`}>
+                  Continuar Jugando
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
       <ToastContainer />
     </div>
   );

@@ -9,6 +9,7 @@ import { useRecordActivityMutation, useGetActiveTreatmentQuery } from '../slices
 import { useSelector } from 'react-redux';
 import 'react-toastify/dist/ReactToastify.css'; // Importar estilos de react-toastify
 import io from 'socket.io-client';
+import styles from '../assets/styles/ActivityScreen1.module.css'; // Importa los estilos específicos
 
 const ActivityScreen1 = () => {
   const [board, setBoard] = useState(() => createBoard(1)); // Nivel 1
@@ -134,29 +135,49 @@ const ActivityScreen1 = () => {
   }, [userInfo, activeTreatment]);
 
   return (
-    <div className='activity-screen'>
-      <h1>Encuentra la letra (Nivel 1)</h1>
-      {isRecording && <p>Guardando actividad...</p>}
-      {isTreatmentLoading && <p>Cargando tratamiento activo...</p>}
-      {treatmentError && <p>Error: {treatmentError.message}</p>}
-      {gamesToWin > 0 && <p>Tiempo: {miliseconds} segundos</p>}
-      {gamesToWin === 0 ? (
-        <p>Felicidades, tu tiempo fue: {miliseconds} segundos</p>
-      ) : (
-        <p>Juegos restantes: {gamesToWin}</p>
-      )}
-      {gamesToWin > 0 && (
-        <div className='board'>
-          {board.map((row, rowIdx) => (
-            <div key={rowIdx} className='row'>
-              {row.map((letter, letterIdx) => (
-                <Cell key={letterIdx} handleClick={handleClick} {...letter} />
-              ))}
-            </div>
-          ))}
+    <div className={styles.background}>
+      <div className={styles.container}>
+        <h1 className={styles.title}>Encuentra la letra (Nivel 1)</h1>
+        <div className={styles.infoContainer}>
+          <div className={styles.infoBox}>
+            <span>Tiempo: </span>
+            <span className={styles.timer}>{miliseconds} segundos</span>
+          </div>
+          <div className={styles.infoBox}>
+            <span>Juegos restantes: </span>
+            <span className={styles.gamesToWin}>{gamesToWin}</span>
+          </div>
         </div>
-      )}
-      <ToastContainer />
+
+        {isRecording && <p className={styles.recording}>Guardando actividad...</p>}
+        {isTreatmentLoading && <p className={styles.loading}>Cargando tratamiento activo...</p>}
+        {treatmentError && <p className={styles.error}>Error: {treatmentError.message}</p>}
+
+        {gamesToWin === 0 ? (
+          <div className={styles.gameFinished}>
+            <h2>¡Felicidades!</h2>
+            <p>Tu tiempo fue: <strong>{miliseconds} segundos</strong></p>
+            <p>Puntaje final: <strong>5</strong></p>
+            <button 
+              className={styles.finishButton}
+              onClick={() => navigate('/api/treatments/activities')}
+            >
+              Volver a Actividades
+            </button>
+          </div>
+        ) : (
+          <div className={styles.board}>
+            {board.map((row, rowIdx) => (
+              <div key={rowIdx} className={styles.row}>
+                {row.map((letter, letterIdx) => (
+                  <Cell key={letterIdx} handleClick={handleClick} {...letter} />
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+        <ToastContainer />
+      </div>
     </div>
   );
 };
