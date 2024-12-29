@@ -394,200 +394,295 @@ const NumberSequenceActivity = ({
   );
 };
 
+
 /**
- * Actividad 2: Concentración (letras)
- * El usuario escucha una serie de letras (A, B, C, etc.) a un ritmo de una por segundo.
- * Debe presionar la barra espaciadora (o un botón "Golpe") cada vez que escuche la letra 'A'.
- * Si comete más de un error => 0 puntos, si comete 0 o 1 error => 1 punto
+ * ACTIVIDAD: CONCENTRACIÓN (LETRAS)
+ * El sistema lee una serie de letras (lettersSequence) secuencialmente, sin intervalos fijos.
+ * Cada letra:
+ *   1. Se muestra en pantalla.
+ *   2. Se pronuncia por TTS.
+ *   3. Al finalizar la locución de la letra, se espera 1 segundo y se avanza a la siguiente.
+ * El usuario debe presionar "Golpe" sólo si la letra actual es 'A'.
+ *   - Más de un error => puntaje = 0
+ *   - 0 o 1 error => puntaje = 1
  */
-const ConcentracionActivity = ({
+export const ConcentracionActivity = ({
   onComplete,
   onPrevious,
   isFirstModule,
 }) => {
+  // TTS
   const [isSpeakingLocal, setIsSpeakingLocal] = useState(false);
   const [ttsSupported, setTtsSupported] = useState(true);
-  const [playing, setPlaying] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [errors, setErrors] = useState(0);
-  const [hits, setHits] = useState([]);
-  const [letters] = useState(["F", "B", "A", "C", "C", "A", "D", "A", "G"]); // Ejemplo
-  const intervalRef = useRef(null);
 
-  // Al montar
+  // Estado de actividad
+  const [playing, setPlaying] = useState(false);   // Indica si se está reproduciendo la secuencia
+  const [currentLetter, setCurrentLetter] = useState("--");
+  const [currentIndex, setCurrentIndex] = useState(-1); // Índice de la letra actual
+  const [errors, setErrors] = useState(0);
+  const [hits, setHits] = useState([]);            // Índices donde el usuario golpeó con la letra 'A'
+  const [showContinue, setShowContinue] = useState(false);
+
+  // Secuencia de letras
+  const lettersSequence = [
+    "F", "B", "A", "C", "M", "N", "A", "A",
+    "J", "K", "L", "B", "A", "F", "A", "K",
+    "D", "E", "A", "A", "A", "J", "A", "M",
+    "O", "F", "A", "A", "B"
+  ];
+
   useEffect(() => {
+    // Verificar TTS
     if (!window.speechSynthesis) {
       setTtsSupported(false);
     }
-    // Listener para la barra espaciadora
-    const handleKeydown = (e) => {
-      if (playing && e.code === "Space") {
-        e.preventDefault();
-        handleGolpe();
-      }
-    };
-    window.addEventListener("keydown", handleKeydown);
+    // Cleanup
     return () => {
-      window.removeEventListener("keydown", handleKeydown);
       stopSequence();
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
     };
-  }, [playing]);
+  }, []);
 
+  /**
+   * Leer instrucciones por TTS, sin iniciar automáticamente la secuencia.
+   */
   const speakInstructions = () => {
     if (!ttsSupported) return;
     if (isSpeakingLocal) {
+      // Cancelar cualquier locución en curso
       window.speechSynthesis.cancel();
       setIsSpeakingLocal(false);
     } else {
-      const text =
-        "Voy a leerle una serie de letras. Cada vez que diga la letra A, presione la barra espaciadora o el botón de 'Golpe'. Si la letra no es A, no haga nada.";
-      const utterance = new SpeechSynthesisUtterance(text);
+      const instructions =
+        "Actividad de Concentración con Letras. Se leerá una serie de letras una por una. Presione el botón Golpe únicamente cuando la letra sea A. Si se comete más de un error, la puntuación será cero.";
+      const utterance = new SpeechSynthesisUtterance(instructions);
       utterance.lang = "es-ES";
-      utterance.onend = () => setIsSpeakingLocal(false);
+      utterance.onend = () => {
+        setIsSpeakingLocal(false);
+      };
       window.speechSynthesis.speak(utterance);
       setIsSpeakingLocal(true);
     }
   };
 
+  /**
+   * Inicia la secuencia de forma secuencial:
+   *   - currentIndex avanza letra a letra
+   *   - Para cada letra, se llama a readLetter -> TTS -> al terminar TTS se espera 1s -> next
+   */
   const startSequence = () => {
     setPlaying(true);
-    setCurrentIndex(0);
     setErrors(0);
     setHits([]);
-    intervalRef.current = setInterval(() => {
-      // Avanzar la secuencia
-      setCurrentIndex((prevIndex) => {
-        const newIndex = prevIndex + 1;
-        if (newIndex >= letters.length) {
-          stopSequence();
-        }
-        return newIndex;
-      });
-    }, 1000);
+    setShowContinue(false);
+
+    // Comenzar desde la primera letra
+    readAllLetters(0);
   };
 
+  /**
+   * Función recursiva que lee una letra y, tras acabar la locución + 1s,
+   * pasa a la siguiente.
+   */
+  const readAllLetters = (index) => {
+    if (!ttsSupported) return;
+    if (index >= lettersSequence.length) {
+      // Fin de la secuencia
+      setPlaying(false);
+      setCurrentLetter("--");
+      setShowContinue(true);
+      return;
+    }
+
+    const letter = lettersSequence[index];
+    setCurrentLetter(letter);
+    setCurrentIndex(index);
+
+    // Hablar la letra
+    const utterance = new SpeechSynthesisUtterance(letter);
+    utterance.lang = "es-ES";
+    utterance.onend = () => {
+      // Al terminar de pronunciar la letra, esperar 1 segundo y pasar a la siguiente
+      setTimeout(() => {
+        readAllLetters(index + 1);
+      }, 1000);
+    };
+    window.speechSynthesis.speak(utterance);
+  };
+
+  /**
+   * Detener secuencia manualmente (por si se desea).
+   */
   const stopSequence = () => {
     setPlaying(false);
-    clearInterval(intervalRef.current);
+    setCurrentLetter("--");
+    window.speechSynthesis.cancel();
   };
 
-  // Cada vez que la letra sea 'A' => presionar golpe
-  // Si presiona cuando no es 'A', es error
+  /**
+   * Manejador del botón "Golpe": si la letra actual es 'A' => acierto, sino => error.
+   */
   const handleGolpe = () => {
-    const currentLetter = letters[currentIndex];
-    if (currentLetter === "A") {
+    if (!playing) return; // Sólo válido si se está reproduciendo
+    if (currentIndex < 0 || currentIndex >= lettersSequence.length) return;
+
+    const expectedLetter = lettersSequence[currentIndex];
+    if (expectedLetter === "A") {
       setHits((prev) => [...prev, currentIndex]);
     } else {
-      setErrors((prev) => prev + 1);
+      setErrors((prev) => {
+        const newErrors = prev + 1;
+        // Si se supera 1 error, se detiene y finaliza
+        if (newErrors > 1) {
+          stopSequence();
+          setShowContinue(true);
+        }
+        return newErrors;
+      });
     }
   };
 
-  const handleFinish = () => {
-    stopSequence();
-    // Calcular puntaje
-    // 0 => si comete más de 1 error. 1 => si 0 o 1 error.
+  /**
+   * Al presionar "Continuar", se calcula el puntaje y se llama onComplete.
+   */
+  const handleContinue = () => {
     const score = errors > 1 ? 0 : 1;
     onComplete(score, { hits, errors });
   };
 
   return (
     <div className="module-container">
+      {/* Título y botón de instrucciones */}
       <div className="d-flex align-items-center mb-2">
         <h5 className="mb-0">Actividad 2: Concentración (Letras)</h5>
         <Button
           variant="link"
           onClick={speakInstructions}
-          disabled={isSpeakingLocal}
+          // Deshabilitar mientras habla o mientras reproduce la secuencia
+          disabled={isSpeakingLocal || playing}
           className="ms-3 text-decoration-none"
-          style={{ whiteSpace: "nowrap", minWidth: "180px" }}
+          style={{ whiteSpace: "nowrap", minWidth: "220px" }}
         >
           {isSpeakingLocal ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
         </Button>
       </div>
-      <p className="mt-3">
-        Voy a leer una serie de letras a un ritmo de una por segundo. Cada vez que la letra sea 'A', presione "Golpe" o la barra espaciadora.
+
+      <p>
+        Se leerá una serie de letras de una en una. Cuando la letra sea "A", presione "Golpe". Más de 1 error ⇒ 0 pts.
       </p>
 
-      {!playing ? (
-        <Button variant="primary" onClick={startSequence} className="mb-3">
-          Iniciar Lectura de Letras
+      {/* Botón para iniciar la lectura */}
+      {!playing && !showContinue && (
+        <Button
+          variant="primary"
+          onClick={startSequence}
+          className="d-block mx-auto mb-3"
+          style={{ minWidth: "180px" }}
+        >
+          Iniciar Lectura
         </Button>
-      ) : (
-        <>
-          <h5>Letra actual:</h5>
-          <p style={{ fontSize: "2rem" }}>
-            {letters[currentIndex] || "--"}
-          </p>
-          <Button variant="danger" onClick={stopSequence} className="mb-3">
-            Detener
-          </Button>
-        </>
       )}
 
+      {/* Mostrar estado de la secuencia */}
+      {playing && (
+        <div className="text-center mt-3">
+          <Spinner animation="grow" variant="primary" />
+          <p className="mt-2">
+            Leyendo letra: <strong>{currentLetter}</strong>
+          </p>
+        </div>
+      )}
+
+      {/* Botón Golpe */}
       <Button
         variant="success"
         onClick={handleGolpe}
         className="d-block mx-auto mb-3"
-        style={{ minWidth: "150px" }}
+        style={{ minWidth: "200px", textDecoration: "none" }}
         disabled={!playing}
       >
         Golpe
       </Button>
 
-      <div className="mt-3">
-        <p>
-          Errores: <strong>{errors}</strong>
-        </p>
-        <p>
-          Golpes acertados: <strong>{hits.length}</strong>
-        </p>
+      {/* Errores y Aciertos */}
+      <div className="mt-3 text-center">
+        <p>Errores: {errors}</p>
+        <p>Golpes acertados: {hits.length}</p>
       </div>
 
-      <div className="d-flex justify-content-between mt-4">
-        <Button
-          variant="secondary"
-          onClick={onPrevious}
-          disabled={isFirstModule}
-        >
-          Regresar
-        </Button>
-        <Button variant="success" onClick={handleFinish}>
-          Continuar
-        </Button>
-      </div>
+      {/* Al terminar secuencia => mostrar puntaje */}
+      {showContinue && (
+        <div className="text-center mt-3">
+          <Alert variant={errors > 1 ? "danger" : "success"}>
+            {errors > 1
+              ? "Has cometido más de un error. Puntaje: 0."
+              : "Puntaje: 1."}
+          </Alert>
+          <Button
+            variant="success"
+            onClick={handleContinue}
+            className="mt-2"
+            style={{ minWidth: "150px" }}
+          >
+            Continuar
+          </Button>
+        </div>
+      )}
+
+      {/* Botón para regresar al módulo anterior, sólo si aún no finaliza */}
+      {!showContinue && (
+        <div className="d-flex justify-content-center mt-4">
+          <Button
+            variant="secondary"
+            onClick={onPrevious}
+            disabled={isFirstModule}
+            style={{ minWidth: "150px" }}
+          >
+            Regresar
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
 
 /**
- * Actividad 3: Substracción en secuencia de 7
- * Se pide al usuario restar 7 sucesivamente desde 100, 5 veces.
+ * ACTIVIDAD 3: SUBSTRACCIÓN EN SECUENCIA DE 7
+ * El usuario empieza en 100 y resta 7 sucesivamente, 5 veces.
  * Puntuación:
- *  - 0 si ninguna sustracción es correcta
- *  - 1 si 1 sustracción correcta
- *  - 2 si 2 o 3 correctas
- *  - 3 si 4 o 5 correctas
- * Nota: Si se equivoca en la primera pero sigue restando 7 correctamente => se cuentan como correctas
+ *   0 => ninguna sustracción correcta
+ *   1 => 1 sustracción correcta
+ *   2 => 2 o 3 correctas
+ *   3 => 4 o 5 correctas
+ * Nota: Si se equivoca en la primera pero luego resta 7 correctamente, se cuentan las siguientes como correctas.
  */
-const Sub7Activity = ({
+
+export const Sub7Activity = ({
   onComplete,
   onPrevious,
   isFirstModule,
 }) => {
   const [isSpeakingLocal, setIsSpeakingLocal] = useState(false);
   const [ttsSupported, setTtsSupported] = useState(true);
-  const [steps, setSteps] = useState([]);  // Para almacenar entradas del usuario
-  const correctSequence = [93, 86, 79, 72, 65]; // 5 sustracciones
+  const [steps, setSteps] = useState([]); // Guardar las entradas del usuario
+  const [manualInput, setManualInput] = useState("");
+  const [currentNumber, setCurrentNumber] = useState(100);
+  const [showFinalButtons, setShowFinalButtons] = useState(false);
 
   useEffect(() => {
     if (!window.speechSynthesis) {
       setTtsSupported(false);
     }
+    return () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, []);
 
+  // Función para leer instrucciones
   const speakInstructions = () => {
     if (!ttsSupported) return;
     if (isSpeakingLocal) {
@@ -595,27 +690,35 @@ const Sub7Activity = ({
       setIsSpeakingLocal(false);
     } else {
       const text =
-        "Ahora me gustaría que calcule 100 menos 7, y así sucesivamente. Continúe restando 7 a la cifra anterior.";
+        "Actividad de Substracción en Secuencia de 7. Comience con el número 100 y reste 7 sucesivamente. Ingrese cada resultado en el campo de texto a continuación. Presione 'Continuar' para finalizar y calcular su puntaje o 'Terminar' para finalizar la actividad sin puntaje.";
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "es-ES";
-      utterance.onend = () => setIsSpeakingLocal(false);
+      utterance.onend = () => {
+        setIsSpeakingLocal(false);
+      };
       window.speechSynthesis.speak(utterance);
       setIsSpeakingLocal(true);
     }
   };
 
-  // Manejo manual
-  const [manualInput, setManualInput] = useState("");
-
+  // Función para manejar la entrada manual
   const handleAddStep = () => {
     if (!manualInput.trim()) return;
     const val = parseInt(manualInput, 10);
-    if (!isNaN(val)) {
-      setSteps((prev) => [...prev, val]);
+    if (isNaN(val)) {
+      alert("Por favor, ingrese un número válido.");
+      return;
     }
+
+    // Validar sustracción
+    const expected = currentNumber - 7;
+    const isCorrect = val === expected;
+    setSteps((prev) => [...prev, { value: val, correct: isCorrect }]);
+    setCurrentNumber(val);
     setManualInput("");
   };
 
+  // Manejar presionar Enter en el campo de texto
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -623,118 +726,159 @@ const Sub7Activity = ({
     }
   };
 
-  const handleNext = () => {
-    // Calcular #correctas. "Si el usuario se equivoca en la 1, pero luego resta 7 correctamente..."
-    // Es decir, si step[i] = step[i-1] - 7, se considera correcto.
-    // Empezamos en 100, steps are [X1, X2, X3, X4, X5]
-    // i=0 => compare with 93
-    // i=1 => compare with step[i-1] - 7
+  // Función para calcular el puntaje
+  const calculateScore = () => {
     let correctCount = 0;
     let previousValue = 100;
+
     for (let i = 0; i < steps.length && i < 5; i++) {
       const expected = previousValue - 7;
-      if (steps[i] === expected) {
-        correctCount++;
-        previousValue = steps[i];
+      if (steps[i].value === expected) {
+        correctCount += 1;
+        previousValue = steps[i].value;
       } else {
-        // Si falló, el nuevo 'previousValue' es steps[i]
-        // pero si sigue restando 7 correctamente, cuenta.
-        previousValue = steps[i];
+        previousValue = steps[i].value;
       }
     }
 
     let score = 0;
-    switch (correctCount) {
-      case 0:
-        score = 0;
-        break;
-      case 1:
-        score = 1;
-        break;
-      case 2:
-      case 3:
-        score = 2;
-        break;
-      default:
-        // 4 o 5
-        score = 3;
-        break;
-    }
+    if (correctCount === 1) score = 1;
+    else if (correctCount === 2 || correctCount === 3) score = 2;
+    else if (correctCount === 4 || correctCount === 5) score = 3;
+
     onComplete(score, { steps });
+  };
+
+  // Función para terminar la actividad sin puntaje
+  const handleTerminate = () => {
+    onComplete(0, { steps });
   };
 
   return (
     <div className="module-container">
       <div className="d-flex align-items-center mb-2">
-        <h5 className="mb-0">Actividad 3: Substracción en secuencia de 7</h5>
+        <h5 className="mb-0">Actividad 3: Substracción en Secuencia de 7</h5>
         <Button
           variant="link"
           onClick={speakInstructions}
           disabled={isSpeakingLocal}
           className="ms-3 text-decoration-none"
-          style={{ whiteSpace: "nowrap", minWidth: "180px" }}
+          style={{ whiteSpace: "nowrap", minWidth: "220px" }}
         >
           {isSpeakingLocal ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
         </Button>
       </div>
 
       <p>
-        “Ahora me gustaría que calcule 100 menos 7, y así sucesivamente:
-        continúe restando 7 a la cifra de su respuesta anterior, hasta que le
-        pida que pare.” Escriba o hable los resultados.
+        Comience con el número <strong>100</strong> y reste 7 sucesivamente.
+        Ingrese cada resultado en el campo de texto a continuación.
       </p>
 
-      <div className="text-center mb-3">
-        <h6>Comience en 100</h6>
+      {/* Mostrar el número actual */}
+      <div className="text-center my-4">
+        <h2>{currentNumber}</h2>
       </div>
 
       {/* Entrada manual */}
-      <Form
-        onSubmit={(e) => e.preventDefault()}
-        className="mt-3 d-flex flex-column align-items-center"
-      >
-        <Form.Control
-          type="text"
-          placeholder="Escriba la cifra resultante"
-          value={manualInput}
-          onChange={(e) => setManualInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          style={{ maxWidth: "350px" }}
-        />
-        <Button
-          variant="success"
-          onClick={handleAddStep}
-          className="mt-2"
+      {!showFinalButtons && (
+        <Form
+          onSubmit={(e) => e.preventDefault()}
+          className="d-flex flex-column align-items-center"
         >
-          Agregar
-        </Button>
-      </Form>
+          <Form.Control
+            type="number"
+            placeholder="Ingrese el siguiente número"
+            value={manualInput}
+            onChange={(e) => setManualInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            style={{ maxWidth: "300px" }}
+          />
+          <Button
+            variant="success"
+            onClick={handleAddStep}
+            className="mt-2"
+            style={{ minWidth: "150px" }}
+          >
+            Agregar
+          </Button>
+        </Form>
+      )}
 
+      {/* Lista de números ingresados */}
       <div className="mt-3">
         <p>Números ingresados:</p>
         <ul>
-          {steps.map((num, index) => (
-            <li key={index}>{num}</li>
+          {steps.map((step, index) => (
+            <li key={index} style={{ color: step.correct ? "green" : "red" }}>
+              {step.value} {step.correct ? "✔️" : "❌"}
+            </li>
           ))}
         </ul>
       </div>
 
-      <div className="d-flex justify-content-between mt-4">
-        <Button
-          variant="secondary"
-          onClick={onPrevious}
-          // Podría estar deshabilitado si es la primera.
-          disabled={isFirstModule}
-        >
-          Regresar
-        </Button>
-        <Button variant="success" onClick={handleNext}>
-          Continuar
-        </Button>
-      </div>
+      {/* Botones para continuar o terminar */}
+      {!showFinalButtons && steps.length > 0 && (
+        <div className="d-flex justify-content-center mt-4">
+          <Button
+            variant="success"
+            onClick={calculateScore}
+            className="me-2"
+            style={{ minWidth: "150px" }}
+          >
+            Continuar
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleTerminate}
+            style={{ minWidth: "150px" }}
+          >
+            Terminar
+          </Button>
+        </div>
+      )}
+
+      {/* Mostrar puntaje y botón para continuar */}
+      {showFinalButtons && (
+        <div className="text-center mt-3">
+          <Alert variant="info">
+            {steps.length === 0
+              ? "No se han ingresado sustracciones."
+              : `Puntaje obtenido: ${
+                  steps.filter(step => step.correct).length > 1
+                    ? steps.filter(step => step.correct).length <= 3
+                      ? 2
+                      : 3
+                    : steps.filter(step => step.correct).length
+                }`}
+          </Alert>
+          <Button
+            variant="success"
+            onClick={calculateScore}
+            className="mt-2"
+            style={{ minWidth: "150px" }}
+          >
+            Continuar
+          </Button>
+        </div>
+      )}
+
+      {/* Botón para regresar al módulo anterior */}
+      {!showFinalButtons && (
+        <div className="d-flex justify-content-center mt-4">
+          <Button
+            variant="secondary"
+            onClick={onPrevious}
+            disabled={isFirstModule}
+            style={{ minWidth: "150px" }}
+          >
+            Regresar
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
+
 
 /**
  * Módulo principal de Atención, con 3 actividades:
