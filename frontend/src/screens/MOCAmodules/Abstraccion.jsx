@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Button, Row, Col, Alert, Form, Spinner } from "react-bootstrap";
-import { FaPlay, FaStop } from "react-icons/fa";
+import { FaPlay, FaStop, FaMicrophone } from "react-icons/fa";
 
 const Abstraccion = ({ onComplete, onPrevious, isFirstModule }) => {
+  // Definición de los pares de objetos y sus respuestas aceptadas
   const pairs = [
     {
       objects: "un tren y una bicicleta",
@@ -16,32 +17,43 @@ const Abstraccion = ({ onComplete, onPrevious, isFirstModule }) => {
     },
   ];
 
+  // Índice del par actual (0 o 1)
   const [currentPairIndex, setCurrentPairIndex] = useState(0);
-  const [activity1Score, setActivity1Score] = useState(null);
-  const [activity2Score, setActivity2Score] = useState(null);
 
+  // Puntajes de cada actividad (un par es una actividad)
+  const [activityScores, setActivityScores] = useState([null, null]);
+
+  // Guardar las respuestas del usuario { pairIndex, input, correct }
+  const [pairAnswers, setPairAnswers] = useState([]);
+
+  // Control de TTS
+  const [ttsSupported, setTtsSupported] = useState(true);
+  const [isSpeakingLocal, setIsSpeakingLocal] = useState(false);
+
+  // Control de reconocimiento de voz
   const [useVoice, setUseVoice] = useState(true);
   const [listening, setListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [ttsSupported, setTtsSupported] = useState(true);
+  const recognitionRef = useRef(null);
 
+  // Botones e inputs
   const [transcript, setTranscript] = useState("");
   const [manualInput, setManualInput] = useState("");
   const [confirmation, setConfirmation] = useState(false);
-  const [isSpeakingLocal, setIsSpeakingLocal] = useState(false);
   const [hasHeardPair, setHasHeardPair] = useState(false);
 
-  const recognitionRef = useRef(null);
+  // Revisar si se está reproduciendo alguna instrucción general
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
+  // Inicializa TTS
   useEffect(() => {
     if (!window.speechSynthesis) {
       setTtsSupported(false);
     }
   }, []);
 
+  // Inicializa SpeechRecognition
   useEffect(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       setUseVoice(false);
@@ -69,12 +81,17 @@ const Abstraccion = ({ onComplete, onPrevious, isFirstModule }) => {
     };
 
     recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
   }, []);
 
+  // TTS para leer instrucciones generales
   const speakInstructions = (text) => {
-    if (!ttsSupported) {
-      return;
-    }
+    if (!ttsSupported) return;
     if (isSpeaking) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
@@ -89,15 +106,14 @@ const Abstraccion = ({ onComplete, onPrevious, isFirstModule }) => {
     }
   };
 
+  // TTS para cada par de objetos
   const speakPair = (text) => {
     if (!ttsSupported) return;
     if (isSpeakingLocal) {
       window.speechSynthesis.cancel();
       setIsSpeakingLocal(false);
     } else {
-      const utterance = new SpeechSynthesisUtterance(
-        "Dígame en qué se parecen " + text
-      );
+      const utterance = new SpeechSynthesisUtterance("Dígame en qué se parecen " + text);
       utterance.lang = "es-ES";
       utterance.onend = () => {
         setIsSpeakingLocal(false);
@@ -108,22 +124,22 @@ const Abstraccion = ({ onComplete, onPrevious, isFirstModule }) => {
     }
   };
 
+  // Iniciar reconocimiento de voz
   const handleListen = () => {
     if (!recognitionRef.current) {
       alert("Reconocimiento de voz no disponible.");
       return;
     }
-
     if (!hasHeardPair) {
       alert("Primero debe escuchar las instrucciones para este par de objetos antes de responder.");
       return;
     }
-
     setListening(true);
     setTranscript("");
     recognitionRef.current.start();
   };
 
+  // Detener reconocimiento de voz
   const handleStop = () => {
     if (recognitionRef.current && listening) {
       recognitionRef.current.stop();
@@ -131,6 +147,7 @@ const Abstraccion = ({ onComplete, onPrevious, isFirstModule }) => {
     setListening(false);
   };
 
+  // Normalizar texto para comparación
   const normalizeText = (text) => {
     return text
       .toLowerCase()
@@ -141,33 +158,51 @@ const Abstraccion = ({ onComplete, onPrevious, isFirstModule }) => {
       .replace(/\s+/g, " ");
   };
 
+  // Confirmar la respuesta del usuario
   const handleConfirm = () => {
-    const inputText = normalizeText(transcript || manualInput);
     const pair = pairs[currentPairIndex];
-    const correct = pair.acceptedAnswers.some((ans) => inputText.includes(ans));
+    const inputText = normalizeText(transcript || manualInput);
 
-    if (currentPairIndex === 0) {
-      setActivity1Score(correct ? 1 : 0);
-    } else if (currentPairIndex === 1) {
-      setActivity2Score(correct ? 1 : 0);
-    }
+    const isCorrect = pair.acceptedAnswers.some((ans) => inputText.includes(ans));
 
+    // Guardar la respuesta en pairAnswers
+    setPairAnswers((prev) => [
+      ...prev,
+      {
+        pairIndex: currentPairIndex,
+        input: (transcript || manualInput).trim(),
+        correct: isCorrect,
+      },
+    ]);
+
+    // Setear el score en la posición [currentPairIndex]
+    const newScores = [...activityScores];
+    newScores[currentPairIndex] = isCorrect ? 1 : 0;
+    setActivityScores(newScores);
+
+    // Limpiar
     setManualInput("");
     setTranscript("");
     setConfirmation(false);
 
     if (currentPairIndex < pairs.length - 1) {
+      // Pasar al siguiente par
       setCurrentPairIndex(currentPairIndex + 1);
       setHasHeardPair(false);
-    } 
+    } else {
+      // Si era el último par
+      handleFinish(newScores);
+    }
   };
 
+  // Permite reintentar la misma respuesta
   const handleRetry = () => {
     setTranscript("");
     setManualInput("");
     setConfirmation(false);
   };
 
+  // Manejar enter en el input manual
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -177,150 +212,165 @@ const Abstraccion = ({ onComplete, onPrevious, isFirstModule }) => {
     }
   };
 
-  const handleNext = () => {
-    const totalScore = (activity1Score || 0) + (activity2Score || 0);
-    onComplete(
+  // Finaliza el modulo y llama onComplete
+  const handleFinish = (scores) => {
+    // Calcular total
+    const totalScore = scores.reduce((a, b) => a + (b || 0), 0);
+    onComplete(totalScore, {
       totalScore,
-      {
-        activity1: activity1Score,
-        activity2: activity2Score
-      }
-    );
+      activity1: scores[0],
+      activity2: scores[1],
+      pairAnswers,
+    });
   };
 
-  const allActivitiesDone = activity1Score !== null && activity2Score !== null;
+  const allActivitiesDone = activityScores[0] !== null && activityScores[1] !== null;
 
   return (
     <div className="module-container">
-      <div className="d-flex align-items-center">
-        <h4>Abstracción</h4>
+      {/* Título e instrucciones */}
+      <div className="d-flex align-items-center mb-2">
+        <h4 className="mb-0">Abstracción</h4>
         <Button
           variant="link"
           onClick={() =>
-            speakInstructions(
-              "Le diré dos objetos y me gustaría que me diga en qué se parecen."
-            )
+            speakInstructions("Le diré dos objetos y me dirá en qué se parecen.")
           }
-          disabled={isSpeakingLocal}
+          disabled={isSpeaking}
+          className="ms-3 text-decoration-none"
+          style={{ whiteSpace: "nowrap", minWidth: "220px" }}
         >
-          {isSpeakingLocal ? <FaStop /> : <FaPlay />}
-        </Button>
-      </div>
-      <p>“Le diré dos objetos, y usted me dirá en qué se parecen.”</p>
-
-      <div className="d-flex justify-content-center mt-3">
-        <Row className="justify-content-center">
-          <Col md={8} className="text-center">
-            {currentPairIndex < pairs.length && !confirmation && (
-              <>
-                <p>
-                  Escuche los objetos y luego dígame en qué se parecen. Puede hablar o escribir su respuesta.
-                </p>
-                <Button
-                  variant="primary"
-                  onClick={() => speakPair(pairs[currentPairIndex].objects)}
-                  className="mb-3"
-                  disabled={isSpeakingLocal || hasHeardPair}
-                >
-                  Escuchar objetos
-                </Button>
-              </>
-            )}
-
-            {currentPairIndex < pairs.length && !confirmation && (
-              <>
-                <Form onSubmit={(e) => e.preventDefault()} className="mt-3">
-                  <Form.Group>
-                    <Form.Control
-                      type="text"
-                      placeholder="Escriba aquí su respuesta"
-                      value={manualInput}
-                      onChange={(e) => setManualInput(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      disabled={!hasHeardPair || listening}
-                    />
-                  </Form.Group>
-                  <Button
-                    variant="success"
-                    onClick={() => setConfirmation(true)}
-                    className="me-2 mt-2"
-                    disabled={!manualInput.trim() || !hasHeardPair}
-                  >
-                    Confirmar
-                  </Button>
-                </Form>
-              </>
-            )}
-
-            {currentPairIndex < pairs.length && useVoice && !confirmation && (
-              listening ? (
-                <div>
-                  <Spinner animation="grow" variant="primary" />
-                  <p className="mt-2">Escuchando...</p>
-                  <Button variant="danger" onClick={handleStop}>
-                    Detener
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="primary"
-                  onClick={handleListen}
-                  disabled={!hasHeardPair}
-                >
-                  Hablar
-                </Button>
-              )
-            )}
-
-            {currentPairIndex < pairs.length && confirmation && (
-              <div className="mt-3">
-                <Alert variant="secondary">
-                  <p>¿Es correcta su respuesta?</p>
-                  <strong>"{transcript || manualInput}"</strong>
-                </Alert>
-                <Button
-                  variant="success"
-                  onClick={handleConfirm}
-                  className="me-2"
-                >
-                  Sí
-                </Button>
-                <Button variant="warning" onClick={handleRetry}>
-                  Reintentar
-                </Button>
-              </div>
-            )}
-
-            {currentPairIndex >= pairs.length && (
-              <div className="mt-3">
-                <p>¡Actividades completadas!</p>
-              </div>
-            )}
-          </Col>
-        </Row>
-      </div>
-
-      <div className="d-flex justify-content-center mt-4">
-        <Button variant="info" onClick={() => setCurrentPairIndex(0)} className="me-2">
-          Ir a Actividad 1
-        </Button>
-        <Button variant="info" onClick={() => setCurrentPairIndex(1)}>
-          Ir a Actividad 2
+          {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
         </Button>
       </div>
 
+      {/* Texto indicando lo que se está comparando */}
+      <p className="mb-4">Comparación de pares de objetos para identificar similitudes.</p>
+
+      {/* Contenido de la actividad */}
+      {currentPairIndex < pairs.length && !confirmation && (
+        <div className="text-center mt-3">
+          <p>
+            Escuche los objetos y luego dígame en qué se parecen. Puede hablar o escribir su respuesta.
+          </p>
+          <Button
+            variant="primary"
+            onClick={() => speakPair(pairs[currentPairIndex].objects)}
+            className="mb-3 d-block mx-auto"
+            disabled={isSpeakingLocal || hasHeardPair}
+            style={{ minWidth: "220px" }}
+          >
+            Escuchar objetos
+          </Button>
+        </div>
+      )}
+
+      {currentPairIndex < pairs.length && !confirmation && (
+        <div className="text-center">
+          <Form
+            onSubmit={(e) => e.preventDefault()}
+            className="mt-3 d-flex flex-column align-items-center"
+          >
+            <Form.Control
+              type="text"
+              placeholder="Escriba aquí su respuesta"
+              value={manualInput}
+              onChange={(e) => setManualInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={!hasHeardPair || listening}
+              style={{ maxWidth: "500px" }}
+            />
+            <Button
+              variant="success"
+              onClick={() => setConfirmation(true)}
+              className="me-2 mt-2"
+              disabled={!manualInput.trim() || !hasHeardPair}
+              style={{ minWidth: "220px" }}
+            >
+              Confirmar
+            </Button>
+          </Form>
+        </div>
+      )}
+
+      {currentPairIndex < pairs.length && useVoice && !confirmation && (
+        listening ? (
+          <div className="text-center mt-3 d-flex justify-content-center align-items-center">
+            <Spinner animation="grow" variant="primary" className="me-2" />
+            <Button
+              variant="danger"
+              onClick={handleStop}
+              style={{ minWidth: "220px" }}
+            >
+              Detener
+            </Button>
+          </div>
+        ) : (
+          <div className="text-center mt-3 d-flex justify-content-center">
+            <Button
+              variant="primary"
+              onClick={handleListen}
+              disabled={!hasHeardPair}
+              style={{ minWidth: "220px" }}
+            >
+              <FaMicrophone className="me-2" />
+              Hablar
+            </Button>
+          </div>
+        )
+      )}
+
+      {/* Confirmación de la respuesta actual */}
+      {currentPairIndex < pairs.length && confirmation && (
+        <div className="text-center mt-3">
+          <Alert variant="secondary">
+            <p>¿Es correcta su respuesta?</p>
+            <strong>"{transcript || manualInput}"</strong>
+          </Alert>
+          <div className="d-flex justify-content-center">
+            <Button
+              variant="warning"
+              onClick={handleRetry}
+              className="me-3"
+              style={{ minWidth: "120px" }}
+            >
+              Reintentar
+            </Button>
+            <Button
+              variant="success"
+              onClick={handleConfirm}
+              style={{ minWidth: "120px" }}
+            >
+              Sí
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Si se completaron las dos actividades */}
+      {currentPairIndex >= pairs.length && (
+        <div className="text-center mt-3">
+          <Alert variant="info">¡Actividades de Abstracción completadas!</Alert>
+        </div>
+      )}
+
+      {/* Botón de Regresar y sin los botones de debug de Actividad 1/2 */}
       <div className="d-flex justify-content-between mt-4">
         <Button
           variant="secondary"
           onClick={onPrevious}
           disabled={isFirstModule}
+          style={{ minWidth: "150px" }}
         >
           Regresar
         </Button>
+
+        {/* Botón Continuar sólo se habilita cuando las 2 actividades han terminado */}
         <Button
           variant="success"
-          onClick={handleNext}
+          onClick={() => handleFinish(activityScores)}
           disabled={!allActivitiesDone}
+          style={{ minWidth: "150px" }}
         >
           Continuar
         </Button>
