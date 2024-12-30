@@ -1,12 +1,15 @@
 /* Estilos para el contenedor principal */
 .login-page {
+    width: 40%; /* Ocupa el 40% del ancho de la pantalla */
+    height: 100%; /* Ocupa toda la altura */
+    /*background-color: rgba(255, 255, 255, 0.9);  */
     display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 2rem;
-    background-color: #ffffff; /* Fondo blanco para la página */
-    min-height: 100vh; /* Asegura que ocupe toda la altura de la ventana */
-}
+    align-items: center; /* Centra verticalmente */
+    justify-content: center; /* Centra horizontalmente */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Sombra para separación */
+    z-index: 2; /* Asegura que el formulario esté encima */
+    background-color: #ef4444;
+  }
 
 /* Contenedor del formulario con bordes animados */
 .form-wrapper {
@@ -227,3 +230,7 @@ a {
     color: #ef4444; /* Rojo */
     font-weight: bold;
 }
+
+/* Parte derecha: imagen de fondo */
+
+
