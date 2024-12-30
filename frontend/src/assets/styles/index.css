@@ -15,7 +15,7 @@ body {
   /* Altura completa de la ventana */
   box-sizing: border-box;
   /* Incluye bordes y padding en el tamaño */
-  overflow: hidden;
+  overflow: auto;
   /* Evita scroll innecesario */
 }
 

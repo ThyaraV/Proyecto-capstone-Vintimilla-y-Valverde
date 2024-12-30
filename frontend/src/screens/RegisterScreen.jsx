@@ -103,7 +103,9 @@ const RegisterScreen = () => {
     }
 
     if (!validateCedula(cardId)) {
-      toast.error("Cédula inválida. Asegúrate de que tenga 10 dígitos y sea coherente.");
+      toast.error(
+        "Cédula inválida. Asegúrate de que tenga 10 dígitos y sea coherente."
+      );
       return;
     }
 
@@ -137,10 +139,17 @@ const RegisterScreen = () => {
 
   return (
     <div className="register-container">
-     <div className="fullscreen-background2"></div>
+      <div className="fullscreen-background2"></div>
 
-        <div className="register-page">
-        
+      <div
+        className="register-page"
+        style={{
+          maxHeight: "80vh",
+          overflowY: "auto",
+          msOverflowStyle: "none", // IE 10+
+          scrollbarWidth: "none", // Firefox
+        }}
+      >
         <div className="form-wrapper2">
           <div className="form-inner2">
             <h2 id="form-title">Crea una cuenta</h2>
@@ -248,21 +257,22 @@ const RegisterScreen = () => {
               </div>
             </form>
           </div>
-        
 
-        <style>
-          {`
-          .no-navbar header {
+          <style>
+            {`
+            .no-navbar header {
+                display: none;
+            }
+            /* Ocultamos la scrollbar en navegadores basados en WebKit (Chrome, Safari, Opera) */
+            .register-page::-webkit-scrollbar {
               display: none;
-          }
-        `}
-        </style>
+            }
+            `}
+          </style>
+        </div>
       </div>
     </div>
-    </div>
-
   );
-
 };
 
 export default RegisterScreen;

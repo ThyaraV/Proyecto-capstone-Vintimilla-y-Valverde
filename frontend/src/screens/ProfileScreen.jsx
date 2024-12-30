@@ -1,11 +1,31 @@
 import { useState, useEffect, useRef } from "react";
-import { Table, Form, Button, Row, Col } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Form,
+  Button,
+  Spinner,
+} from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import Loader from "../components/Loader";
 import { useProfileMutation } from "../slices/usersApiSlice";
 import { setCredentials } from "../slices/authSlice";
 import * as faceapi from "face-api.js";
+import {
+  FaUser,
+  FaUserCircle,
+  FaIdCard,
+  FaEnvelope,
+  FaPhone,
+  FaLock,
+  FaCamera,
+} from "react-icons/fa";
+
+// Importamos el archivo CSS
+import "../assets/styles/ProfileScreen.css";
 
 const ProfileScreen = () => {
   // Estados para los campos
@@ -18,15 +38,19 @@ const ProfileScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [faceDescriptor, setFaceDescriptor] = useState(null);
 
-  const videoRef = useRef();
-  const canvasRef = useRef();
+  // Referencias
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
+  // Redux
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.auth);
 
+  // Mutations
   const [updateProfile, { isLoading: loadingUpdateProfile }] =
     useProfileMutation();
 
+  // Efecto para setear datos de usuario en el form
   useEffect(() => {
     if (userInfo) {
       setName(userInfo.name);
@@ -37,6 +61,7 @@ const ProfileScreen = () => {
     }
   }, [userInfo]);
 
+  // Cargar modelos y pedir acceso a la cámara
   useEffect(() => {
     const loadModels = async () => {
       const MODEL_URL = "/models";
@@ -49,35 +74,42 @@ const ProfileScreen = () => {
       navigator.mediaDevices
         .getUserMedia({ video: {} })
         .then((stream) => {
-          videoRef.current.srcObject = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
         })
         .catch((err) => {
           console.error("Error accessing camera:", err);
+          toast.error("No se pudo acceder a la cámara.");
         });
     };
 
     loadModels().then(startVideo);
   }, []);
 
+  // Captura de rostro
   const captureFace = async () => {
     if (videoRef.current) {
       const detections = await faceapi
-        .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+        .detectSingleFace(
+          videoRef.current,
+          new faceapi.TinyFaceDetectorOptions()
+        )
         .withFaceLandmarks()
         .withFaceDescriptor();
-  
+
       if (detections) {
         const descriptor = detections.descriptor;
         const descriptorArray = Array.from(descriptor);
         setFaceDescriptor(descriptorArray);
-        toast.success("Face captured successfully!");
+        toast.success("¡Rostro capturado con éxito!");
       } else {
-        toast.error("No face detected. Please try again.");
+        toast.error("No se detectó ningún rostro. Inténtalo de nuevo.");
       }
     }
   };
 
-  // Función para validar cédula
+  // Validar cédula
   const validateCedula = (cedula) => {
     if (!/^\d{10}$/.test(cedula)) {
       return false;
@@ -101,33 +133,37 @@ const ProfileScreen = () => {
     return resultadoFinal === verificador;
   };
 
-  // Función para validar correo electrónico
+  // Validar correo
   const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
   };
 
+  // Submit del formulario
   const submitHandler = async (e) => {
     e.preventDefault();
 
-    // Validar la cédula
+    // Validar cédula
     if (!validateCedula(cardId)) {
-      toast.error('Cédula inválida. Asegúrate de que tenga 10 dígitos y sea coherente.');
+      toast.error(
+        "Cédula inválida. Asegúrate de que tenga 10 dígitos y sea coherente."
+      );
       return;
     }
 
     // Validar email
     if (!validateEmail(email)) {
-      toast.error('Correo electrónico inválido. Asegúrate de que sea un formato válido.');
+      toast.error("Correo electrónico inválido. Formato incorrecto.");
       return;
     }
 
     // Validar contraseñas
     if (password !== confirmPassword) {
-      toast.error('Las contraseñas no coinciden');
+      toast.error("Las contraseñas no coinciden.");
       return;
     }
 
+    // Actualizar perfil
     try {
       const res = await updateProfile({
         _id: userInfo._id,
@@ -148,112 +184,171 @@ const ProfileScreen = () => {
   };
 
   return (
-    <Row>
-      <Col md={3}>
-        <h2>Perfil de Usuario</h2>
+    <Container className="profile-screen-container">
+      <Row className="justify-content-center">
+        <Col md={10} lg={8}>
+          <Card className="profile-card">
+            <Card.Header className="profile-card-header">
+              <FaUserCircle size={24} className="me-2" />
+              <h4 className="mb-0">Perfil de Usuario</h4>
+            </Card.Header>
+            <Card.Body>
+              <Form onSubmit={submitHandler}>
+                <Row>
+                  <Col md={6}>
+                    {/* Nombre */}
+                    <Form.Group controlId="name" className="mb-3">
+                      <Form.Label>
+                        <FaUser className="me-1" /> Nombre
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        placeholder="Ingresa tu nombre"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                      />
+                    </Form.Group>
 
-        <Form onSubmit={submitHandler}>
-          <Form.Group controlId="name" className="my-2">
-            <Form.Label>Nombre</Form.Label>
-            <Form.Control
-              type="name"
-              placeholder="Ingrese su nombre"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            ></Form.Control>
-          </Form.Group>
+                    {/* Apellido */}
+                    <Form.Group controlId="lastName" className="mb-3">
+                      <Form.Label>
+                        <FaUser className="me-1" /> Apellido
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        placeholder="Ingresa tu apellido"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                      />
+                    </Form.Group>
 
-          <Form.Group controlId="lastName" className="my-2">
-            <Form.Label>Apellido</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Ingrese su apellido"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-            ></Form.Control>
-          </Form.Group>
+                    {/* Cédula (read only) */}
+                    <Form.Group controlId="cardId" className="mb-3">
+                      <Form.Label>
+                        <FaIdCard className="me-1" /> Cédula
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={cardId}
+                        readOnly
+                        className="profile-readonly"
+                      />
+                      <Form.Text className="text-muted">
+                        Este campo no se puede editar
+                      </Form.Text>
+                    </Form.Group>
 
-          <Form.Group controlId="cardId" className="my-2">
-            <Form.Label>Cédula</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Ingrese su cédula"
-              value={cardId}
-              readOnly
-              style={{
-                backgroundColor: "#f0f0f0", // Color de fondo gris claro
-                color: "#6c757d", // Color de texto gris oscuro
-                cursor: "not-allowed" // Cambiar el cursor para indicar que no es editable
-              }}
-            ></Form.Control>
-          </Form.Group>
+                    {/* Email (read only) */}
+                    <Form.Group controlId="email" className="mb-3">
+                      <Form.Label>
+                        <FaEnvelope className="me-1" /> Correo electrónico
+                      </Form.Label>
+                      <Form.Control
+                        type="email"
+                        value={email}
+                        readOnly
+                        className="profile-readonly"
+                      />
+                      <Form.Text className="text-muted">
+                        Este campo no se puede editar
+                      </Form.Text>
+                    </Form.Group>
 
-          <Form.Group controlId="email" className="my-2">
-            <Form.Label>Correo electrónico</Form.Label>
-            <Form.Control
-              type="email"
-              placeholder="Ingrese su email"
-              value={email}
-              readOnly
-              style={{
-                backgroundColor: "#f0f0f0",
-                color: "#6c757d",
-                cursor: "not-allowed"
-              }}
-            ></Form.Control>
-          </Form.Group>
+                    {/* Teléfono */}
+                    <Form.Group controlId="phoneNumber" className="mb-3">
+                      <Form.Label>
+                        <FaPhone className="me-1" /> Número de teléfono
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        placeholder="Ej. 0999999999"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
 
-          <Form.Group controlId="phoneNumber" className="my-2">
-            <Form.Label>Número de teléfono</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Ingrese su número de teléfono"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-            ></Form.Control>
-          </Form.Group>
+                  <Col md={6}>
+                    {/* Contraseña */}
+                    <Form.Group controlId="password" className="mb-3">
+                      <Form.Label>
+                        <FaLock className="me-1" /> Contraseña
+                      </Form.Label>
+                      <Form.Control
+                        type="password"
+                        placeholder="Ingresa tu contraseña"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                    </Form.Group>
 
-          <Form.Group controlId="password" className="my-2">
-            <Form.Label>Contraseña</Form.Label>
-            <Form.Control
-              type="password"
-              placeholder="Ingrese su contraseña"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            ></Form.Control>
-          </Form.Group>
+                    {/* Confirmar Contraseña */}
+                    <Form.Group controlId="confirmPassword" className="mb-3">
+                      <Form.Label>
+                        <FaLock className="me-1" /> Confirmar Contraseña
+                      </Form.Label>
+                      <Form.Control
+                        type="password"
+                        placeholder="Confirma tu contraseña"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                    </Form.Group>
 
-          <Form.Group controlId="confirmPassword" className="my-3">
-            <Form.Label>Confirmar Contraseña</Form.Label>
-            <Form.Control
-              type="password"
-              placeholder="Confirme su contraseña"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            ></Form.Control>
-          </Form.Group>
+                    {/* Sección de cámara y captura de rostro */}
+                    <div className="mb-3">
+                      <Form.Label className="d-block">
+                        <FaCamera className="me-1" /> Captura de Rostro
+                      </Form.Label>
+                      <div className="profile-camera-section">
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          muted
+                          className="profile-video"
+                        />
+                        <canvas ref={canvasRef} style={{ display: "none" }} />
+                        <Button
+                          type="button"
+                          variant="outline-secondary"
+                          className="mt-2"
+                          onClick={captureFace}
+                        >
+                          Capturar Rostro
+                        </Button>
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
 
-          <div className="my-3">
-            <video ref={videoRef} autoPlay muted width="300" height="300" />
-            <canvas ref={canvasRef} style={{ display: "none" }} />
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={captureFace}
-              className="mt-2"
-            >
-              Capturar rostro
-            </Button>
-          </div>
+                {/* Botón de actualizar */}
+                <div className="d-flex justify-content-end">
+                  <Button type="submit" variant="primary">
+                    {loadingUpdateProfile ? (
+                      <>
+                        <Spinner
+                          as="span"
+                          animation="border"
+                          size="sm"
+                          role="status"
+                          aria-hidden="true"
+                        />{" "}
+                        Actualizando...
+                      </>
+                    ) : (
+                      "Actualizar"
+                    )}
+                  </Button>
+                </div>
+              </Form>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
-          <Button type="Submit" variant="primary" className="my-2">
-            Actualizar
-          </Button>
-
-          {loadingUpdateProfile && <Loader />}
-        </Form>
-      </Col>
-    </Row>
+      {/* Loader si lo necesitas */}
+      {loadingUpdateProfile && <Loader />}
+    </Container>
   );
 };
 
