@@ -136,117 +136,133 @@ const RegisterScreen = () => {
   };
 
   return (
-    <div className="login-page">
-      <div className="form-wrapper">
-        <div className="form-inner">
-          <h2 id="form-title">Registrarse</h2>
-          <form className="form-space" onSubmit={submitHandler}>
-            <label className="input-label">
-              Nombre <span className="required-asterisk">*</span>
-            </label>
-            <input
-              className="input-field"
-              placeholder="Ingrese su nombre"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+    <div className="register-container">
+     <div className="fullscreen-background2"></div>
 
-            <label className="input-label">
-              Apellido <span className="required-asterisk">*</span>
-            </label>
-            <input
-              className="input-field"
-              placeholder="Ingrese su apellido"
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-            />
+        <div className="register-page">
+        
+        <div className="form-wrapper2">
+          <div className="form-inner2">
+            <h2 id="form-title">Crea una cuenta</h2>
+            <form className="form-grid" onSubmit={submitHandler}>
+              <div className="form-row">
+                <div className="form-column">
+                  <label className="input-label">
+                    Nombre <span className="required-asterisk">*</span>
+                  </label>
+                  <input
+                    className="input-field2"
+                    placeholder="Ingrese su nombre"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
 
-            <label className="input-label">
-              Cédula <span className="required-asterisk">*</span>
-            </label>
-            <input
-              className="input-field"
-              placeholder="Ingrese su cédula"
-              type="text"
-              value={cardId}
-              onChange={(e) => setCardId(e.target.value)}
-            />
+                  <label className="input-label">
+                    Apellido <span className="required-asterisk">*</span>
+                  </label>
+                  <input
+                    className="input-field2"
+                    placeholder="Ingrese su apellido"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
 
-            <label className="input-label">
-              Email <span className="required-asterisk">*</span>
-            </label>
-            <input
-              className="input-field"
-              placeholder="Ingrese su email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+                  <label className="input-label">
+                    Cédula <span className="required-asterisk">*</span>
+                  </label>
+                  <input
+                    className="input-field2"
+                    placeholder="Ingrese su cédula"
+                    type="text"
+                    value={cardId}
+                    onChange={(e) => setCardId(e.target.value)}
+                  />
 
-            <label className="input-label">
-              Teléfono <span className="required-asterisk">*</span>
-            </label>
-            <input
-              className="input-field"
-              placeholder="Ingrese su número de teléfono"
-              type="text"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-            />
+                  <label className="input-label">
+                    Email <span className="required-asterisk">*</span>
+                  </label>
+                  <input
+                    className="input-field2"
+                    placeholder="Ingrese su email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
 
-            <label className="input-label">
-              Contraseña <span className="required-asterisk">*</span>
-            </label>
-            <input
-              className="input-field"
-              placeholder="Ingrese una contraseña"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+              <div className="form-row">
+                <div className="form-column">
+                  <label className="input-label">
+                    Teléfono <span className="required-asterisk">*</span>
+                  </label>
+                  <input
+                    className="input-field2"
+                    placeholder="Ingrese su número de teléfono"
+                    type="text"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                  />
 
-            <label className="input-label">
-              Confirmar Contraseña <span className="required-asterisk">*</span>
-            </label>
-            <input
-              className="input-field"
-              placeholder="Confirme su contraseña"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
+                  <label className="input-label">
+                    Contraseña <span className="required-asterisk">*</span>
+                  </label>
+                  <input
+                    className="input-field2"
+                    placeholder="Ingrese una contraseña"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
 
-            <button
-              className="primary-button"
-              type="submit"
-              disabled={isLoading}
-            >
-              {isLoading ? "Registrando..." : "Registrarse"}
-            </button>
+                  <label className="input-label">
+                    Confirmar Contraseña <span className="required-asterisk">*</span>
+                  </label>
+                  <input
+                    className="input-field2"
+                    placeholder="Confirme su contraseña"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+              </div>
 
-            <div className="text-center" style={{ marginTop: "1rem" }}>
-              <Link
-                to={redirect ? `/login?redirect=${redirect}` : "/login"}
-                className="link"
+              <button
+                className="primary-button"
+                type="submit"
+                disabled={isLoading}
               >
-                ¿Ya tienes una cuenta? Iniciar sesión
-              </Link>
-            </div>
-          </form>
-        </div>
-      </div>
+                {isLoading ? "Registrando..." : "Registrarse"}
+              </button>
 
-      <style>
-        {`
+              <div className="text-center" style={{ marginTop: "1rem" }}>
+                <Link
+                  to={redirect ? `/login?redirect=${redirect}` : "/login"}
+                  className="link"
+                >
+                  ¿Ya tienes una cuenta? Iniciar sesión
+                </Link>
+              </div>
+            </form>
+          </div>
+        
+
+        <style>
+          {`
           .no-navbar header {
               display: none;
           }
         `}
-      </style>
+        </style>
+      </div>
     </div>
+    </div>
+
   );
+
 };
 
 export default RegisterScreen;

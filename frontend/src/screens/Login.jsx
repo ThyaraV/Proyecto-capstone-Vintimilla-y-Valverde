@@ -7,8 +7,9 @@ import { toast } from "react-toastify";
 import * as faceapi from "face-api.js";
 import axios from "axios";
 import logo from "../assets/logoHigea.png";
-import cerebro from "../assets/cerebro.png";
-
+import { AiOutlineMail } from "react-icons/ai"; // Importa el ícono
+import { AiOutlineLock } from "react-icons/ai"; // Importa el ícono de candado
+import TypingAnimation from "./TypingAnimation";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -232,108 +233,114 @@ const Login = () => {
   };
 
   return (
-    
-    <div className="login-container"
-      style={{
-        backgroundImage: `url(${cerebro})`, // La imagen de fondo
-        backgroundSize: "cover", // Asegura que cubra todo el área
-        backgroundPosition: "center", // Centra la imagen
-        backgroundRepeat: "no-repeat", // Evita que se repita
-        width: "100vw", // Asegura que ocupe el ancho completo de la ventana
-        height: "100vh", // Asegura que ocupe la altura completa de la ventana
-      }}
-    >
-      <div className="login-page">
-        <div className="form-wrapper">
-          <div className="form-inner">
-            <img src={logo}
-              alt="Logo de la empresa"
-              style={{
-                width: "100px", // Ancho
-                height: "100px", // Alto
-                objectFit: "contain", // Mantener proporciones
-                margin: "0 auto 20px auto", // Centrar horizontalmente y agregar espacio inferior
-                display: "block", // Necesario para centrar con margin
-                borderRadius: "50%", // Opcional, para redondear la imagen
-                paddingTop: "10px", // Espacio adicional en la parte superior
-              }}
-            />
-            <form className="form-space" onSubmit={submitHandler}>
-              <input
-                className="input-field"
-                placeholder="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+    <>
+    <div className="typing-animation-container">
+        <TypingAnimation
+          text="creemos en un enfoque integral y personalizado para el tratamiento de la salud mental y neurológica. Combinamos técnicas modernas con un enfoque humanista para abordar los problemas desde una perspectiva completa y personalizada."
+          speed={150}
+        />
+      </div>
+      <div className="login-container">
+        
+        <div className="login-page">
+          <div className="form-wrapper">
+            <div className="form-inner">
+              <img src={logo}
+                alt="Logo de la empresa"
+                style={{
+                  width: "100px", // Ancho
+                  height: "100px", // Alto
+                  objectFit: "contain", // Mantener proporciones
+                  margin: "0 auto 20px auto", // Centrar horizontalmente y agregar espacio inferior
+                  display: "block", // Necesario para centrar con margin
+                  borderRadius: "50%", // Opcional, para redondear la imagen
+                  paddingTop: "10px", // Espacio adicional en la parte superior
+                }}
               />
-
-              {!isFaceLogin && (
-                <input
-                  className="input-field"
-                  placeholder="Contraseña"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              )}
-
-              <button
-                className="primary-button"
-                type="submit"
-                disabled={isLoading}
-              >
-                {isFaceLogin ? "Iniciando Sesión..." : "Iniciar Sesión"}
-              </button>
-
-              {!isFaceLogin && (
-                <button
-                  type="button"
-                  onClick={handleFaceLogin}
-                  className="secondary-button"
-                >
-                  Iniciar con Reconocimiento Facial
-                </button>
-              )}
-
-              <div className="text-center" style={{ marginTop: "1rem" }}>
-                <Link
-                  to={redirect ? `/register?redirect=${redirect}` : "/register"}
-                  className="link"
-                >
-                  ¿Nuevo usuario? Regístrate
-                </Link>
-              </div>
-
-              {isLoading && <div className="loader">Cargando...</div>}
-
-              {faceRecognitionStatus && (
-                <div className="alert-error">{faceRecognitionStatus}</div>
-              )}
-
-              {matchPercentage && (
-                <div className="alert-success">
-                  Porcentaje de coincidencia: {matchPercentage}%
+              <form className="form-space" onSubmit={submitHandler}>
+                <div className="mailfield">
+                  <AiOutlineMail className="icon" />
+                  <input
+                    className="input-field"
+                    placeholder="Correo electrónico"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
-              )}
-            </form>
+                {!isFaceLogin && (
+                  <div className="mailfield2">
+                    <div className="iconfliend">
+                      <AiOutlineLock className="icon2" />
+                    </div>
+                    <input
+                      className="input-field"
+                      placeholder="Contraseña"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                )}
 
-            {showVideo && (
-              <div className="video-overlay">
-                <div className="video-container">
-                  <video ref={videoRef} autoPlay muted></video>
-                  <canvas ref={canvasRef}></canvas>
-                  <div className="button-group-popup">
-                    <button onClick={handleDetectAgain} className="secondary-button purple">Ingresar</button>
-                    <button onClick={handleNormalLogin} className="secondary-button yellow">Volver al Inicio Normal</button>
+
+                <button
+                  className="primary-button"
+                  type="submit"
+                  disabled={isLoading}
+                >
+                  {isFaceLogin ? "Iniciando Sesión..." : "Iniciar Sesión"}
+                </button>
+
+                {!isFaceLogin && (
+                  <button
+                    type="button"
+                    onClick={handleFaceLogin}
+                    className="secondary-button"
+                  >
+                    Iniciar con reconocimiento facial
+                  </button>
+                )}
+
+                <div className="text-center" style={{ marginTop: "1rem" }}>
+                  <Link
+                    to={redirect ? `/register?redirect=${redirect}` : "/register"}
+                    className="link"
+                  >
+                    ¿Nuevo usuario? Regístrate
+                  </Link>
+                </div>
+
+                {isLoading && <div className="loader">Cargando...</div>}
+
+                {faceRecognitionStatus && (
+                  <div className="alert-error">{faceRecognitionStatus}</div>
+                )}
+
+                {matchPercentage && (
+                  <div className="alert-success">
+                    Porcentaje de coincidencia: {matchPercentage}%
+                  </div>
+                )}
+              </form>
+
+              {showVideo && (
+                <div className="video-overlay">
+                  <div className="video-container">
+                    <video ref={videoRef} autoPlay muted></video>
+                    <canvas ref={canvasRef}></canvas>
+                    <div className="button-group-popup">
+                      <button onClick={handleDetectAgain} className="secondary-button purple">Ingresar</button>
+                      <button onClick={handleNormalLogin} className="secondary-button yellow">Volver al Inicio Normal</button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
 
-        <style>
-          {`
+          <style>
+            {`
     .no-navbar header {
         display: none;
     }
@@ -373,11 +380,16 @@ const Login = () => {
         margin-top: 15px;
     }
     `}
-        </style>
+          </style>
+        </div>
+        <div className="fullscreen-background"> </div>
       </div>
-      
-    </div>
+
+    </>
+
   );
+
+
 };
 
 export default Login;
