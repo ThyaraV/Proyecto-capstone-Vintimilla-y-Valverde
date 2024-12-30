@@ -1,3 +1,5 @@
+// src/screens/FluidezVerbalActivityLevel2.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button, Form, Spinner } from "react-bootstrap";
 import { FaPlay, FaStop } from "react-icons/fa";
@@ -6,6 +8,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useRecordActivityMutation } from '../slices/treatmentSlice';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+
+// Importa el CSS Module del Nivel 1
+import styles from '../assets/styles/FluidezVerbalActivityM.module.css';
 
 const FluidezVerbalActivityLevel2 = ({
   onComplete = () => {}, 
@@ -102,7 +107,7 @@ const FluidezVerbalActivityLevel2 = ({
 
     recognition.onerror = () => {
       setListening(false);
-      alert("Error al reconocer la voz. Intente de nuevo.");
+      toast.error("Error al reconocer la voz. Intente de nuevo.");
     };
 
     recognition.onend = () => {
@@ -162,11 +167,11 @@ const FluidezVerbalActivityLevel2 = ({
 
   const handleListen = () => {
     if (!recognitionRef.current) {
-      alert("Reconocimiento de voz no disponible.");
+      toast.error("Reconocimiento de voz no disponible.");
       return;
     }
     if (!isRunning) {
-      alert("Primero inicie el tiempo antes de hablar.");
+      toast.error("Primero inicie el tiempo antes de hablar.");
       return;
     }
     setListening(true);
@@ -224,82 +229,107 @@ const FluidezVerbalActivityLevel2 = ({
   };
 
   return (
-    <div className="module-container">
-      <div className="d-flex align-items-center">
-        <h4>
-          Fluidez verbal - Combinación "{currentPrefix}" {/* Mostrar la combinación de dos letras */}
-        </h4>
-        <Button
-          variant="link"
-          onClick={() =>
-            speakInstructions(
-              `Me gustaría que me diga el mayor número posible de palabras que comiencen por la combinación "${currentPrefix}". Puede hablar o escribirlas. ¿Está listo? Presione el botón para iniciar.`
-            )
-          }
-        >
-          {isSpeaking ? <FaStop /> : <FaPlay />}
-        </Button>
-      </div>
-      <p>
-        Me gustaría que me diga el mayor número posible de palabras que comiencen por la combinación "{currentPrefix}". Puede hablar o escribirlas. Presione el botón para iniciar.
-      </p>
-      {!isRunning ? (
-        <div className="text-center">
-          <Button variant="primary" onClick={handleStart}>
-            Iniciar
-          </Button>
+    <div className={styles.background}>
+      <div className={styles.container}>
+        {/* Encabezado de la Actividad */}
+        <div className={styles.activityHeader}>
+          <h4 className={styles.title}>
+            Fluidez verbal - Combinación "{currentPrefix}"
+          </h4>
         </div>
-      ) : (
-        <>
-          <div className="text-center mb-3">
-            <h5>Tiempo restante: {timer}s</h5>
+
+        {/* Instrucciones */}
+        <p className={styles.instructions}>
+          Me gustaría que me diga el mayor número posible de palabras que comiencen por la combinación "{currentPrefix}". Puede hablar o escribirlas. Presione el botón para iniciar.
+        </p>
+
+        {/* Botón de Inicio */}
+        {!isRunning ? (
+          <div className="text-center">
+            <Button variant="primary" onClick={handleStart}>
+              Iniciar
+            </Button>
           </div>
-          <div className="d-flex justify-content-center align-items-center mb-4">
-            {useVoice && !listening ? (
-              <Button variant="primary" onClick={handleListen} className="me-3">
-                Hablar
-              </Button>
-            ) : listening ? (
-              <div className="d-flex align-items-center me-3">
-                <Spinner animation="grow" variant="primary" className="me-2" />
-                <Button variant="danger" onClick={handleStopListening}>
-                  Detener
+        ) : (
+          <>
+            {/* Temporizador */}
+            <div className={styles.infoBox}>
+              <span>Tiempo: </span>
+              <span className={styles.timer}>{timer} segundos</span>
+            </div>
+
+            {/* Controles de la Actividad */}
+            <div className={styles.controlsContainer}>
+              {useVoice && !listening ? (
+                <Button variant="primary" onClick={handleListen}>
+                  Hablar
                 </Button>
-              </div>
-            ) : null}
-            <Form onSubmit={(e) => e.preventDefault()} className="d-flex">
-              <Form.Control
-                type="text"
-                placeholder={`Escriba una palabra que comience con "${currentPrefix}"`}
-                value={inputWord}
-                onChange={handleInputChange}
-                onKeyPress={handleKeyPress}
-              />
-              <Button
-                variant="success"
-                onClick={handleAddWord}
-                className="ms-2"
-              >
-                Agregar
-              </Button>
-            </Form>
-          </div>
-          <div>
-            <h5>Palabras registradas:</h5>
-            <ul>
-              {wordList.map((word, index) => (
-                <li key={index}>{word}</li>
-              ))}
-            </ul>
-          </div>
-        </>
-      )}
-      <div className="d-flex justify-content-between mt-4">
-        <Button variant="secondary" onClick={onPrevious} disabled={isFirstModule}>
-          Regresar
-        </Button>
+              ) : listening ? (
+                <div className={styles.listeningContainer}>
+                  <Spinner animation="grow" variant="primary" />
+                  <Button variant="danger" onClick={handleStopListening}>
+                    Detener
+                  </Button>
+                </div>
+              ) : null}
+
+              {/* Formulario de Ingreso de Palabras */}
+              <Form onSubmit={(e) => e.preventDefault()} className={styles.formContainer}>
+                <Form.Control
+                  type="text"
+                  placeholder={`Escriba una palabra que comience con "${currentPrefix}"`}
+                  value={inputWord}
+                  onChange={handleInputChange}
+                  onKeyPress={handleKeyPress}
+                  className={styles.wordInput}
+                />
+                <Button
+                  variant="success"
+                  onClick={handleAddWord}
+                  className="ms-2"
+                >
+                  Agregar
+                </Button>
+              </Form>
+            </div>
+
+            {/* Listado de Palabras Registradas */}
+            <div className={styles.wordListSection}>
+              <h5>Palabras registradas:</h5>
+              <ul className={styles.wordList}>
+                {wordList.map((word, index) => (
+                  <li key={index}>{word}</li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
+
+        {/* Botones Finales (Opcional) */}
+        {/*
+        <div className={styles.footerButtons}>
+          <Button variant="secondary" onClick={onPrevious} disabled={isFirstModule}>
+            Regresar
+          </Button>
+          {isRunning && (
+            <Button
+              variant="primary"
+              onClick={calculateScore}
+              className={styles.submitButton}
+              disabled={timer > 0}
+            >
+              Enviar Respuestas
+            </Button>
+          )}
+        </div>*/}
+
+        {/* Mensajes de Estado */}
+        {isRecording && <p className={styles.recording}>Guardando actividad...</p>}
+        {recordError && <p className={styles.error}>Error: {recordError?.data?.message || recordError.message}</p>}
+
+        {/* Contenedor de Toasts */}
+        <ToastContainer />
       </div>
-      <ToastContainer />
     </div>
   );
 };
