@@ -1,3 +1,5 @@
+// src/screens/FluidezVerbalActivityM.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button, Form, Spinner } from "react-bootstrap";
 import { FaPlay, FaStop } from "react-icons/fa";
@@ -6,6 +8,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useRecordActivityMutation } from '../slices/treatmentSlice';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+
+// Importa el CSS Module
+import styles from '../assets/styles/FluidezVerbalActivityM.module.css';
 
 const FluidezVerbalActivityM = ({
   onComplete = () => {}, 
@@ -22,7 +27,7 @@ const FluidezVerbalActivityM = ({
   const [inputWord, setInputWord] = useState("");
   const [useVoice, setUseVoice] = useState(true);
   const [listening, setListening] = useState(false);
-  const [currentLetter, setCurrentLetter] = useState("M"); // <-- Nueva variable de estado para la letra
+  const [currentLetter, setCurrentLetter] = useState("M"); // Letra actual
   const recognitionRef = useRef(null);
   const scoreCalculatedRef = useRef(false); // Bandera para evitar doble guardado
 
@@ -80,7 +85,7 @@ const FluidezVerbalActivityM = ({
             .replace(/[\u0300-\u036f]/g, "")
             .replace(/[^a-z0-9\s]/g, "")
             .split(/\s+/)
-            .filter((w) => w && w[0] === currentLetter.toLowerCase() && w.length > 1); // <-- Uso de currentLetter
+            .filter((w) => w && w[0] === currentLetter.toLowerCase() && w.length > 1); // Filtrar palabras correctas
           setWordList((prevList) => {
             const combined = [...prevList, ...words];
             return combined.filter((word, index, self) => self.indexOf(word) === index);
@@ -91,7 +96,7 @@ const FluidezVerbalActivityM = ({
 
     recognition.onerror = () => {
       setListening(false);
-      alert("Error al reconocer la voz. Intente de nuevo.");
+      toast.error("Error al reconocer la voz. Intente de nuevo.");
     };
 
     recognition.onend = () => {
@@ -105,14 +110,13 @@ const FluidezVerbalActivityM = ({
         recognitionRef.current.abort();
       }
     };
-  }, [currentLetter]); // <-- Dependencia agregada
+  }, [currentLetter]); // Dependencia agregada
 
   const handleStart = () => {
     setIsRunning(true);
     scoreCalculatedRef.current = false; // Reiniciar la bandera al iniciar
     const letter = getRandomLetter();
     setCurrentLetter(letter); // Establecer la letra aleatoria
-    // Opcional: Reiniciar wordList y timer si es necesario
     setWordList([]);
     setTimer(60);
   };
@@ -129,7 +133,7 @@ const FluidezVerbalActivityM = ({
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9\s]/g, "")
         .trim();
-      if (word && word[0] === currentLetter.toLowerCase() && word.length > 1) { // <-- Uso de currentLetter
+      if (word && word[0] === currentLetter.toLowerCase() && word.length > 1) { // Validar palabra
         setWordList((prevList) =>
           [...prevList, word].filter(
             (w, idx, arr) => arr.indexOf(w) === idx
@@ -149,11 +153,11 @@ const FluidezVerbalActivityM = ({
 
   const handleListen = () => {
     if (!recognitionRef.current) {
-      alert("Reconocimiento de voz no disponible.");
+      toast.error("Reconocimiento de voz no disponible.");
       return;
     }
     if (!isRunning) {
-      alert("Primero inicie el tiempo antes de hablar.");
+      toast.error("Primero inicie el tiempo antes de hablar.");
       return;
     }
     setListening(true);
@@ -168,23 +172,22 @@ const FluidezVerbalActivityM = ({
   };
 
   const calculateScore = async () => {
-    // Ahora correctAnswers será la cantidad de palabras dichas, no 0/1
-    const validWords = wordList.filter((w) => w[0] === currentLetter.toLowerCase() && w.length > 1); // <-- Uso de currentLetter
+    const validWords = wordList.filter((w) => w[0] === currentLetter.toLowerCase() && w.length > 1);
     const correctAnswers = validWords.length;
-    const incorrectAnswers = 0;
+    const incorrectAnswers = 0; // Puedes ajustar según la lógica
     const timeUsed = 60 - timer;
     const patientId = userInfo ? userInfo._id : null;
     const activityId = activity ? activity._id : null;
 
     // Construir el objeto con la cantidad real de palabras en scoreObtained
     const activityData = {
-      activityId: activityId,
+      activityId: activityId, // ID de la actividad principal
       correctAnswers: correctAnswers,
       incorrectAnswers: incorrectAnswers,
       timeUsed: timeUsed,
       scoreObtained: parseFloat(correctAnswers.toFixed(2)), 
       progress: 'mejorando',
-      observations: 'El paciente completó la actividad de clasificación de palabras en nivel avanzado.',
+      observations: 'El paciente completó la actividad de fluidez verbal.',
       patientId: patientId,
       difficultyLevel: 1,
       image: '',
@@ -203,85 +206,101 @@ const FluidezVerbalActivityM = ({
       console.warn("No se pudo guardar la actividad: faltan datos (treatmentId, activityId o patientId).");
     }
 
-    // onComplete con la cantidad de palabras
     onComplete(correctAnswers);
   };
 
   return (
-    <div className="module-container">
-      <div className="d-flex align-items-center">
-        <h4>Fluidez verbal - Letra {currentLetter}</h4> {/* <-- Uso de currentLetter */}
-        <Button
-          variant="link"
-          onClick={() =>
-            speakInstructions(
-              `Me gustaría que me diga el mayor número posible de palabras que comiencen por la letra ${currentLetter}. Puede hablar o escribirlas. ¿Está listo? Presione el botón para iniciar.`
-            )
-          }
-        >
-          {isSpeaking ? <FaStop /> : <FaPlay />}
-        </Button>
-      </div>
-      <p>
-        Me gustaría que me diga el mayor número posible de palabras que comiencen por la letra {currentLetter}. Puede hablar o escribirlas. Presione el botón para iniciar.
-      </p>
-      {!isRunning ? (
-        <div className="text-center">
-          <Button variant="primary" onClick={handleStart}>
-            Iniciar
-          </Button>
+    <div className={styles.background}>
+      <div className={styles.container}>
+        <div className={styles.activityHeader}>
+          <h4 className={styles.title}>
+            Fluidez verbal - Letra {currentLetter}
+          </h4>
         </div>
-      ) : (
-        <>
-          <div className="text-center mb-3">
-            <h5>Tiempo restante: {timer}s</h5>
+
+        <p className={styles.instructions}>
+          Me gustaría que me diga el mayor número posible de palabras que comiencen por la letra {currentLetter}. Puede hablar o escribirlas. Presione el botón para iniciar.
+        </p>
+
+        {!isRunning ? (
+          <div className="text-center">
+            <Button variant="primary" onClick={handleStart}>
+              Iniciar
+            </Button>
           </div>
-          <div className="d-flex justify-content-center align-items-center mb-4">
-            {useVoice && !listening ? (
-              <Button variant="primary" onClick={handleListen} className="me-3">
-                Hablar
-              </Button>
-            ) : listening ? (
-              <div className="d-flex align-items-center me-3">
-                <Spinner animation="grow" variant="primary" className="me-2" />
-                <Button variant="danger" onClick={handleStopListening}>
-                  Detener
+        ) : (
+          <>
+            <div className={styles.infoBox}>
+            <span>Tiempo: </span>
+            <span className={styles.timer}>{timer} segundos</span>
+          </div>
+
+            <div className={styles.controlsContainer}>
+              {useVoice && !listening ? (
+                <Button variant="primary" onClick={handleListen}>
+                  Hablar
                 </Button>
-              </div>
-            ) : null}
-            <Form onSubmit={(e) => e.preventDefault()} className="d-flex">
-              <Form.Control
-                type="text"
-                placeholder={`Escriba una palabra que comience con la letra ${currentLetter}`}
-                value={inputWord}
-                onChange={handleInputChange}
-                onKeyPress={handleKeyPress}
-              />
-              <Button
-                variant="success"
-                onClick={handleAddWord}
-                className="ms-2"
-              >
-                Agregar
-              </Button>
-            </Form>
-          </div>
-          <div>
-            <h5>Palabras registradas:</h5>
-            <ul>
-              {wordList.map((word, index) => (
-                <li key={index}>{word}</li>
-              ))}
-            </ul>
-          </div>
-        </>
-      )}
-      <div className="d-flex justify-content-between mt-4">
-        <Button variant="secondary" onClick={onPrevious} disabled={isFirstModule}>
-          Regresar
-        </Button>
+              ) : listening ? (
+                <div className={styles.listeningContainer}>
+                  <Spinner animation="grow" variant="primary" />
+                  <Button variant="danger" onClick={handleStopListening}>
+                    Detener
+                  </Button>
+                </div>
+              ) : null}
+
+              <Form onSubmit={(e) => e.preventDefault()} className={styles.formContainer}>
+                <Form.Control
+                  type="text"
+                  placeholder={`Escriba una palabra que comience con la letra ${currentLetter}`}
+                  value={inputWord}
+                  onChange={handleInputChange}
+                  onKeyPress={handleKeyPress}
+                  className={styles.wordInput}
+                />
+                <Button
+                  variant="success"
+                  onClick={handleAddWord}
+                  className="ms-2"
+                >
+                  Agregar
+                </Button>
+              </Form>
+            </div>
+
+            <div className={styles.wordListSection}>
+              <h5>Palabras registradas:</h5>
+              <ul className={styles.wordList}>
+                {wordList.map((word, index) => (
+                  <li key={index}>{word}</li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
+        {/*
+        <div className={styles.footerButtons}>
+          <Button variant="secondary" onClick={onPrevious} disabled={isFirstModule}>
+            Regresar
+          </Button>
+          {isRunning && (
+            <Button
+              variant="primary"
+              onClick={calculateScore}
+              className={styles.submitButton}
+              disabled={timer > 0}
+            >
+              Enviar Respuestas
+            </Button>
+          )}
+        </div>*/}
+
+        {/* Mensajes de estado */}
+        {isRecording && <p className={styles.recording}>Guardando actividad...</p>}
+        {recordError && <p className={styles.error}>Error: {recordError?.data?.message || recordError.message}</p>}
+
+        <ToastContainer />
       </div>
-      <ToastContainer />
     </div>
   );
 };

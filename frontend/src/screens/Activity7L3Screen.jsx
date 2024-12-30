@@ -1,11 +1,10 @@
-// src/screens/ActivityScreenLevel3.jsx
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useRecordActivityMutation } from '../slices/treatmentSlice';
 import { useSelector } from 'react-redux';
+import styles from '../assets/styles/ActivityScreen7.module.css';
 
 // Definición de imágenes de nivel 3
 const imagesLevel3 = [
@@ -23,17 +22,14 @@ const imagesLevel3 = [
   { id: 12, src: require('../images/taco.jpg') },
   { id: 13, src: require('../images/burrito.jpg') },
   { id: 14, src: require('../images/papas.jpg') },
-  { id: 15, src: require('../images/hotdog.jpg') }
+  { id: 15, src: require('../images/hotdog.jpg') },
 ];
 
-// Función para barajar las cartas
-const shuffle = (array) => {
-  return array.sort(() => Math.random() - 0.5);
-};
+const shuffle = (array) => array.sort(() => Math.random() - 0.5);
 
 const ActivityScreenLevel3 = () => {
-  const { treatmentId, activityId } = useParams(); // Extrae treatmentId y activityId de la ruta
-  const [cards, setCards] = useState(shuffle([...imagesLevel3, ...imagesLevel3])); // Duplicar y mezclar las imágenes
+  const { treatmentId, activityId } = useParams();
+  const [cards, setCards] = useState(shuffle([...imagesLevel3, ...imagesLevel3]));
   const [flippedCards, setFlippedCards] = useState([]);
   const [matchedCards, setMatchedCards] = useState([]);
   const [score, setScore] = useState(0);
@@ -41,14 +37,11 @@ const ActivityScreenLevel3 = () => {
   const [timer, setTimer] = useState(0);
   const navigate = useNavigate();
 
-  // Obtener información del usuario autenticado desde el estado de Redux
   const userInfo = useSelector((state) => state.auth.userInfo);
-  const patientId = userInfo?._id;
 
-  // Hook de la mutación para registrar actividad
-  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+  const [recordActivity, { isLoading: isRecording, error: recordError }] =
+    useRecordActivityMutation();
 
-  // Iniciar el temporizador
   useEffect(() => {
     let interval;
     if (!gameFinished) {
@@ -59,30 +52,25 @@ const ActivityScreenLevel3 = () => {
     return () => clearInterval(interval);
   }, [gameFinished]);
 
-  // Manejar errores de la mutación
   useEffect(() => {
     if (recordError) {
       toast.error(`Error al guardar la actividad: ${recordError.data?.message || recordError.message}`);
     }
   }, [recordError]);
 
-  // Verificar si el juego ha finalizado y guardar la actividad
   useEffect(() => {
     if (matchedCards.length === imagesLevel3.length * 2) {
       setGameFinished(true);
       toast.success('¡Juego Terminado!');
       saveActivity();
 
-      // Navegar de regreso después de 6 segundos
       const timeout = setTimeout(() => {
-        navigate('/api/treatments/activities'); // Asegúrate de que esta ruta sea correcta
+        navigate('/api/treatments/activities');
       }, 6000);
       return () => clearTimeout(timeout);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchedCards, navigate]);
 
-  // Manejar el clic en una carta
   const handleCardClick = (index) => {
     if (flippedCards.length === 2 || flippedCards.includes(index) || matchedCards.includes(index)) {
       return;
@@ -108,90 +96,80 @@ const ActivityScreenLevel3 = () => {
     }
   };
 
-  // Función para guardar la actividad utilizando RTK Query
   const saveActivity = async () => {
-    // Validar que el usuario está autenticado
     if (!userInfo) {
       toast.error('Usuario no autenticado');
       return;
     }
 
-    // Validar que treatmentId está definido
     if (!treatmentId) {
       toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
       return;
     }
 
-    // Construir el objeto de datos de la actividad
     const activityData = {
-      activityId, // ID de la actividad principal desde los parámetros de la ruta
-      correctAnswers: matchedCards.length / 2, // Cada par correcto cuenta como una respuesta correcta
-      incorrectAnswers: (cards.length / 2) - (matchedCards.length / 2), // Total de pares - correctos
+      activityId,
+      correctAnswers: matchedCards.length / 2,
+      incorrectAnswers: cards.length / 2 - matchedCards.length / 2,
       timeUsed: timer,
-      scoreObtained: parseFloat(score.toFixed(2)), // Asegurar que es un número decimal
-      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
+      scoreObtained: parseFloat(score.toFixed(2)),
+      progress: 'mejorando',
       observations: 'El paciente completó el juego de memoria de nivel avanzado.',
-      patientId, // ID del paciente desde el estado de Redux
-      difficultyLevel: 3, // Nivel de dificultad
-      image: '', // No hay imagen asociada en esta actividad
+      patientId: userInfo._id,
+      difficultyLevel: 3,
     };
 
-    console.log('Guardando actividad con los siguientes datos:', activityData);
-
     try {
-      // Registrar la actividad dentro del tratamiento usando la mutación
       await recordActivity({ treatmentId, activityData }).unwrap();
-
-      console.log('Actividad guardada correctamente');
       toast.success('Actividad guardada correctamente');
     } catch (error) {
-      console.error('Error al guardar la actividad:', error);
-      // El error será manejado por el useEffect anterior
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Error al guardar la actividad: ${errorMessage}`);
     }
   };
 
   return (
-    <div className="memory-game-container">
-      <h1>Juego de Memoria - Nivel 3</h1>
-      <p>Tiempo: {timer} segundos</p>
-      <p>Puntuación: {score}</p>
-
-      <div className="memory-cards-container">
-        {cards.map((card, index) => (
-          <div
-            key={index}
-            className={`memory-card ${flippedCards.includes(index) || matchedCards.includes(index) ? 'flipped' : ''}`}
-            onClick={() => handleCardClick(index)}
-          >
-            <div className="memory-card-inner">
-              <div className="memory-card-front">
-                <img src={card.src} alt="Card" />
-              </div>
-              <div className="memory-card-back"></div>
-            </div>
+    <div className={styles.background}>
+      <div className={styles.container}>
+        <h1 className={styles.title}>Juego de Memoria - Nivel 3</h1>
+        <div className={styles.infoContainer}>
+          <div className={styles.infoBox}>
+            <span>Puntuación:</span>
+            <span className={styles.score}>{score}</span>
           </div>
-        ))}
-      </div>
-
-      {/* Eliminar el botón "Enviar Respuesta" */}
-      {/* 
-      {!gameFinished && (
-        <button onClick={() => { /* No necesitas `checkAnswers` aquí ya que el juego se verifica automáticamente */ /* }} className="submit-button">
-          Enviar Respuesta
-        </button>
-      )}
-      */}
-
-      {gameFinished && (
-        <div className="memory-results">
-          <h2>¡Juego Terminado!</h2>
-          <p>Respuestas correctas: {matchedCards.length / 2} de {imagesLevel3.length}</p>
-          <p>Respuestas incorrectas: {(cards.length / 2) - (matchedCards.length / 2)} de {imagesLevel3.length}</p>
-          <p>Tiempo total: {timer} segundos</p>
-          <p>Puntuación final: {score}</p>
+          <div className={styles.infoBox}>
+            <span>Tiempo:</span>
+            <span className={styles.timer}>{timer} segundos</span>
+          </div>
         </div>
-      )}
 
+        {!gameFinished ? (
+          <div className={styles.memoryCardsContainer}>
+            {cards.map((card, index) => (
+              <div
+                key={index}
+                className={`${styles.memoryCard} ${
+                  flippedCards.includes(index) || matchedCards.includes(index) ? styles.flipped : ''
+                }`}
+                onClick={() => handleCardClick(index)}
+              >
+                <div className={styles.memoryCardInner}>
+                  <div className={styles.memoryCardBack}></div>
+                  <div className={styles.memoryCardFront}>
+                    <img src={card.src} alt={`Card ${card.id}`} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.gameFinished}>
+            <h2 className={styles.gameTitle}>¡Juego Terminado!</h2>
+            <p>Tiempo total: {timer} segundos</p>
+            <p>Puntuación final: {score}</p>
+          </div>
+        )}
+      </div>
       <ToastContainer />
     </div>
   );
