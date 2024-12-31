@@ -1,109 +1,186 @@
 // src/screens/ActivityScreenLevel2.jsx
 
 import React, { useState, useEffect } from 'react';
-import { ToastContainer, toast } from 'react-toastify';
-import { useNavigate, useParams } from 'react-router-dom';
-import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate } from 'react-router-dom';
 import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
 import { useSelector } from 'react-redux';
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useDrag, useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import '../assets/styles/ActivityScreenLevel2.css'; // Asegúrate de crear y ajustar este archivo CSS
 
-// Definición de categorías y palabras de nivel 2
+// Importa las imágenes de Casas
+import casa1Image from '../images/casa1.png';
+import casa2Image from '../images/casa2.png';
+import casa3Image from '../images/casa3.png';
+import casa4Image from '../images/casa4.png';
+import casa5Image from '../images/casa5.png';
+import casa6Image from '../images/casa6.png';
+import casa7Image from '../images/casa7.png';
+import casa8Image from '../images/casa8.png';
+import casa9Image from '../images/casa9.png';
+import casa10Image from '../images/casa10.png';
+
+// Importa las imágenes de Ropa
+import ropa1Image from '../images/ropa1.png';
+import ropa2Image from '../images/ropa2.png';
+import ropa3Image from '../images/ropa3.png';
+import ropa4Image from '../images/ropa4.png';
+import ropa5Image from '../images/ropa5.png';
+import ropa6Image from '../images/ropa6.png';
+import ropa7Image from '../images/ropa7.png';
+import ropa8Image from '../images/ropa8.png';
+import ropa9Image from '../images/ropa9.png';
+import ropa10Image from '../images/ropa10.png';
+
+// Importa las imágenes de Plantas
+import planta1Image from '../images/planta1.png';
+import planta2Image from '../images/planta2.png';
+import planta3Image from '../images/planta3.png';
+import planta4Image from '../images/planta4.png';
+import planta5Image from '../images/planta5.png';
+import planta6Image from '../images/planta6.png';
+import planta7Image from '../images/planta7.png';
+import planta8Image from '../images/planta8.png';
+import planta9Image from '../images/planta9.png';
+import planta10Image from '../images/planta10.png';
+
+// Definir las categorías
 const categoriesLevel2 = [
-  { id: 1, name: 'Colores' },
-  { id: 2, name: 'Formas' },
-  { id: 3, name: 'Frutas' }
+  { id: 1, name: 'Casas' },
+  { id: 2, name: 'Ropa' },
+  { id: 3, name: 'Plantas' }
 ];
 
-const wordsLevel2 = [
-  { id: 1, text: 'Verde', category: 'Colores', style: { backgroundColor: 'green' } },
-  { id: 2, text: 'Óvalo', category: 'Formas', style: { borderRadius: '50%', width: '150px', height: '100px', backgroundColor: 'gray' } },
-  { id: 3, text: 'Naranja', category: 'Colores', style: { backgroundColor: 'orange' } },
-  { id: 4, text: 'Rectángulo', category: 'Formas', style: { width: '150px', height: '100px', backgroundColor: 'gray' } },
-  { id: 5, text: 'Manzana', category: 'Frutas', style: { backgroundColor: 'red' } },
-  { id: 6, text: 'Pera', category: 'Frutas', style: { backgroundColor: 'green' } },
-  { id: 7, text: 'Plátano', category: 'Frutas', style: { backgroundColor: 'yellow' } },
-  { id: 8, text: 'Uva', category: 'Frutas', style: { backgroundColor: 'purple' } }
+// Separar las imágenes por categoría y asignar IDs únicos
+const casas = [
+  { id: 1, src: casa1Image, category: 'Casas', alt: 'Casa 1' },
+  { id: 2, src: casa2Image, category: 'Casas', alt: 'Casa 2' },
+  { id: 3, src: casa3Image, category: 'Casas', alt: 'Casa 3' },
+  { id: 4, src: casa4Image, category: 'Casas', alt: 'Casa 4' },
+  { id: 5, src: casa5Image, category: 'Casas', alt: 'Casa 5' },
+  { id: 6, src: casa6Image, category: 'Casas', alt: 'Casa 6' },
+  { id: 7, src: casa7Image, category: 'Casas', alt: 'Casa 7' },
+  { id: 8, src: casa8Image, category: 'Casas', alt: 'Casa 8' },
+  { id: 9, src: casa9Image, category: 'Casas', alt: 'Casa 9' },
+  { id: 10, src: casa10Image, category: 'Casas', alt: 'Casa 10' }
 ];
 
-// Componente principal de la actividad
-const ActivityScreenLevel2 = () => {
-  const { treatmentId, activityId } = useParams(); // Extrae treatmentId y activityId de la ruta
+const ropa = [
+  { id: 11, src: ropa1Image, category: 'Ropa', alt: 'Ropa 1' },
+  { id: 12, src: ropa2Image, category: 'Ropa', alt: 'Ropa 2' },
+  { id: 13, src: ropa3Image, category: 'Ropa', alt: 'Ropa 3' },
+  { id: 14, src: ropa4Image, category: 'Ropa', alt: 'Ropa 4' },
+  { id: 15, src: ropa5Image, category: 'Ropa', alt: 'Ropa 5' },
+  { id: 16, src: ropa6Image, category: 'Ropa', alt: 'Ropa 6' },
+  { id: 17, src: ropa7Image, category: 'Ropa', alt: 'Ropa 7' },
+  { id: 18, src: ropa8Image, category: 'Ropa', alt: 'Ropa 8' },
+  { id: 19, src: ropa9Image, category: 'Ropa', alt: 'Ropa 9' },
+  { id: 20, src: ropa10Image, category: 'Ropa', alt: 'Ropa 10' }
+];
+
+const plantas = [
+  { id: 21, src: planta1Image, category: 'Plantas', alt: 'Planta 1' },
+  { id: 22, src: planta2Image, category: 'Plantas', alt: 'Planta 2' },
+  { id: 23, src: planta3Image, category: 'Plantas', alt: 'Planta 3' },
+  { id: 24, src: planta4Image, category: 'Plantas', alt: 'Planta 4' },
+  { id: 25, src: planta5Image, category: 'Plantas', alt: 'Planta 5' },
+  { id: 26, src: planta6Image, category: 'Plantas', alt: 'Planta 6' },
+  { id: 27, src: planta7Image, category: 'Plantas', alt: 'Planta 7' },
+  { id: 28, src: planta8Image, category: 'Plantas', alt: 'Planta 8' },
+  { id: 29, src: planta9Image, category: 'Plantas', alt: 'Planta 9' },
+  { id: 30, src: planta10Image, category: 'Plantas', alt: 'Planta 10' }
+];
+
+// Función para seleccionar N elementos aleatorios de un array
+const getRandomElements = (array, num) => {
+  const shuffled = array.slice().sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, num);
+};
+
+// Función para mezclar un array usando el algoritmo Fisher-Yates
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for(let i = shuffled.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+const ActivityScreenLevel2 = ({ activity, treatmentId }) => { // Recibe 'activity' y 'treatmentId' como props
   const [assignedCategories, setAssignedCategories] = useState({});
-  const [correctAnswers, setCorrectAnswers] = useState(0);
-  const [incorrectAnswers, setIncorrectAnswers] = useState(0);
+  const [score, setScore] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
-  const [message, setMessage] = useState('');
+  const [selectedImages, setSelectedImages] = useState([]);
   const navigate = useNavigate();
 
-  // Obtener información del usuario autenticado desde el estado de Redux
-  const userInfo = useSelector((state) => state.auth.userInfo);
-  const patientId = userInfo?._id;
+  const userInfo = useSelector((state) => state.auth.userInfo); // Obtener información del usuario autenticado
 
   // Hook de la mutación para registrar actividad
   const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
 
-  // Iniciar el temporizador
+  // Seleccionar y mezclar imágenes aleatorias al montar el componente o reiniciar el juego
+  useEffect(() => {
+    const selectAndShuffleImages = () => {
+      const randomCasas = getRandomElements(casas, 3);
+      const randomRopa = getRandomElements(ropa, 3);
+      const randomPlantas = getRandomElements(plantas, 3);
+      const combined = [...randomCasas, ...randomRopa, ...randomPlantas];
+      const shuffled = shuffleArray(combined);
+      setSelectedImages(shuffled);
+    };
+
+    selectAndShuffleImages();
+  }, []); // Ejecutar solo una vez al montar
+
+  // Iniciar el temporizador al montar el componente
   useEffect(() => {
     let interval;
     if (!gameFinished) {
       interval = setInterval(() => {
         setTimer((prevTimer) => prevTimer + 1);
       }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [gameFinished]);
-
-  // Navegar de regreso después de terminar el juego
-  useEffect(() => {
-    if (gameFinished) {
-      const timeout = setTimeout(() => {
+    } else {
+      setTimeout(() => {
         navigate('/api/treatments/activities');
       }, 6000);
-      return () => clearTimeout(timeout);
     }
+    return () => clearInterval(interval);
   }, [gameFinished, navigate]);
 
-  // Barajar opciones al cargar cada palabra
-  useEffect(() => {
-    // No es necesario aquí ya que el drag-and-drop maneja las asignaciones
-  }, []);
-
-  // Manejar errores de la mutación
-  useEffect(() => {
-    if (recordError) {
-      toast.error(`Error al guardar la actividad: ${recordError.data?.message || recordError.message}`);
-    }
-  }, [recordError]);
-
-  // Manejar el arrastre y soltar
-  const handleDrop = (word, category) => {
+  // Manejar el drop de una imagen en una categoría
+  const handleDrop = (image, category) => {
     setAssignedCategories((prevAssigned) => ({
       ...prevAssigned,
-      [word.id]: category.name
+      [image.id]: category.name
     }));
   };
 
-  // Calcular y verificar respuestas
+  // Verificar las respuestas y calcular el puntaje
   const checkAnswers = () => {
     let correctCount = 0;
 
-    wordsLevel2.forEach((word) => {
-      if (assignedCategories[word.id] && assignedCategories[word.id] === word.category) {
+    selectedImages.forEach((image) => {
+      // Verificamos si la categoría asignada coincide con la categoría correcta de la imagen
+      if (assignedCategories[image.id] && assignedCategories[image.id] === image.category) {
         correctCount += 1;
       }
     });
 
-    const score = (correctCount * (5 / wordsLevel2.length)).toFixed(2); // Puntaje con dos decimales
-    setCorrectAnswers(score);
-    setIncorrectAnswers(wordsLevel2.length - correctCount);
+    // Calculamos el puntaje proporcional
+    const calculatedScore = (correctCount * 5) / 9;
+    const finalScore = parseFloat(calculatedScore.toFixed(2));
+
+    setScore(finalScore); // Actualizamos el puntaje basado en la cantidad correcta
     setGameFinished(true);
+    saveActivity(finalScore); // Guardamos la actividad con el puntaje correcto
   };
 
-  // Guardar la actividad utilizando RTK Query
-  const saveActivity = async () => {
+  // Función para guardar la actividad en el backend dentro del tratamiento correspondiente
+  const saveActivity = async (score) => {
     // Validar que el usuario está autenticado
     if (!userInfo) {
       toast.error('Usuario no autenticado');
@@ -118,16 +195,12 @@ const ActivityScreenLevel2 = () => {
 
     // Construir el objeto de datos de la actividad
     const activityData = {
-      activityId, // ID de la actividad principal desde los parámetros de la ruta
-      correctAnswers: correctAnswers, // Número de respuestas correctas (puntaje)
-      incorrectAnswers: incorrectAnswers, // Número de respuestas incorrectas
+      activityId: activity._id, // ID de la actividad principal
+      scoreObtained: score, // Puntaje calculado
       timeUsed: timer,
-      scoreObtained: parseFloat(correctAnswers), // Asegurar que es un número decimal
       progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
-      observations: 'El paciente completó la actividad de clasificación de palabras en nivel intermedio.',
-      patientId, // ID del paciente desde el estado de Redux
-      difficultyLevel: 2, // Nivel de dificultad
-      image: '', // No hay imagen asociada en esta actividad
+      observations: `El paciente obtuvo un puntaje de ${score} puntos al clasificar correctamente las imágenes.`,
+      // Puedes agregar más campos si es necesario
     };
 
     console.log('Guardando actividad con los siguientes datos:', activityData);
@@ -140,68 +213,84 @@ const ActivityScreenLevel2 = () => {
       toast.success('Actividad guardada correctamente');
     } catch (error) {
       console.error('Error al guardar la actividad:', error);
-      // El error será manejado por el useEffect anterior
+      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
+      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
     }
   };
 
-  // Llamar a saveActivity cuando el juego ha finalizado
-  useEffect(() => {
-    if (gameFinished) {
-      saveActivity();
-    }
-  }, [gameFinished]);
+  // Función para reiniciar el juego
+  const restartGame = () => {
+    setAssignedCategories({});
+    setScore(0);
+    setGameFinished(false);
+    setTimer(0);
+    const randomCasas = getRandomElements(casas, 3);
+    const randomRopa = getRandomElements(ropa, 3);
+    const randomPlantas = getRandomElements(plantas, 3);
+    const combined = [...randomCasas, ...randomRopa, ...randomPlantas];
+    const shuffled = shuffleArray(combined);
+    setSelectedImages(shuffled);
+  };
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="word-classification">
-        <h1>Clasificación de Palabras - Nivel 2</h1>
+      <div className="image-classification-level2">
+        <h1>Clasificación de Imágenes - Nivel 2</h1>
         <p>Tiempo: {timer} segundos</p>
 
-        <div className="categories-container" style={{ display: 'flex', justifyContent: 'space-around' }}>
+        <div className="categories-container-level2">
           {categoriesLevel2.map((category) => (
             <Category
               key={category.id}
               category={category}
-              assignedWords={Object.keys(assignedCategories)
-                .filter((wordId) => assignedCategories[wordId] === category.name)
-                .map((wordId) => wordsLevel2.find((word) => word.id === parseInt(wordId)))}
-              onDrop={(word) => handleDrop(word, category)}
+              assignedImages={Object.keys(assignedCategories)
+                .filter((imageId) => assignedCategories[imageId] === category.name)
+                .map((imageId) => selectedImages.find((image) => image.id === parseInt(imageId)))}
+              onDrop={(image) => handleDrop(image, category)}
             />
           ))}
         </div>
 
-        <div className="words-container" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
-          {wordsLevel2.filter(word => !Object.keys(assignedCategories).includes(word.id.toString())).map((word) => (
-            <Word key={word.id} word={word} />
-          ))}
+        <div className="images-container-level2">
+          {selectedImages
+            .filter(image => !Object.keys(assignedCategories).includes(image.id.toString()))
+            .map((image) => (
+              <ImageItem key={image.id} image={image} />
+            ))}
         </div>
 
         {!gameFinished && (
-          <button onClick={checkAnswers} className="submit-button" style={{ marginTop: '20px', padding: '10px 20px', fontSize: '16px' }}>
+          <button onClick={checkAnswers} className="submit-button-level2">
             Enviar Respuesta
           </button>
         )}
 
         {gameFinished && (
-          <div className="results" style={{ marginTop: '20px' }}>
+          <div className="results-level2">
             <h2>¡Juego Terminado!</h2>
-            <p>Respuestas correctas: {correctAnswers} de {wordsLevel2.length}</p>
-            <p>Respuestas incorrectas: {incorrectAnswers} de {wordsLevel2.length}</p>
+            <p>Puntaje: {score} / 5</p>
             <p>Tiempo total: {timer} segundos</p>
+            <button onClick={restartGame} className="restart-button-level2">
+              Jugar de Nuevo
+            </button>
           </div>
         )}
 
+        {/* Mostrar estado de guardado de la actividad */}
+        {isRecording && <p>Guardando actividad...</p>}
+        {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
+        
         <ToastContainer />
       </div>
     </DndProvider>
   );
 };
 
-// Componente para las palabras que se pueden arrastrar
-const Word = ({ word }) => {
+// Componente ImageItem
+const ImageItem = ({ image }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'WORD',
-    item: word,
+    type: 'IMAGE',
+    item: image,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })
@@ -210,30 +299,31 @@ const Word = ({ word }) => {
   return (
     <div
       ref={drag}
-      className="word"
+      className="image-item-level2"
       style={{
-        ...word.style,
         opacity: isDragging ? 0.5 : 1,
         width: '100px',
-        height: word.style.borderRadius ? '100px' : '50px',
-        fontSize: '20px',
-        textAlign: 'center',
+        height: '100px',
+        margin: '10px',
+        cursor: 'grab',
+        border: '1px solid #ccc',
+        borderRadius: '8px',
+        overflow: 'hidden',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        margin: '10px',
-        cursor: 'grab'
+        backgroundColor: '#f9f9f9'
       }}
     >
-      {word.text}
+      <img src={image.src} alt={image.alt} style={{ maxWidth: '100%', maxHeight: '100%' }} />
     </div>
   );
 };
 
-// Componente para las categorías donde se pueden soltar las palabras
-const Category = ({ category, assignedWords, onDrop }) => {
+// Componente Category
+const Category = ({ category, assignedImages, onDrop }) => {
   const [{ isOver }, drop] = useDrop(() => ({
-    accept: 'WORD',
+    accept: 'IMAGE',
     drop: (item) => onDrop(item),
     collect: (monitor) => ({
       isOver: !!monitor.isOver()
@@ -243,37 +333,40 @@ const Category = ({ category, assignedWords, onDrop }) => {
   return (
     <div
       ref={drop}
-      className="category"
+      className="category-level2"
       style={{
         backgroundColor: isOver ? '#f0f0f0' : 'white',
         padding: '20px',
         border: '2px dashed gray',
         minHeight: '200px',
-        width: '30%',
         margin: '10px',
-        borderRadius: '8px'
+        borderRadius: '8px',
+        width: '30%' // Ajuste para tres categorías
       }}
     >
       <h3>{category.name}</h3>
-      <div className="assigned-words" style={{ display: 'flex', flexWrap: 'wrap' }}>
-        {assignedWords.map((word) => (
-          <div
-            key={word.id}
-            className="word"
-            style={{
-              ...word.style,
-              width: '100px',
-              height: word.style.borderRadius ? '100px' : '50px',
-              fontSize: '20px',
-              textAlign: 'center',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              margin: '10px'
-            }}
-          >
-            {word.text}
-          </div>
+      <div className="assigned-images-level2" style={{ display: 'flex', flexWrap: 'wrap' }}>
+        {assignedImages.map((image) => (
+          image && (
+            <div
+              key={image.id}
+              className="image-item-level2"
+              style={{
+                width: '80px',
+                height: '80px',
+                margin: '5px',
+                border: '1px solid #ccc',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#f9f9f9'
+              }}
+            >
+              <img src={image.src} alt={image.alt} style={{ maxWidth: '100%', maxHeight: '100%' }} />
+            </div>
+          )
         ))}
       </div>
     </div>

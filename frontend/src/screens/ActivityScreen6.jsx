@@ -9,31 +9,99 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useDrag, useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
+// Importa las imágenes
+import rojoImage from '../images/rojo.png';
+import amarilloImage from '../images/amarillo.png';
+import azulImage from '../images/azul.png';
+import celesteImage from '../images/celeste.png';
+import moradoImage from '../images/morado.png';
+import mentaImage from '../images/menta.png';
+import naranjaImage from '../images/naranja.png';
+import verdeImage from '../images/verde.png';
+import rosadoImage from '../images/rosado.png';
+import cuboImage from '../images/cubo.png';
+import trianguloImage from '../images/triangulo.png';
+import paraleloImage from '../images/paralelo.png';
+import cilindroImage from '../images/cilindro.png';
+import circuloImage from '../images/circulo.png';
+import hexagonoImage from '../images/hexagono.png';
+import prismaImage from '../images/prisma.png';
+import cuboideImage from '../images/cuboide.png';
+import hexagonooImage from '../images/hexagonoo.png';
+
+import '../assets/styles/ActivityScreen6Level1.css'
+// Definir las categorías
 const categoriesLevel1 = [
   { id: 1, name: 'Colores' },
   { id: 2, name: 'Formas' }
 ];
 
-const wordsLevel1 = [
-  { id: 1, text: 'Rojo', category: 'Colores', style: { backgroundColor: 'red' } },
-  { id: 2, text: 'Círculo', category: 'Formas', style: { borderRadius: '50%', width: '100px', height: '100px', backgroundColor: 'gray' } },
-  { id: 3, text: 'Azul', category: 'Colores', style: { backgroundColor: 'blue' } },
-  { id: 4, text: 'Cuadrado', category: 'Formas', style: { width: '100px', height: '100px', backgroundColor: 'gray' } },
-  { id: 5, text: 'Amarillo', category: 'Colores', style: { backgroundColor: 'yellow' } },
-  { id: 6, text: 'Triángulo', category: 'Formas', style: { width: '0', height: '0', borderLeft: '50px solid transparent', borderRight: '50px solid transparent', borderBottom: '100px solid gray' } }
+// Separar las imágenes por categoría y asignar IDs únicos
+const colors = [
+  { id: 1, src: rojoImage, category: 'Colores', alt: 'Rojo' },
+  { id: 2, src: amarilloImage, category: 'Colores', alt: 'Amarillo' },
+  { id: 3, src: azulImage, category: 'Colores', alt: 'Azul' },
+  { id: 4, src: moradoImage, category: 'Colores', alt: 'Morado' },
+  { id: 5, src: rosadoImage, category: 'Colores', alt: 'Rosado' },
+  { id: 6, src: mentaImage, category: 'Colores', alt: 'Menta' },
+  { id: 7, src: celesteImage, category: 'Colores', alt: 'Celeste' },
+  { id: 8, src: naranjaImage, category: 'Colores', alt: 'Naranja' },
+  { id: 9, src: verdeImage, category: 'Colores', alt: 'Verde' }
 ];
+
+const forms = [
+  { id: 10, src: circuloImage, category: 'Formas', alt: 'Círculo' },
+  { id: 11, src: cuboImage, category: 'Formas', alt: 'Cubo' },
+  { id: 12, src: prismaImage, category: 'Formas', alt: 'Prisma' },
+  { id: 13, src: trianguloImage, category: 'Formas', alt: 'Triángulo' },
+  { id: 14, src: paraleloImage, category: 'Formas', alt: 'Paralelo' },
+  { id: 15, src: cuboideImage, category: 'Formas', alt: 'Cuboide' },
+  { id: 16, src: hexagonoImage, category: 'Formas', alt: 'Hexágono' },
+  { id: 17, src: cilindroImage, category: 'Formas', alt: 'Cilindro' },
+  { id: 18, src: hexagonooImage, category: 'Formas', alt: 'Hexagonoo' }
+];
+
+// Función para seleccionar N elementos aleatorios de un array
+const getRandomElements = (array, num) => {
+  const shuffled = array.slice().sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, num);
+};
+
+// Función para mezclar un array usando el algoritmo Fisher-Yates
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for(let i = shuffled.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
 const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activity' y 'treatmentId' como props
   const [assignedCategories, setAssignedCategories] = useState({});
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [gameFinished, setGameFinished] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [selectedImages, setSelectedImages] = useState([]);
   const navigate = useNavigate();
 
   const userInfo = useSelector((state) => state.auth.userInfo); // Obtener información del usuario autenticado
 
   // Hook de la mutación para registrar actividad
   const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+
+  // Seleccionar y mezclar imágenes aleatorias al montar el componente o reiniciar el juego
+  useEffect(() => {
+    const selectAndShuffleImages = () => {
+      const randomColors = getRandomElements(colors, 3);
+      const randomForms = getRandomElements(forms, 3);
+      const combined = [...randomColors, ...randomForms];
+      const shuffled = shuffleArray(combined);
+      setSelectedImages(shuffled);
+    };
+
+    selectAndShuffleImages();
+  }, []); // Ejecutar solo una vez al montar
 
   // Iniciar el temporizador al montar el componente
   useEffect(() => {
@@ -50,11 +118,11 @@ const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activit
     return () => clearInterval(interval);
   }, [gameFinished, navigate]);
 
-  // Manejar el drop de una palabra en una categoría
-  const handleDrop = (word, category) => {
+  // Manejar el drop de una imagen en una categoría
+  const handleDrop = (image, category) => {
     setAssignedCategories((prevAssigned) => ({
       ...prevAssigned,
-      [word.id]: category.name
+      [image.id]: category.name
     }));
   };
 
@@ -62,15 +130,15 @@ const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activit
   const checkAnswers = () => {
     let correctCount = 0;
 
-    wordsLevel1.forEach((word) => {
-      // Verificamos si la categoría asignada coincide con la categoría correcta de la palabra
-      if (assignedCategories[word.id] && assignedCategories[word.id] === word.category) {
+    selectedImages.forEach((image) => {
+      // Verificamos si la categoría asignada coincide con la categoría correcta de la imagen
+      if (assignedCategories[image.id] && assignedCategories[image.id] === image.category) {
         correctCount += 1;
       }
     });
 
-    // Ajustamos el puntaje para que cada respuesta correcta valga 0.83 puntos
-    const score = (correctCount * (5 / wordsLevel1.length)).toFixed(2);
+    // Ajustamos el puntaje para que cada respuesta correcta valga puntos según la cantidad total
+    const score = (correctCount * (5 / selectedImages.length)).toFixed(2);
 
     setCorrectAnswers(score); // Actualizamos el puntaje basado en la cantidad correcta
 
@@ -98,7 +166,7 @@ const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activit
       scoreObtained: parseFloat(score), // Asegurarse de que es un número
       timeUsed: timer,
       progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
-      observations: `El paciente clasificó correctamente ${score} palabras.`,
+      observations: `El paciente clasificó correctamente ${score} imágenes.`,
       // Puedes agregar más campos si es necesario
     };
 
@@ -117,10 +185,23 @@ const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activit
     }
   };
 
+  // Función para reiniciar el juego
+  const restartGame = () => {
+    setAssignedCategories({});
+    setCorrectAnswers(0);
+    setGameFinished(false);
+    setTimer(0);
+    const randomColors = getRandomElements(colors, 3);
+    const randomForms = getRandomElements(forms, 3);
+    const combined = [...randomColors, ...randomForms];
+    const shuffled = shuffleArray(combined);
+    setSelectedImages(shuffled);
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="word-classification">
-        <h1>Clasificación de Palabras - Nivel 1</h1>
+      <div className="image-classification">
+        <h1>Clasificación de Imágenes - Nivel 1</h1>
         <p>Tiempo: {timer} segundos</p>
 
         <div className="categories-container">
@@ -128,18 +209,20 @@ const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activit
             <Category
               key={category.id}
               category={category}
-              assignedWords={Object.keys(assignedCategories)
-                .filter((wordId) => assignedCategories[wordId] === category.name)
-                .map((wordId) => wordsLevel1.find((word) => word.id === parseInt(wordId)))}
-              onDrop={(word) => handleDrop(word, category)}
+              assignedImages={Object.keys(assignedCategories)
+                .filter((imageId) => assignedCategories[imageId] === category.name)
+                .map((imageId) => selectedImages.find((image) => image.id === parseInt(imageId)))}
+              onDrop={(image) => handleDrop(image, category)}
             />
           ))}
         </div>
 
-        <div className="words-container">
-          {wordsLevel1.filter(word => !Object.keys(assignedCategories).includes(word.id.toString())).map((word) => (
-            <Word key={word.id} word={word} />
-          ))}
+        <div className="images-container">
+          {selectedImages
+            .filter(image => !Object.keys(assignedCategories).includes(image.id.toString()))
+            .map((image) => (
+              <ImageItem key={image.id} image={image} />
+            ))}
         </div>
 
         {!gameFinished && (
@@ -151,8 +234,11 @@ const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activit
         {gameFinished && (
           <div className="results">
             <h2>¡Juego Terminado!</h2>
-            <p>Respuestas correctas: {correctAnswers} / 5</p>
+            <p>Respuestas correctas: {correctAnswers} / 6</p>
             <p>Tiempo total: {timer} segundos</p>
+            <button onClick={restartGame} className="restart-button">
+              Jugar de Nuevo
+            </button>
           </div>
         )}
 
@@ -166,11 +252,11 @@ const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activit
   );
 };
 
-// Componente Word
-const Word = ({ word }) => {
+// Componente ImageItem
+const ImageItem = ({ image }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'WORD',
-    item: word,
+    type: 'IMAGE',
+    item: image,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })
@@ -179,30 +265,31 @@ const Word = ({ word }) => {
   return (
     <div
       ref={drag}
-      className="word"
+      className="image-item"
       style={{
-        ...word.style,
         opacity: isDragging ? 0.5 : 1,
-        width: '100px',  // Ajuste para hacer más grandes las formas y los colores
-        height: word.style.borderRadius ? '100px' : '50px', // Mayor tamaño para las formas
-        fontSize: '20px',  // Ajuste de tamaño de letra para que no se salga
-        textAlign: 'center',
+        width: '100px',
+        height: '100px',
+        margin: '10px',
+        cursor: 'grab',
+        border: '1px solid #ccc',
+        borderRadius: '8px',
+        overflow: 'hidden',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        margin: '10px',
-        cursor: 'grab' // Indicador visual de arrastrar
+        backgroundColor: '#f9f9f9'
       }}
     >
-      {word.text}
+      <img src={image.src} alt={image.alt} style={{ maxWidth: '100%', maxHeight: '100%' }} />
     </div>
   );
 };
 
 // Componente Category
-const Category = ({ category, assignedWords, onDrop }) => {
+const Category = ({ category, assignedImages, onDrop }) => {
   const [{ isOver }, drop] = useDrop(() => ({
-    accept: 'WORD',
+    accept: 'IMAGE',
     drop: (item) => onDrop(item),
     collect: (monitor) => ({
       isOver: !!monitor.isOver()
@@ -219,28 +306,30 @@ const Category = ({ category, assignedWords, onDrop }) => {
         border: '2px dashed gray',
         minHeight: '200px',
         margin: '10px',
-        borderRadius: '8px'
+        borderRadius: '8px',
+        width: '45%' // Ajuste para mejorar el diseño
       }}
     >
       <h3>{category.name}</h3>
-      <div className="assigned-words">
-        {assignedWords.map((word) => (
+      <div className="assigned-images" style={{ display: 'flex', flexWrap: 'wrap' }}>
+        {assignedImages.map((image) => (
           <div
-            key={word.id}
-            className="word"
+            key={image.id}
+            className="image-item"
             style={{
-              ...word.style,
-              width: '100px',  // Mantener el tamaño cuando la palabra se asigna a la categoría
-              height: word.style.borderRadius ? '100px' : '50px',
-              fontSize: '20px',
-              textAlign: 'center',
+              width: '80px',
+              height: '80px',
+              margin: '5px',
+              border: '1px solid #ccc',
+              borderRadius: '8px',
+              overflow: 'hidden',
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              margin: '10px'
+              backgroundColor: '#f9f9f9'
             }}
           >
-            {word.text}
+            <img src={image.src} alt={image.alt} style={{ maxWidth: '100%', maxHeight: '100%' }} />
           </div>
         ))}
       </div>
