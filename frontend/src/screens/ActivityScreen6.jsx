@@ -29,7 +29,8 @@ import prismaImage from '../images/prisma.png';
 import cuboideImage from '../images/cuboide.png';
 import hexagonooImage from '../images/hexagonoo.png';
 
-import '../assets/styles/ActivityScreen6Level1.css'
+import '../assets/styles/ActivityScreen6Level1.css';
+
 // Definir las categorías
 const categoriesLevel1 = [
   { id: 1, name: 'Colores' },
@@ -200,53 +201,53 @@ const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activit
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="image-classification">
-        <h1>Clasificación de Imágenes - Nivel 1</h1>
-        <p>Tiempo: {timer} segundos</p>
-
-        <div className="categories-container">
-          {categoriesLevel1.map((category) => (
-            <Category
-              key={category.id}
-              category={category}
-              assignedImages={Object.keys(assignedCategories)
-                .filter((imageId) => assignedCategories[imageId] === category.name)
-                .map((imageId) => selectedImages.find((image) => image.id === parseInt(imageId)))}
-              onDrop={(image) => handleDrop(image, category)}
-            />
-          ))}
-        </div>
-
-        <div className="images-container">
-          {selectedImages
-            .filter(image => !Object.keys(assignedCategories).includes(image.id.toString()))
-            .map((image) => (
-              <ImageItem key={image.id} image={image} />
-            ))}
-        </div>
-
-        {!gameFinished && (
-          <button onClick={checkAnswers} className="submit-button">
-            Enviar Respuesta
-          </button>
-        )}
-
-        {gameFinished && (
-          <div className="results">
-            <h2>¡Juego Terminado!</h2>
-            <p>Respuestas correctas: {correctAnswers} / 6</p>
-            <p>Tiempo total: {timer} segundos</p>
-            <button onClick={restartGame} className="restart-button">
-              Jugar de Nuevo
-            </button>
+      <div className="image-classification-wrapper"> {/* Nuevo contenedor para aplicar fondo */}
+        <div className="image-classification"> {/* Contenedor existente */}
+          <h1 className="title">Clasificación de Imágenes - Nivel 1</h1> {/* Agregar clase 'title' */}
+          <div className="infoBox">
+          <p className="timer">Tiempo: {timer} segundos</p> {/* Agregar clase 'timer' */}
           </div>
-        )}
+          <div className="categories-container">
+            {categoriesLevel1.map((category) => (
+              <Category
+                key={category.id}
+                category={category}
+                assignedImages={Object.keys(assignedCategories)
+                  .filter((imageId) => assignedCategories[imageId] === category.name)
+                  .map((imageId) => selectedImages.find((image) => image.id === parseInt(imageId)))}
+                onDrop={(image) => handleDrop(image, category)}
+              />
+            ))}
+          </div>
 
-        {/* Mostrar estado de guardado de la actividad */}
-        {isRecording && <p>Guardando actividad...</p>}
-        {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
-        
-        <ToastContainer />
+          <div className="images-container">
+            {selectedImages
+              .filter(image => !Object.keys(assignedCategories).includes(image.id.toString()))
+              .map((image) => (
+                <ImageItem key={image.id} image={image} />
+              ))}
+          </div>
+
+          {!gameFinished && (
+            <button onClick={checkAnswers} className="submit-button">
+              Enviar Respuesta
+            </button>
+          )}
+
+          {gameFinished && (
+            <div className="results">
+              <h2>¡Juego Terminado!</h2>
+              <p>Respuestas correctas: {correctAnswers} / 6</p>
+              <p>Tiempo total: {timer} segundos</p>
+            </div>
+          )}
+
+          {/* Mostrar estado de guardado de la actividad */}
+          {isRecording && <p className="recording">Guardando actividad...</p>}
+          {recordError && <p className="error">Error: {recordError?.data?.message || recordError.message}</p>}
+          
+          <ToastContainer />
+        </div>
       </div>
     </DndProvider>
   );

@@ -1,213 +1,185 @@
-// src/screens/ActivityScreen10.jsx
+// src/screens/ActivityWordSearchLevel1.jsx
 
 import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { useNavigate } from 'react-router-dom';
-import { useRecordActivityMutation } from '../slices/treatmentSlice'; // Importa el hook de mutación
+import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
-// Lista de objetos con imágenes y sus usos
-const objects = [
-  {
-    id: 1,
-    image: require('../images/cepillodientes.jpg'),
-    correctUse: 'Limpiar los dientes',
-    options: ['Cortar frutas', 'Limpiar los dientes', 'Iluminar una habitación']
-  },
-  {
-    id: 2,
-    image: require('../images/taza.jpg'),
-    correctUse: 'Beber líquidos',
-    options: ['Beber líquidos', 'Guardar ropa', 'Cortar papel']
-  },
-  {
-    id: 3,
-    image: require('../images/tijeras.jpg'),
-    correctUse: 'Cortar papel o tela',
-    options: ['Cortar madera', 'Cortar papel o tela', 'Limpiar ventanas']
-  },
-  {
-    id: 4,
-    image: require('../images/llaves.jpg'),
-    correctUse: 'Abrir una puerta',
-    options: ['Encender la TV', 'Pintar una pared', 'Abrir una puerta']
-  },
-  {
-    id: 5,
-    image: require('../images/cucharas.jpg'),
-    correctUse: 'Comer alimentos',
-    options: ['Comer alimentos', 'Coser ropa', 'Limpiar zapatos']
-  },
-  {
-    id: 6,
-    image: require('../images/plato.jpg'),
-    correctUse: 'Colocar alimentos',
-    options: ['Poner libros', 'Vestirse', 'Colocar alimentos']
-  },
-  {
-    id: 7,
-    image: require('../images/cepillopelo.jpg'),
-    correctUse: 'Peinar el cabello',
-    options: ['Pintar paredes', 'Peinar el cabello', 'Jugar en el patio']
-  },
-  {
-    id: 8,
-    image: require('../images/toallas.jpg'),
-    correctUse: 'Secarse el cuerpo',
-    options: ['Secarse el cuerpo', 'Guardar libros', 'Cargar herramientas']
-  },
-  {
-    id: 9,
-    image: require('../images/jabon.jpg'),
-    correctUse: 'Lavarse las manos',
-    options: ['Cocinar', 'Pintar lienzo', 'Lavarse las manos']
-  },
-  {
-    id: 10,
-    image: require('../images/zapatos.jpg'),
-    correctUse: 'Caminar',
-    options: ['Comer', 'Caminar', 'Leer']
-  }
-];
+import Board from '../utils/Board.jsx';
+import { createWordSearchBoardLevel1 } from '../utils/createWordSearchBoardLevel1';
+import { useRecordActivityMutation, useGetActiveTreatmentQuery } from '../slices/treatmentSlice';
 
-const ActivityScreen10 = ({ activity, treatmentId }) => { // Recibe 'activity' y 'treatmentId' como props
-  const [currentObjectIndex, setCurrentObjectIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [timer, setTimer] = useState(0);
-  const [gameFinished, setGameFinished] = useState(false);
+import 'react-toastify/dist/ReactToastify.css';
+import styles from '../assets/styles/ActivityWordSearch.module.css'; // Define estilos específicos
+
+const ActivityWordSearchLevel1 = () => {
   const navigate = useNavigate();
-
-  // Obtener información del usuario autenticado
+  const { activityId } = useParams();
   const userInfo = useSelector((state) => state.auth.userInfo);
+  const userId = userInfo?._id;
 
-  // Hook de la mutación para registrar actividad
-  const [recordActivity, { isLoading: isRecording, error: recordError }] = useRecordActivityMutation();
+  const {
+    data: activeTreatment,
+    isLoading: isTreatmentLoading,
+    error: treatmentError,
+  } = useGetActiveTreatmentQuery(userId, {
+    skip: !userId,
+  });
+
+  const [recordActivity, { isLoading: isRecording }] = useRecordActivityMutation();
+  const [boardData, setBoardData] = useState({ board: [], selectedWords: [] });
+  const [foundWords, setFoundWords] = useState([]);
+  const [highlightedPositions, setHighlightedPositions] = useState([]);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectedCells, setSelectedCells] = useState([]);
+  const [timer, setTimer] = useState(0);
+
+  const miliseconds = (timer / 10).toFixed(2);
 
   useEffect(() => {
-    let interval;
-    if (!gameFinished) {
-      interval = setInterval(() => {
-        setTimer((prevTimer) => prevTimer + 0.1);
-      }, 100);
-    }
-    return () => clearInterval(interval);
-  }, [gameFinished]);
-
-  // Desplazar al inicio de la página cuando el juego inicia
-  useEffect(() => {
-    window.scrollTo(0, 0); // Desplazar al tope cuando se carga el componente
+    const { board, selectedWords } = createWordSearchBoardLevel1(10); // Tablero 10x10
+    setBoardData({ board, selectedWords });
   }, []);
 
-  const handleOptionClick = (selectedOption) => {
-    const currentObject = objects[currentObjectIndex];
+  useEffect(() => {
+    if (foundWords.length < 5) {
+      const interval = setInterval(() => {
+        setTimer((prev) => prev + 1);
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [foundWords]);
 
-    let newScore = score;
-    if (selectedOption === currentObject.correctUse) {
-      newScore += 0.5;
-      setScore(newScore);
-      toast.success('¡Correcto! +0.5 puntos');
-    } else {
-      toast.error(`Incorrecto. La respuesta correcta es: ${currentObject.correctUse}`);
+  const handleCellMouseDown = (e, row, col) => {
+    e.preventDefault();
+    setIsSelecting(true);
+    setSelectedCells([{ row, col }]);
+  };
+
+  const handleCellMouseEnter = (e, row, col) => {
+    e.preventDefault();
+    if (isSelecting) {
+      setSelectedCells((prev) => [...prev, { row, col }]);
+    }
+  };
+
+  const handleCellMouseUp = (e) => {
+    e.preventDefault();
+    setIsSelecting(false);
+
+    setTimeout(() => checkSelectedCells(), 0);
+  };
+
+  const checkSelectedCells = () => {
+    if (selectedCells.length < 2) {
+      setSelectedCells([]);
+      return;
     }
 
-    // Desplazar al tope de la página cada vez que se selecciona una opción
-    window.scrollTo(0, 0);
+    let sortedCells = [...selectedCells].sort((a, b) => {
+      if (a.row === b.row) return a.col - b.col;
+      return a.row - b.row;
+    });
 
-    // Avanzar al siguiente objeto después de mostrar el mensaje
-    setTimeout(() => {
-      if (currentObjectIndex + 1 < objects.length) {
-        setCurrentObjectIndex(currentObjectIndex + 1);
-      } else {
-        setGameFinished(true);
-        toast.success('¡Juego terminado!');
-        saveActivity(newScore, timer.toFixed(2)); // Guardar la actividad con el puntaje actualizado
-        setTimeout(() => navigate('/api/treatments/activities'), 6000); // Redirigir después de 6 segundos
+    const letters = sortedCells.map(
+      (pos) => boardData.board[pos.row][pos.col]
+    );
+    const formedString = letters.join('');
+
+    const allInSameRow = sortedCells.every((c) => c.row === sortedCells[0].row);
+    const allInSameCol = sortedCells.every((c) => c.col === sortedCells[0].col);
+
+    let isValidSequence = false;
+    if (allInSameRow || allInSameCol) {
+      isValidSequence = true;
+    }
+
+    if (isValidSequence && boardData.selectedWords.includes(formedString)) {
+      if (!foundWords.includes(formedString)) {
+        setFoundWords((prev) => [...prev, formedString]);
+        setHighlightedPositions((prev) => [...prev, ...sortedCells]);
       }
-    }, 2000);
+    }
+
+    setSelectedCells([]);
   };
 
-  // Función para guardar la actividad en el backend dentro del tratamiento correspondiente
-  const saveActivity = async (finalScore, timeUsed) => {
-    // Validar que el usuario está autenticado
-    if (!userInfo) {
-      toast.error('Usuario no autenticado');
-      return;
+  useEffect(() => {
+    if (foundWords.length === 5) {
+      saveActivity();
     }
+  }, [foundWords]);
 
-    // Validar que treatmentId está definido
-    if (!treatmentId) {
-      toast.error('Tratamiento no identificado. No se puede guardar la actividad.');
-      return;
-    }
-
-    // Construir el objeto de datos de la actividad
-    const activityData = {
-      activityId: activity._id, // ID de la actividad principal
-      scoreObtained: finalScore,
-      timeUsed: parseFloat(timeUsed),
-      progress: 'mejorando', // Puedes ajustar esto según la lógica de tu aplicación
-      observations: 'El usuario completó la actividad de identificar objetos y sus usos.',
-      // Puedes agregar más campos si es necesario
-    };
-
-    console.log('Guardando actividad con los siguientes datos:', activityData);
-
+  const saveActivity = async () => {
     try {
-      // Registrar la actividad dentro del tratamiento usando la mutación
-      await recordActivity({ treatmentId, activityData }).unwrap();
+      if (!userInfo || isTreatmentLoading || !activeTreatment) {
+        toast.error('Error al guardar la actividad.');
+        return;
+      }
 
-      console.log('Actividad guardada correctamente');
-      toast.success('Actividad guardada correctamente');
+      const scoreObtained = foundWords.length; // 1 punto por palabra
+
+      const activityData = {
+        activityId,
+        scoreObtained,
+        timeUsed: parseFloat(miliseconds),
+        progress: 'mejorando',
+        observations: 'Actividad completada satisfactoriamente.',
+      };
+
+      await recordActivity({
+        treatmentId: activeTreatment._id,
+        activityData,
+      }).unwrap();
+
+      toast.success('Actividad guardada correctamente.');
+      setTimeout(() => navigate('/api/treatments/activities'), 6000);
     } catch (error) {
-      console.error('Error al guardar la actividad:', error);
-      const errorMessage = error?.data?.message || error.message || 'Error desconocido';
-      toast.error(`Hubo un problema al guardar la actividad: ${errorMessage}`);
+      console.error('Error:', error);
+      toast.error('No se pudo guardar la actividad.');
     }
   };
 
-  const currentObject = objects[currentObjectIndex] || {}; // Asegúrate de que `currentObject` no sea undefined
+  const { board, selectedWords } = boardData;
 
   return (
-    <div className="identify-objects-game-container">
-      <h1>Juego de Identificar Objetos y Usos</h1>
-      <p className="timer-text">Tiempo: {timer.toFixed(2)} segundos</p>
-
-      {!gameFinished ? (
-        <div className="object-card">
-          {/* Verificar si `image` existe antes de intentar mostrarla */}
-          {currentObject.image ? (
-            <img src={currentObject.image} alt="Objeto" className="object-image" />
-          ) : (
-            <p>Cargando imagen...</p>
-          )}
-          <div className="options-group">
-            {currentObject.options && currentObject.options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => handleOptionClick(option)}
-                className="option-button"
-              >
-                {option}
-              </button>
-            ))}
+    <div className={styles.background}>
+      <div className={styles.container}>
+        <h1 className={styles.title}>Nivel 1: Encuentra 5 palabras</h1>
+        <div className={styles.infoContainer}>
+          <div className={styles.infoBox}>
+            <span>Tiempo:</span> <span className={styles.timer}>{miliseconds} seg</span>
+          </div>
+          <div className={styles.infoBox}>
+            <span>Palabras encontradas:</span> <span>{foundWords.length} / 5</span>
+          </div>
+          <div className={styles.infoBox}>
+            <span>Puntaje:</span> <span>{foundWords.length} / 5</span>
           </div>
         </div>
-      ) : (
-        <div className="results">
-          <h2>¡Juego Terminado!</h2>
-          <p>Puntuación final: {score.toFixed(2)} / 5</p>
-          <p>Tiempo total: {timer.toFixed(2)} segundos</p>
+        <div className={styles.gameArea}>
+          <Board
+            board={board}
+            highlightedPositions={highlightedPositions}
+            onCellMouseDown={handleCellMouseDown}
+            onCellMouseEnter={handleCellMouseEnter}
+            onCellMouseUp={handleCellMouseUp}
+          />
+          <div className={styles.wordList}>
+            <h2>Palabras por encontrar:</h2>
+            <ul>
+              {selectedWords.map((word) => (
+                <li key={word} className={foundWords.includes(word) ? styles.found : ''}>
+                  {word}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-      )}
-
-      {/* Mostrar estado de guardado de la actividad */}
-      {isRecording && <p>Guardando actividad...</p>}
-      {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
-
-      <ToastContainer />
+        <ToastContainer />
+      </div>
     </div>
   );
 };
 
-export default ActivityScreen10;
+export default ActivityWordSearchLevel1;
