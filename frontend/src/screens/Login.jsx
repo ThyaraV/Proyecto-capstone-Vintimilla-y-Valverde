@@ -239,7 +239,8 @@ const Login = () => {
     <>
       <div className="typing-animation-container">
         <TypingAnimation
-          text="  Creemos en un enfoque integral y personalizado para el tratamiento de la salud mental y neurológica. Combinamos técnicas modernas con un enfoque humanista para abordar los problemas desde una perspectiva completa y personalizada."
+          text="  Creemos en un enfoque integral y personalizado para el tratamiento de la salud mental y neurológica. 
+          Combinamos técnicas modernas con un enfoque humanista para abordar los problemas desde una perspectiva completa y personalizada."
           speed={100}
         />
       </div>

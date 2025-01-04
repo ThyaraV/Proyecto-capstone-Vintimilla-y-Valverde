@@ -13,7 +13,8 @@ import {
   getCompletedActivities,
   getAssignedActivities,
   getActivitiesByUser,
-  getActiveTreatment, toggleActivateTreatment
+  getActiveTreatment, toggleActivateTreatment,
+  getCompletedActivitiesByTreatment
 } from '../controllers/treatmentController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -37,9 +38,11 @@ router.route('/:treatmentId/activities')
   .post(protect, recordActivity) // Solo pacientes pueden registrar actividades
   .get(protect, getCompletedActivities); // Solo pacientes pueden ver sus actividades
 
+router.route('/:treatmentId/completedActivities').get(protect, getCompletedActivitiesByTreatment);
 
 
-  router.route('/patient/:patientId/treatments').get(protect, admin, getTreatmentsByPatient);
+
+router.route('/patient/:patientId/treatments').get(protect, admin, getTreatmentsByPatient);
 router.route('/:treatmentId/assignedActivities').get(protect, getAssignedActivities);
 
 

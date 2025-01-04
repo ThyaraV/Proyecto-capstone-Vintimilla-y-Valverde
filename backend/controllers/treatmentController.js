@@ -1,4 +1,5 @@
 import asyncHandler from 'express-async-handler';
+import mongoose from 'mongoose';
 import Treatment from '../models/treatmentModel.js';
 import Patient from '../models/patientModel.js';
 import Activity from '../models/activityModel.js';
@@ -763,8 +764,50 @@ const toggleActivateTreatment = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Obtener actividades completadas para un tratamiento específico
+// @route   GET /api/treatments/:treatmentId/completedActivities
+// @access  Privado/Doctor
+const getCompletedActivitiesByTreatment = asyncHandler(async (req, res) => {
+  const { treatmentId } = req.params;
+
+  console.log(`Received request for completed activities of treatment: ${treatmentId}`);
+
+  // Validar que treatmentId es un ObjectId válido
+  if (!mongoose.Types.ObjectId.isValid(treatmentId)) {
+    console.log('Invalid treatmentId');
+    res.status(400);
+    throw new Error('ID de tratamiento inválido');
+  }
+
+  // Buscar el tratamiento
+  const treatment = await Treatment.findById(treatmentId)
+    .populate('completedActivities.activity') // Asegúrate de que esto coincide con tu esquema
+    .populate('patients')
+    //.populate('Doctor');
+
+  if (!treatment) {
+    console.log('Treatment not found');
+    res.status(404);
+    throw new Error('Tratamiento no encontrado');
+  }
+
+  console.log(`Treatment found: ${treatment.treatmentName}`);
+  //console.log(`Doctor ID: ${treatment.doctor._id}, User ID: ${req.user._id}`);
+
+  // Verificar que el usuario autenticado es el doctor del tratamiento
+  /*if (treatment.doctor.toString() !== req.user._id.toString()) {
+    console.log('User not authorized');
+    res.status(401);
+    throw new Error('No autorizado para ver las actividades de este tratamiento');
+  }*/
+
+  console.log(`Returning ${treatment.completedActivities.length} completed activities`);
+  res.status(200).json(treatment.completedActivities);
+});
+
 export { assignActivityToPatient, updateAssignmentResults, 
   getAssignedActivities,unassignActivityFromPatient,getMyAssignedActivities, 
   createTreatment, getMyTreatments, getActivitiesByUser,
   getTreatmentById, updateTreatment, getMyMedications, getDueMedications,
-getTreatmentsByPatient,recordActivity,getCompletedActivities, getActiveTreatment,toggleActivateTreatment};
+getTreatmentsByPatient,recordActivity,getCompletedActivities, getActiveTreatment,toggleActivateTreatment,
+getCompletedActivitiesByTreatment};
