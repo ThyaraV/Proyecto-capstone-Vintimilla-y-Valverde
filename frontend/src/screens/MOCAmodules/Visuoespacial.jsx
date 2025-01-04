@@ -763,7 +763,7 @@ const RelojActivity = ({
 
     // Dibujar las líneas
     context.strokeStyle = '#000';
-    context.lineWidth = 5;
+    context.lineWidth = 2;
     lines.forEach((line, idx) => {
       context.beginPath();
       line.forEach((point, index) => {
@@ -812,27 +812,31 @@ const RelojActivity = ({
       }
 
       // Parsear respuesta del backend
-      const data = await response.json();
-      console.log("Respuesta del backend:", data);
+      // En handleEvaluate (frontend):
+const data = await response.json();
+console.log("Respuesta del backend (reloj):", data);
 
-      // Validar el contenido de la respuesta
-      if (!('score' in data)) {
-        throw new Error("Respuesta inesperada del backend: Falta el campo 'score'.");
-      }
+// data.score es un entero 0..3
+// data.detail = { contorno, numeros, agujas }
 
-      // Actualizar el estado global del puntaje
-      setClockScore(data.score);
+if (typeof data.score === 'number') {
+  setClockScore(data.score);
 
-      // Mostrar mensaje basado en el puntaje
-      if (data.score === 1) {
-        setAlertMessage('¡Buen trabajo! Has dibujado correctamente el reloj (+1 Punto).');
-        setAlertVariant('success');
-      } else {
-        setAlertMessage('Lo siento, no has dibujado correctamente el reloj (0 Puntos).');
-        setAlertVariant('danger');
-      }
+  // Mensaje con desglose
+  if (data.score === 3) {
+    setAlertMessage('¡Perfecto! Contorno, números y agujas correctos. +3 Puntos');
+    setAlertVariant('success');
+  } else {
+    const { contorno, numeros, agujas } = data.detail;
+    setAlertMessage(`Puntaje: ${data.score} / 3
+    Contorno: ${contorno}
+    Números: ${numeros}
+    Agujas: ${agujas}`);
+    setAlertVariant('warning'); 
+  }
+  setShowAlert(true);
+}
 
-      setShowAlert(true);
       console.log("Evaluación completada.");
     } catch (err) {
       console.error("Error al evaluar el reloj:", err);

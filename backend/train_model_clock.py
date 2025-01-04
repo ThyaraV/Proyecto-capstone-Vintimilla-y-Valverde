@@ -1,103 +1,133 @@
 import os
+import csv
 import tensorflow as tf
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import numpy as np
+from tensorflow.keras import layers, models
+from PIL import Image
 
-# Parámetros para la carga de datos
-TRAIN_DIR = os.path.join('data_clock', 'train')
-VAL_DIR = os.path.join('data_clock', 'val')
-TEST_DIR = os.path.join('data_clock', 'test')  # Opcional para pruebas
+# Rutas absolutas o relativas para tus datos
+# (opción 1) USAR RUTAS ABSOLUTAS:
+# TRAIN_DIR = r"C:\Users\asval\Downloads\tesis\Proyecto-capstone-Vintimilla-y-Valverde\backend\data_clock\train"
+# TRAIN_CSV = r"C:\Users\asval\Downloads\tesis\Proyecto-capstone-Vintimilla-y-Valverde\backend\data_clock\train\train_labels.csv"
+# VAL_DIR   = r"C:\Users\asval\Downloads\tesis\Proyecto-capstone-Vintimilla-y-Valverde\backend\data_clock\val"
+# VAL_CSV   = r"C:\Users\asval\Downloads\tesis\Proyecto-capstone-Vintimilla-y-Valverde\backend\data_clock\val\val_labels.csv"
+
+# (opción 2) USAR RUTAS RELATIVAS (si prefieres no colocar las rutas completas):
+TRAIN_DIR = "data_clock/train"
+TRAIN_CSV = "data_clock/train/train_labels.csv"
+VAL_DIR   = "data_clock/val"
+VAL_CSV   = "data_clock/val/val_labels.csv"
+
+MODEL_PATH = "model_clock.h5"
 
 IMG_HEIGHT = 224
 IMG_WIDTH = 224
 BATCH_SIZE = 16
-EPOCHS = 10  
+EPOCHS = 10
 
-# Verificar que las rutas existen
-for directory in [TRAIN_DIR, VAL_DIR, TEST_DIR]:
-    if not os.path.exists(directory):
-        print(f"Error: La carpeta {directory} no existe.")
-        exit(1)
+def load_data_from_csv(base_dir, csv_path):
+    """
+    Carga rutas de imágenes y etiquetas multi-output (contorno, numeros, agujas).
+    Las imágenes se asumen en subcarpetas 'correct/' o 'incorrect/'.
+    """
+    images = []
+    labels = []
+    with open(csv_path, 'r', newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            filename = row['filename']  # p.ej. "correct/reloj_01.jpg" o "incorrect/reloj_10.jpg"
+            contorno = int(row['contorno'])
+            numeros  = int(row['numeros'])
+            agujas   = int(row['agujas'])
+            
+            # Ruta final = base_dir + "/" + filename (p.ej. data_clock/train/correct/reloj_01.jpg)
+            img_path = os.path.join(base_dir, filename)
+            if os.path.exists(img_path):
+                images.append(img_path)
+                labels.append([contorno, numeros, agujas])
+            else:
+                print(f"Advertencia: la imagen {img_path} no existe.")
+    
+    return images, np.array(labels, dtype="float32")
 
-# Generadores de imágenes con Data Augmentation para entrenamiento
-train_datagen = ImageDataGenerator(
-    rescale=1.0/255,
-    rotation_range=20,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True,
-    fill_mode='nearest'
-)
+def preprocess_image(path):
+    """
+    Lee la imagen, la redimensiona y la normaliza como MobileNetV2.
+    """
+    img = Image.open(path).convert('RGB')
+    img = img.resize((IMG_WIDTH, IMG_HEIGHT))
+    img_array = np.array(img)
+    # Preprocesamiento de MobileNetV2 (normalización y escalado)
+    img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)
+    return img_array
 
-# Para validación y test solemos usar menos aumentos para mantener consistencia
-val_datagen = ImageDataGenerator(rescale=1.0/255)
-test_datagen = ImageDataGenerator(rescale=1.0/255)
+def data_generator(paths, labels, batch_size):
+    """
+    Generador Python que yield batches de imágenes y etiquetas multi-output.
+    """
+    dataset_size = len(paths)
+    indices = np.arange(dataset_size)
+    
+    while True:
+        np.random.shuffle(indices)
+        for start in range(0, dataset_size, batch_size):
+            end = min(start + batch_size, dataset_size)
+            batch_indices = indices[start:end]
 
-# Carga de datos en batch desde directorios
-train_generator = train_datagen.flow_from_directory(
-    TRAIN_DIR,
-    target_size=(IMG_HEIGHT, IMG_WIDTH),
-    batch_size=BATCH_SIZE,
-    class_mode='binary',  # Correcto vs Incorrecto
-    shuffle=True
-)
+            batch_images = []
+            batch_labels = []
+            for i in batch_indices:
+                img_array = preprocess_image(paths[i])
+                batch_images.append(img_array)
+                batch_labels.append(labels[i])
+            
+            yield (np.array(batch_images), np.array(batch_labels))
 
-val_generator = val_datagen.flow_from_directory(
-    VAL_DIR,
-    target_size=(IMG_HEIGHT, IMG_WIDTH),
-    batch_size=BATCH_SIZE,
-    class_mode='binary',
-    shuffle=False
-)
 
-# Opcional: si quieres evaluar en test
-test_generator = test_datagen.flow_from_directory(
-    TEST_DIR,
-    target_size=(IMG_HEIGHT, IMG_WIDTH),
-    batch_size=BATCH_SIZE,
-    class_mode='binary',
-    shuffle=False
-)
+# Cargar datos de entrenamiento y validación
+train_paths, train_labels = load_data_from_csv(TRAIN_DIR, TRAIN_CSV)
+val_paths, val_labels     = load_data_from_csv(VAL_DIR,   VAL_CSV)
 
-# Carga del modelo base (MobileNetV2) sin la parte fully connected original
+# Definir pasos por época
+train_steps = len(train_paths) // BATCH_SIZE
+val_steps   = len(val_paths)   // BATCH_SIZE
+
+# Definir generadores
+train_gen = data_generator(train_paths, train_labels, BATCH_SIZE)
+val_gen   = data_generator(val_paths,   val_labels,   BATCH_SIZE)
+
+# Crear el modelo base (MobileNetV2) sin la parte fully connected
 base_model = tf.keras.applications.MobileNetV2(
     input_shape=(IMG_HEIGHT, IMG_WIDTH, 3),
-    include_top=False,  # quitamos las capas densas originales
+    include_top=False,
     weights='imagenet'
 )
+base_model.trainable = False  # Congelar el modelo base en un inicio
 
-# Congelamos el modelo base para que no se entrene en las primeras épocas
-base_model.trainable = False
-
-# Añadimos capas densas de clasificación
+# Añadir capas densas de clasificación multi-output (3 salidas: contorno, numeros, agujas)
 model = tf.keras.Sequential([
     base_model,
-    tf.keras.layers.GlobalAveragePooling2D(),
-    tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(1, activation='sigmoid')  # Binario: Correcto vs Incorrecto
+    layers.GlobalAveragePooling2D(),
+    layers.Dropout(0.2),
+    layers.Dense(3, activation="sigmoid")  # 3 salidas
 ])
 
-# Compilamos el modelo
 model.compile(
     optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-    loss='binary_crossentropy',
-    metrics=['accuracy']
+    loss="binary_crossentropy",  # Para cada salida (contorno, numeros, agujas)
+    metrics=["accuracy"]
 )
 
-print("=== Iniciando Entrenamiento ===")
+print("=== Iniciando Entrenamiento (Reloj) ===")
 
-# Entrenamiento del modelo
 history = model.fit(
-    train_generator,
+    train_gen,
+    steps_per_epoch=train_steps,
     epochs=EPOCHS,
-    validation_data=val_generator
+    validation_data=val_gen,
+    validation_steps=val_steps
 )
 
-# (Opcional) Evaluación final con la carpeta de test
-print("=== Evaluando en Test ===")
-test_loss, test_acc = model.evaluate(test_generator)
-print(f"Loss en Test: {test_loss:.4f} - Acc en Test: {test_acc:.4f}")
-
-# Guardamos el modelo en un archivo h5
-model.save('model_clock.h5')
-print("Modelo guardado como model_clock.h5")
+# Guardar el modelo
+model.save(MODEL_PATH)
+print(f"Modelo guardado en {MODEL_PATH}")

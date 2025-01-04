@@ -101,8 +101,9 @@ def evaluate_cube():
 @app.route('/api/evaluate-clock', methods=['POST'])
 def evaluate_clock():
     """
-    Endpoint para evaluar el dibujo del reloj.
-    Retorna {"score": 0 or 1} según se considere incorrecto o correcto.
+    Endpoint para evaluar el dibujo del reloj con 3 criterios:
+    contorno, numeros, agujas.
+    Retorna un total de 0 a 3, y el desglose.
     """
     if model_clock is None:
         return jsonify({"error": "No se cargó el modelo de reloj."}), 500
@@ -132,18 +133,32 @@ def evaluate_clock():
 
         # Realizar inferencia con modelo_clock
         preds = model_clock.predict(img_array)
-        probabilidad = float(preds[0][0])
+        # Ejemplo preds => [[0.83, 0.12, 0.99]]
+        prob_contorno = float(preds[0][0])
+        prob_numeros  = float(preds[0][1])
+        prob_agujas   = float(preds[0][2])
 
-        # Lógica de puntuación: Ajusta tu umbral según tu conveniencia
-        # Ejemplo: >= 0.5 es 1 (correcto), si no 0
-        score = 0 if probabilidad >= 0.7 else 1
+        # Asignar puntos con un umbral (ej: 0.5)
+        p_contorno = 1 if prob_contorno >= 0.5 else 0
+        p_numeros  = 1 if prob_numeros >= 0.5 else 0
+        p_agujas   = 1 if prob_agujas >= 0.5 else 0
 
-        print(f"[RELOJ] Puntaje asignado: {score}, Prob: {probabilidad:.4f}")
-        return jsonify({"score": score})
+        total_score = p_contorno + p_numeros + p_agujas
+
+        print(f"[RELOJ] contorno={p_contorno}, numeros={p_numeros}, agujas={p_agujas} => total={total_score}")
+        return jsonify({
+            "score": total_score,  # 0, 1, 2, 3
+            "detail": {
+                "contorno": p_contorno,
+                "numeros": p_numeros,
+                "agujas": p_agujas
+            }
+        })
 
     except Exception as e:
         print(f"Error al procesar la imagen del reloj: {e}")
         return jsonify({"error": "Error al procesar la imagen del reloj."}), 500
+
 
 
 if __name__ == '__main__':
