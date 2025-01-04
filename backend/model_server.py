@@ -12,22 +12,27 @@ app = Flask(__name__)
 CORS(app)
 
 # Carpeta para imágenes recibidas (opcional)
-if not os.path.exists('received_images'):
-    os.makedirs('received_images')
+RECEIVED_IMAGES_DIR = 'received_images'
+if not os.path.exists(RECEIVED_IMAGES_DIR):
+    os.makedirs(RECEIVED_IMAGES_DIR)
 
 # Cargar el modelo
+MODEL_PATH = 'model.h5'
+
 try:
-    model = tf.keras.models.load_model('model.h5')
-    print("Modelo cargado correctamente.")
+    model = tf.keras.models.load_model(MODEL_PATH)
+    print(f"Modelo cargado correctamente desde {MODEL_PATH}.")
 except Exception as e:
-    print(f"Error al cargar el modelo: {e}")
+    print(f"Error al cargar el modelo desde {MODEL_PATH}: {e}")
     exit(1)
 
 img_height = 224
 img_width = 224
 
 def preprocess_image(img):
-    # Ajuste y normalización consistente con el entrenamiento
+    """
+    Preprocesa la imagen para que sea compatible con MobileNetV2.
+    """
     img = img.convert('RGB')
     img = img.resize((img_width, img_height))
     img_array = np.array(img)
@@ -38,18 +43,25 @@ def preprocess_image(img):
 
 @app.route('/api/evaluate-cube', methods=['POST'])
 def evaluate():
+    """
+    Endpoint para evaluar el dibujo del cubo.
+    Recibe una imagen en base64, la procesa y devuelve el puntaje y probabilidad.
+    """
     data = request.get_json()
     image_data = data.get('image', '')
 
+    # Validar que la imagen está en formato base64
     if not image_data.startswith('data:image'):
         return jsonify({"error": "No es una imagen válida."}), 400
 
     try:
+        # Decodificar la imagen
         header, encoded = image_data.split(',', 1)
         img_bytes = base64.b64decode(encoded)
 
         # Guardar imagen recibida (opcional, para debug)
-        image_filename = f"received_images/cube_{int(time.time())}.png"
+        timestamp = int(time.time())
+        image_filename = os.path.join(RECEIVED_IMAGES_DIR, f"cube_{timestamp}.png")
         with open(image_filename, "wb") as f:
             f.write(img_bytes)
         print(f"Imagen recibida y guardada como {image_filename}")
@@ -62,15 +74,22 @@ def evaluate():
         preds = model.predict(img_array)
         print(f"Predicciones del modelo: {preds}")
 
-        # Umbral 0.5: >= 0.5 se considera correcto, de lo contrario incorrecto
-        score = 1 if preds[0][0] >= 0.5 else 0
+        # Obtener probabilidad y puntaje
+        probabilidad = float(preds[0][0])  # Probabilidad entre 0.0 y 1.0
+        score = 0 if probabilidad >= 0.7 else 1
 
-        print(f"Puntaje asignado: {score}")
-        return jsonify({"score": int(score)})
+        print(f"Puntaje asignado: {score}, Probabilidad: {probabilidad:.4f}")
+
+        # Devolver respuesta con score y probabilidad
+        return jsonify({
+            "score": score,
+            "prob": probabilidad
+        })
 
     except Exception as e:
         print(f"Error al procesar la imagen: {e}")
         return jsonify({"error": "Error al procesar la imagen."}), 500
 
 if __name__ == '__main__':
+    # Ejecutar el servidor Flask
     app.run(host='0.0.0.0', port=5001, debug=True)
