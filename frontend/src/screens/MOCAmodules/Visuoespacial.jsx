@@ -670,62 +670,320 @@ const RelojActivity = ({
   speakInstructions,
   isFirstModule
 }) => {
+  // Estado de dibujo
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [lines, setLines] = useState([]);
+
+  // Historial para deshacer/rehacer
+  const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
+
+  const canvasRef = useRef(null);
+
+  // Estados de carga y error
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Estados para el Alert
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertVariant, setAlertVariant] = useState('success');
+
+  // ======== EVENTOS DE DIBUJO EN EL CANVAS ========
+  const handleMouseDown = (e) => {
+    setIsDrawing(true);
+    const rect = e.target.getBoundingClientRect();
+    const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    
+    // Iniciar nueva línea
+    setLines((prev) => [...prev, [point]]);
+    setRedoStack([]); // Limpiar el redoStack al iniciar un nuevo trazo
+    console.log("Nueva línea iniciada:", point);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDrawing) return;
+    const rect = e.target.getBoundingClientRect();
+    const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+    setLines((prev) => {
+      const updated = [...prev];
+      updated[updated.length - 1] = [...updated[updated.length - 1], point];
+      return updated;
+    });
+    console.log("Punto agregado a la línea:", point);
+  };
+
+  const handleMouseUp = () => {
+    setIsDrawing(false);
+    console.log("Finalizó el trazo.");
+  };
+
+  // ======== BOTÓN DE BORRAR DIBUJO ========
+  const handleClear = () => {
+    setLines([]);
+    setUndoStack([]);
+    setRedoStack([]);
+    setClockScore(null);
+    setShowAlert(false);
+    setError(null);
+    console.log("Canvas limpiado.");
+  };
+
+  // ======== FUNCIÓN DE DESHACER (UNDO) ========
+  const handleUndo = () => {
+    if (lines.length === 0) return;
+    const lastLine = lines[lines.length - 1];
+    setRedoStack((prev) => [...prev, lastLine]);
+    setLines((prev) => prev.slice(0, prev.length - 1));
+    console.log("Deshacer: Última línea removida.");
+  };
+
+  // ======== FUNCIÓN DE REHACER (REDO) ========
+  const handleRedo = () => {
+    if (redoStack.length === 0) return;
+    const lineToRestore = redoStack[redoStack.length - 1];
+    setLines((prev) => [...prev, lineToRestore]);
+    setRedoStack((prev) => prev.slice(0, prev.length - 1));
+    console.log("Rehacer: Última línea restaurada.");
+  };
+
+  // ======== DIBUJAR EN EL CANVAS AL CAMBIAR 'lines' ========
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext('2d');
+
+    // Limpiar el canvas
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Fondo blanco
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Dibujar las líneas
+    context.strokeStyle = '#000';
+    context.lineWidth = 5;
+    lines.forEach((line, idx) => {
+      context.beginPath();
+      line.forEach((point, index) => {
+        if (index === 0) {
+          context.moveTo(point.x, point.y);
+        } else {
+          context.lineTo(point.x, point.y);
+        }
+      });
+      context.stroke();
+      console.log(`Línea ${idx + 1} dibujada con ${line.length} puntos.`);
+    });
+  }, [lines]);
+
+  // ======== FUNCIÓN PRINCIPAL: EVALUAR CON BACKEND ========
+  const handleEvaluate = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      console.error("Error: No se encontró el canvas.");
+      setAlertMessage("No se encontró el canvas.");
+      setAlertVariant('danger');
+      setShowAlert(true);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Convertir canvas a imagen Base64
+      const imageData = canvas.toDataURL("image/png");
+      console.log("Evaluando el reloj: Imagen convertida a Base64.");
+
+      // Llamar al endpoint /api/evaluate-clock
+      const response = await fetch('http://localhost:5001/api/evaluate-clock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageData })
+      });
+
+      console.log("Solicitud enviada a /api/evaluate-clock");
+
+      if (!response.ok) {
+        throw new Error(`Error en la petición: ${response.statusText}`);
+      }
+
+      // Parsear respuesta del backend
+      const data = await response.json();
+      console.log("Respuesta del backend:", data);
+
+      // Validar el contenido de la respuesta
+      if (!('score' in data)) {
+        throw new Error("Respuesta inesperada del backend: Falta el campo 'score'.");
+      }
+
+      // Actualizar el estado global del puntaje
+      setClockScore(data.score);
+
+      // Mostrar mensaje basado en el puntaje
+      if (data.score === 1) {
+        setAlertMessage('¡Buen trabajo! Has dibujado correctamente el reloj (+1 Punto).');
+        setAlertVariant('success');
+      } else {
+        setAlertMessage('Lo siento, no has dibujado correctamente el reloj (0 Puntos).');
+        setAlertVariant('danger');
+      }
+
+      setShowAlert(true);
+      console.log("Evaluación completada.");
+    } catch (err) {
+      console.error("Error al evaluar el reloj:", err);
+      setError("Hubo un problema al evaluar el reloj. Por favor, intenta nuevamente.");
+      setAlertMessage("Hubo un problema al evaluar el reloj. Por favor, intenta nuevamente.");
+      setAlertVariant('danger');
+      setShowAlert(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ======== EVALUAR Y LUEGO CONTINUAR ========
+  const handleAutoContinue = async () => {
+    await handleEvaluate();
+    handleNext(); // Avanzar al siguiente módulo
+    console.log("Auto-continue: Avanzando al siguiente módulo.");
+  };
+
   return (
     <div className="module-container">
       <div className="d-flex align-items-center">
-        <h4>Capacidades visuoconstructivas (Reloj)</h4>
+        <h4>Capacidades Visuoconstructivas (Reloj)</h4>
         <Button
           variant="link"
           onClick={() =>
             speakInstructions(
-              'Ahora me gustaría que dibuje un reloj, que incluya todos los números, ' +
-                'y que marque las 11 y 10.'
+              'Ahora me gustaría que dibuje un reloj, que incluya todos los números y marque las 11 y 10.'
             )
           }
         >
           {isSpeaking ? <FaStop /> : <FaPlay />}
         </Button>
       </div>
-      <p>
-        “Ahora me gustaría que dibuje un reloj, que incluya todos los números, y que marque las 11 y 10”.
-      </p>
-      {/* Similar to the cube activity, se podría implementar un canvas aquí */}
-      <div className="d-flex flex-column align-items-center">
-        <Button
-          variant={clockScore === 3 ? 'success' : 'outline-success'}
-          className={`toggle-button ${clockScore === 3 ? 'active' : ''} mb-2`}
-          onClick={() => setClockScore(3)}
-        >
-          Dibujo correctamente todas las características +3
+
+      <p>“Ahora me gustaría que dibuje un reloj, que incluya todos los números, y que marque las 11 y 10.”</p>
+
+      <div className="d-flex justify-content-center">
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {/* Imagen de referencia del reloj */}
+          
+          {/* Canvas para dibujar */}
+          <canvas
+            ref={canvasRef}
+            width={300}
+            height={300}
+            style={{ border: '1px solid black', backgroundColor: '#fff' }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          />
+        </div>
+      </div>
+
+      {/* Botones de Deshacer y Rehacer */}
+      <div className="d-flex justify-content-center mt-3">
+        <Button variant="outline-secondary" onClick={handleUndo} className="me-2">
+          Deshacer
         </Button>
-        <Button
-          variant={clockScore === 2 ? 'primary' : 'outline-primary'}
-          className={`toggle-button ${clockScore === 2 ? 'active' : ''} mb-2`}
-          onClick={() => setClockScore(2)}
-        >
-          Dibujo correctamente dos de tres características +2
-        </Button>
-        <Button
-          variant={clockScore === 1 ? 'warning' : 'outline-warning'}
-          className={`toggle-button ${clockScore === 1 ? 'active' : ''} mb-2`}
-          onClick={() => setClockScore(1)}
-        >
-          Dibujo correctamente solo una característica +1
-        </Button>
-        <Button
-          variant={clockScore === 0 ? 'danger' : 'outline-danger'}
-          className={`toggle-button ${clockScore === 0 ? 'active' : ''}`}
-          onClick={() => setClockScore(0)}
-        >
-          Ninguna de las anteriores 0
+        <Button variant="outline-secondary" onClick={handleRedo}>
+          Rehacer
         </Button>
       </div>
+
+      {/* Mostrar el Alert */}
+      {showAlert && (
+        <Alert
+          variant={alertVariant}
+          onClose={() => setShowAlert(false)}
+          dismissible
+          className="mt-3"
+        >
+          {alertMessage}
+        </Alert>
+      )}
+
+      <div className="d-flex justify-content-center mt-3">
+        <Button variant="warning" onClick={handleClear} className="me-2">
+          Borrar dibujo
+        </Button>
+        <Button
+          variant="success"
+          onClick={handleAutoContinue}
+          disabled={isLoading || lines.length === 0}
+          className="me-2"
+        >
+          {isLoading ? (
+            <>
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                aria-hidden="true"
+                className="me-2"
+              />
+              Evaluando...
+            </>
+          ) : (
+            "Continuar"
+          )}
+        </Button>
+        <Button
+          variant="primary"
+          onClick={handleEvaluate}
+          disabled={isLoading || lines.length === 0}
+        >
+          {isLoading ? (
+            <>
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                aria-hidden="true"
+                className="me-2"
+              />
+              Evaluando...
+            </>
+          ) : (
+            "Evaluar"
+          )}
+        </Button>
+      </div>
+
+      {error && (
+        <div className="alert alert-danger mt-3" role="alert">
+          {error}
+        </div>
+      )}
+
+      <div className="d-flex flex-column align-items-center mt-3">
+        {clockScore !== null && (
+          <div>
+            <Button
+              variant={clockScore === 1 ? 'success' : 'danger'}
+              className={`toggle-button ${clockScore === 1 ? 'active' : ''} mb-2`}
+              disabled
+            >
+              {clockScore === 1
+                ? 'Dibujado correctamente +1'
+                : 'No dibujado correctamente 0'}
+            </Button>
+          </div>
+        )}
+      </div>
+
       <div className="d-flex justify-content-between mt-4">
         <Button variant="secondary" onClick={handlePrevious} disabled={isFirstModule}>
           Regresar
-        </Button>
-        <Button variant="success" onClick={handleNext} disabled={clockScore === null}>
-          Continuar
         </Button>
       </div>
     </div>
