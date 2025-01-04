@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Button, Row, Col, Alert, Form, Spinner } from "react-bootstrap";
-import { FaPlay, FaStop } from "react-icons/fa";
+import { FaPlay, FaStop, FaMicrophone } from "react-icons/fa";
 
 const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
   const words = ["ROSTRO", "SEDA", "IGLESIA", "CLAVEL", "ROJO"];
@@ -18,7 +18,7 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
 
-  // Fases: 
+  // Fases:
   // 0: Intento espontáneo
   // 1: Pistas de categoría
   // 2: Opción múltiple
@@ -42,7 +42,7 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
     SEDA: "tela",
     IGLESIA: "edificio",
     CLAVEL: "flor",
-    ROJO: "color"
+    ROJO: "color",
   };
 
   // Opción múltiple
@@ -51,18 +51,20 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
     SEDA: ["lana", "algodon", "seda"],
     IGLESIA: ["iglesia", "escuela", "hospital"],
     CLAVEL: ["rosa", "clavel", "tulipan"],
-    ROJO: ["rojo", "azul", "verde"]
+    ROJO: ["rojo", "azul", "verde"],
   };
 
   const [categoryAnswers, setCategoryAnswers] = useState({});
   const [multipleChoiceAnswers, setMultipleChoiceAnswers] = useState({});
 
+  // Inicializar TTS
   useEffect(() => {
     if (!window.speechSynthesis) {
       setTtsSupported(false);
     }
   }, []);
 
+  // Inicializar SpeechRecognition
   useEffect(() => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -93,12 +95,17 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
     };
 
     recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
   }, []);
 
+  // TTS para leer instrucciones generales
   const speakInstructions = (text) => {
-    if (!ttsSupported) {
-      return;
-    }
+    if (!ttsSupported) return;
     if (isSpeaking) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
@@ -113,6 +120,7 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
     }
   };
 
+  // Iniciar reconocimiento de voz
   const handleListen = () => {
     if (!recognitionRef.current) {
       alert("Reconocimiento de voz no disponible.");
@@ -123,6 +131,7 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
     recognitionRef.current.start();
   };
 
+  // Detener reconocimiento de voz
   const handleStop = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
@@ -130,15 +139,16 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
     setListening(false);
   };
 
-  const normalizeText = (text) => {
-    return text
+  // Normalizar texto para comparación
+  const normalizeText = (text) =>
+    text
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z]/g, "")
       .trim();
-  };
 
+  // Función para ir agregando las palabras recordadas
   const handleAddSpontaneous = (word) => {
     const nWord = normalizeText(word);
     if (words.map((w) => normalizeText(w)).includes(nWord)) {
@@ -151,8 +161,8 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
     }
   };
 
+  // Confirmar respuesta (fase espontánea)
   const handleConfirm = () => {
-    // Confirmar la respuesta ingresada por voz o texto
     if (manualInput.trim() !== "") {
       manualInput
         .split(",")
@@ -164,27 +174,19 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
         .map((x) => x.trim())
         .forEach((w) => handleAddSpontaneous(w));
     }
-
     setManualInput("");
     setTranscript("");
     setConfirmation(false);
-
-    if (phase === 0) {
-      // Sigue intentando espontáneamente hasta que presione "Continuar espontáneo"
-    } else if (phase === 1) {
-      // Confirmación en fase de pistas de categoría
-      // Asignar en categoryAnswers
-    } else if (phase === 2) {
-      // Confirmación en fase de opción múltiple
-    }
   };
 
+  // Reintentar en caso de error
   const handleRetry = () => {
     setTranscript("");
     setManualInput("");
     setConfirmation(false);
   };
 
+  // Manejar Enter en el input manual
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -194,6 +196,7 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
     }
   };
 
+  // Continuar con las pistas de categoría
   const handleContinueSpontaneous = () => {
     // Al terminar fase espontánea, calcular qué palabras faltan
     const missing = words.filter(
@@ -203,51 +206,62 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
     setPhase(1);
   };
 
-  const handleCategoryPhaseConfirm = () => {
-    // Usuario ha intentado recordar con pistas de categoría (sin puntos)
-    // Calcular qué palabras faltan ahora
-    const missingAfterCategory = missedWords.filter((w) => {
-      const norm = normalizeText(w);
-      return !(
-        spontaneousAnswers.includes(norm) ||
-        (categoryAnswers[norm] && categoryAnswers[norm] === norm)
-      );
-    });
-    setMissedWords(missingAfterCategory);
-    setPhase(2);
-  };
-
-  const handleMultipleChoiceConfirm = () => {
-    // Última fase, no da puntos, pero registra las seleccionadas
-    // Calcular puntaje final
-    const spontScore = spontaneousAnswers.filter((ans) =>
-      words.map((w) => normalizeText(w)).includes(ans)
-    ).length;
-
-    setActivityScore(spontScore); 
-  };
-
+  // Maneja la entrada en fase de Pistas de Categoría
   const handleCategoryInputChange = (word, val) => {
     const nVal = normalizeText(val);
     setCategoryAnswers((prev) => ({ ...prev, [normalizeText(word)]: nVal }));
   };
 
-  const handleMultipleChoiceChange = (word, val) => {
-    setMultipleChoiceAnswers((prev) => ({ ...prev, [normalizeText(word)]: val }));
+  // Pasa a la fase de Opción Múltiple
+  const handleCategoryPhaseConfirm = () => {
+    // Fase 1 no afecta el puntaje
+    // Calcula qué palabras siguen faltando tras este intento
+    const missingAfterCategory = missedWords.filter((w) => {
+      const norm = normalizeText(w);
+      return !spontaneousAnswers.includes(norm) && !(categoryAnswers[norm] === norm);
+    });
+    setMissedWords(missingAfterCategory);
+    setPhase(2);
   };
 
+  // Maneja la selección de la opción múltiple
+  const handleMultipleChoiceChange = (word, val) => {
+    setMultipleChoiceAnswers((prev) => ({
+      ...prev,
+      [normalizeText(word)]: val,
+    }));
+  };
+
+  // Al presionar "registrar respuestas" en la fase 2
+  const handleMultipleChoiceConfirm = () => {
+    // Puntaje basado solo en lo recordado espontáneamente
+    const spontScore = spontaneousAnswers.filter((ans) =>
+      words.map((x) => normalizeText(x)).includes(ans)
+    ).length;
+    setActivityScore(spontScore);
+  };
+
+  // Al final, dar "Continuar" con la prueba
   const handleNext = () => {
-    // Calcular puntaje final
-    const spontScore = activityScore || 0;
-    onComplete(spontScore, { spontaneousScore: spontScore });
+    const totalScore = activityScore || 0;
+    onComplete(totalScore, {
+      totalScore,
+      spontaneousScore: activityScore,
+      pairAnswers: {
+        spontaneousAnswers,
+        categoryAnswers,
+        multipleChoiceAnswers,
+      },
+    });
   };
 
   const allDone = activityScore !== null;
 
   return (
     <div className="module-container">
-      <div className="d-flex align-items-center">
-        <h4>Recuerdo Diferido</h4>
+      {/* Título e instrucciones */}
+      <div className="d-flex align-items-center mb-3">
+        <h4 className="mb-0">Recuerdo Diferido</h4>
         <Button
           variant="link"
           onClick={() =>
@@ -255,154 +269,263 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
               "Antes le leí una serie de palabras. Dígame ahora todas las palabras de las que se acuerde."
             )
           }
-          disabled={isSpeakingLocal}
+          disabled={isSpeaking}
+          className="ms-3 text-decoration-none"
+          style={{ whiteSpace: "nowrap", minWidth: "220px" }}
         >
-          {isSpeakingLocal ? <FaStop /> : <FaPlay />}
+          {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
         </Button>
       </div>
-      <p>
-        “Antes le leí una serie de palabras, dígame ahora todas las que recuerde.”
+
+      <p className="mb-4">
+        Recuerde las palabras que escuchó anteriormente y añádalas a la lista.
       </p>
 
+      {/* Fase 0: Espontáneo */}
       {phase === 0 && (
         <>
           <p>
-            Intente recordar las palabras espontáneamente. Puede hablar o escribir las palabras separadas por comas.
+            Intente recordar las palabras espontáneamente. Puede hablar o
+            escribir las palabras separadas por comas.
           </p>
-          {useVoice && !confirmation && (
-            listening ? (
-              <div>
-                <Spinner animation="grow" variant="primary" />
-                <p className="mt-2">Escuchando...</p>
-                <Button variant="danger" onClick={handleStop}>
-                  Detener
+          <div className="text-center">
+            {useVoice && !confirmation && (
+              listening ? (
+                <div className="d-flex flex-column align-items-center mb-3">
+                  <Spinner animation="grow" variant="primary" className="mb-2" />
+                  <p>Escuchando...</p>
+                  <Button
+                    variant="danger"
+                    onClick={handleStop}
+                    style={{ minWidth: "220px" }}
+                  >
+                    Detener
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="primary"
+                  onClick={handleListen}
+                  className="mb-3"
+                  style={{ minWidth: "220px" }}
+                >
+                  <FaMicrophone className="me-2" />
+                  Hablar
                 </Button>
-              </div>
-            ) : (
-              <Button variant="primary" onClick={handleListen} className="me-3">
-                Hablar
-              </Button>
-            )
-          )}
-          <Form onSubmit={(e) => e.preventDefault()} className="d-flex mt-3">
-            <Form.Control
-              type="text"
-              placeholder="Escriba las palabras separadas por comas"
-              value={manualInput}
-              onChange={(e) => setManualInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-            />
-            <Button
-              variant="success"
-              onClick={() => setConfirmation(true)}
-              className="ms-2"
-              disabled={!manualInput.trim()}
-            >
-              Confirmar
-            </Button>
-          </Form>
+              )
+            )}
 
-          {confirmation && (
-            <div className="mt-3">
-              <Alert variant="secondary">
-                <p>¿Es correcta su respuesta?</p>
-                <strong>"{transcript || manualInput}"</strong>
-              </Alert>
+            <Form
+              onSubmit={(e) => e.preventDefault()}
+              className="d-flex flex-column align-items-center"
+            >
+              <Form.Control
+                type="text"
+                placeholder="Escriba las palabras separadas por comas"
+                value={manualInput}
+                onChange={(e) => setManualInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                style={{ maxWidth: "500px", marginBottom: "10px" }}
+              />
               <Button
                 variant="success"
-                onClick={handleConfirm}
-                className="me-2"
+                onClick={() => setConfirmation(true)}
+                disabled={!manualInput.trim()}
+                style={{ minWidth: "220px" }}
               >
-                Sí
+                Confirmar
               </Button>
-              <Button variant="warning" onClick={handleRetry}>
-                Reintentar
+            </Form>
+
+            {confirmation && (
+              <div className="mt-3">
+                <Alert variant="secondary">
+                  <p>¿Es correcta su respuesta?</p>
+                  <strong>"{transcript || manualInput}"</strong>
+                </Alert>
+                <div className="d-flex justify-content-center">
+                  <Button
+                    variant="warning"
+                    onClick={handleRetry}
+                    className="me-3"
+                    style={{ minWidth: "120px" }}
+                  >
+                    Reintentar
+                  </Button>
+                  <Button
+                    variant="success"
+                    onClick={handleConfirm}
+                    style={{ minWidth: "120px" }}
+                  >
+                    Sí
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Lista de palabras registradas espontáneamente */}
+            {spontaneousAnswers.length > 0 && (
+              <div className="mt-3">
+                <h5>Palabras registradas:</h5>
+                <ul>
+                  {spontaneousAnswers.map((ans, index) => (
+                    <li key={index}>{ans.toUpperCase()}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="d-flex justify-content-center mt-3">
+              <Button
+                variant="info"
+                onClick={handleContinueSpontaneous}
+                style={{ minWidth: "220px" }}
+              >
+                Continuar con pistas
               </Button>
             </div>
-          )}
-          <div className="mt-3">
-            <Button variant="info" onClick={handleContinueSpontaneous}>
-              Continuar a las pistas de categoría
-            </Button>
           </div>
         </>
       )}
 
+      {/* Fase 1: Pistas de Categoría */}
       {phase === 1 && (
         <>
-          <p>Ahora le daré una pista de categoría para cada palabra que no recordó espontáneamente. Intente recordarlas ahora. Sin puntos por esta fase.</p>
-          {missedWords.map((w) => (
-            <div key={w} className="mt-3">
-              <p><strong>{w}</strong>: pista de categoría: {categoryClues[w]}</p>
-              <Form onSubmit={(e) => e.preventDefault()} className="d-flex">
-                <Form.Control
-                  type="text"
-                  placeholder="Respuesta"
-                  value={categoryAnswers[normalizeText(w)] || ""}
-                  onChange={(e) => handleCategoryInputChange(w, e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                    }
-                  }}
-                />
-              </Form>
-            </div>
-          ))}
-          <div className="mt-3">
-            <Button variant="info" onClick={handleCategoryPhaseConfirm}>
-              Continuar a la opción múltiple
-            </Button>
-          </div>
-        </>
-      )}
-
-      {phase === 2 && (
-        <>
-          <p>Ahora le daré opciones múltiples para las palabras que aún no recordó. Escoja la correcta. Sin puntos por esta fase.</p>
-          {missedWords.map((w) => (
-            <div key={w} className="mt-3">
-              <p><strong>{w}</strong>: Escoja la correcta</p>
-              {multipleChoice[w].map((opt) => (
-                <div key={opt} className="d-flex align-items-center mb-2">
-                  <Form.Check
-                    type="radio"
-                    name={normalizeText(w)}
-                    id={normalizeText(w) + normalizeText(opt)}
-                    label={opt}
-                    onChange={() => handleMultipleChoiceChange(w, opt)}
-                  />
+          <p>
+            A continuación se darán pistas de categoría para las palabras que no
+            recordó espontáneamente. No se otorgan puntos por esta fase.
+          </p>
+          <Row className="justify-content-center">
+            <Col md={8}>
+              {missedWords.map((w) => (
+                <div key={w} className="mt-3">
+                  <Alert variant="secondary">
+                    <p>
+                      <strong>Pista de categoría:</strong> {categoryClues[w]}
+                    </p>
+                    <Form onSubmit={(e) => e.preventDefault()} className="d-flex justify-content-center">
+                      <Form.Control
+                        type="text"
+                        placeholder="Respuesta"
+                        value={categoryAnswers[normalizeText(w)] || ""}
+                        onChange={(e) =>
+                          setCategoryAnswers((prev) => ({
+                            ...prev,
+                            [normalizeText(w)]: normalizeText(e.target.value),
+                          }))
+                        }
+                        style={{ maxWidth: "400px", marginRight: "10px" }}
+                      />
+                    </Form>
+                  </Alert>
                 </div>
               ))}
-            </div>
-          ))}
-          <div className="mt-3">
-            <Button variant="info" onClick={() => {
-              const spontWords = normalizeTextWords(spontaneousAnswers);
-              const spontScore = spontWords.filter((sw) => words.map((x) => normalizeText(x)).includes(sw)).length;
-              setActivityScore(spontScore);
-            }}>
-              Finalizar Evaluación
-            </Button>
-          </div>
+              <div className="d-flex justify-content-center mt-3">
+                <Button
+                  variant="info"
+                  onClick={handleCategoryPhaseConfirm}
+                  style={{ minWidth: "220px" }}
+                >
+                  Continuar con opción múltiple
+                </Button>
+              </div>
+            </Col>
+          </Row>
         </>
       )}
 
+      {/* Fase 2: Opción múltiple */}
+      {phase === 2 && (
+        <>
+          <p>
+            Seleccione la respuesta correcta para las palabras que aún no
+            recordó. Tampoco se otorga puntaje en esta fase.
+          </p>
+          <Row className="justify-content-center">
+            <Col md={8}>
+              {missedWords.map((w) => (
+                <div key={w} className="mt-3">
+                  <Alert variant="secondary">
+                    <p>
+                      <strong>{w}</strong> - Elija la opción correcta
+                    </p>
+                    <Form>
+                      {multipleChoice[w].map((opt) => (
+                        <div key={opt} className="d-flex align-items-center mb-2">
+                          <Form.Check
+                            type="radio"
+                            name={normalizeText(w)}
+                            id={normalizeText(w) + normalizeText(opt)}
+                            label={opt}
+                            onChange={() =>
+                              setMultipleChoiceAnswers((prev) => ({
+                                ...prev,
+                                [normalizeText(w)]: opt,
+                              }))
+                            }
+                          />
+                        </div>
+                      ))}
+                    </Form>
+                  </Alert>
+                </div>
+              ))}
+              <div className="d-flex justify-content-center mt-3">
+                <Button
+                  variant="info"
+                  onClick={() => {
+                    // Calcular puntaje final basado solo en lo recordado espontáneamente
+                    const spontScore = spontaneousAnswers.filter((ans) =>
+                      words.map((x) => normalizeText(x)).includes(ans)
+                    ).length;
+                    setActivityScore(spontScore);
+                  }}
+                  style={{ minWidth: "220px" }}
+                >
+                  Registrar respuestas
+                </Button>
+              </div>
+            </Col>
+          </Row>
+        </>
+      )}
+
+      {/* Mostrar puntaje final */}
       {activityScore !== null && (
-        <div className="mt-3">
-          <p>Ha finalizado la prueba de recuerdo diferido.</p>
+        <div className="text-center mt-4">
+          <Alert variant="success">
+            ¡Ha finalizado la prueba de recuerdo diferido!
+          </Alert>
           <p>Puntaje (solo por recuerdos espontáneos): {activityScore}</p>
         </div>
       )}
 
+      {/* Botones de navegación */}
       <div className="d-flex justify-content-between mt-4">
-        <Button variant="secondary" onClick={onPrevious} disabled={isFirstModule}>
+        <Button
+          variant="secondary"
+          onClick={onPrevious}
+          disabled={isFirstModule}
+          style={{ minWidth: "150px" }}
+        >
           Regresar
         </Button>
         <Button
           variant="success"
-          onClick={() => onComplete(activityScore || 0, { spontaneousScore: activityScore || 0 })}
+          onClick={() => {
+            const finalScore = activityScore || 0;
+            onComplete(finalScore, {
+              totalScore: finalScore,
+              spontaneousScore: finalScore,
+              pairAnswers: {
+                spontaneousAnswers,
+                categoryAnswers,
+                multipleChoiceAnswers,
+              },
+            });
+          }}
           disabled={activityScore === null}
+          style={{ minWidth: "150px" }}
         >
           Continuar
         </Button>
@@ -410,17 +533,5 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
     </div>
   );
 };
-
-// Función auxiliar para normalizar listas de palabras ya guardadas
-function normalizeTextWords(list) {
-  return list.map((w) =>
-    w
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z]/g, "")
-      .trim()
-  );
-}
 
 export default RecuerdoDiferido;
