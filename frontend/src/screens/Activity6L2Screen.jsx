@@ -8,7 +8,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useDrag, useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import '../assets/styles/ActivityScreenLevel2.css'; // Asegúrate de crear y ajustar este archivo CSS
+import '../assets/styles/ActivityScreen6Level2.css'; // Asegúrate de crear y ajustar este archivo CSS
 
 // Importa las imágenes de Casas
 import casa1Image from '../images/casa1.png';
@@ -234,53 +234,52 @@ const ActivityScreenLevel2 = ({ activity, treatmentId }) => { // Recibe 'activit
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="image-classification-level2">
-        <h1>Clasificación de Imágenes - Nivel 2</h1>
-        <p>Tiempo: {timer} segundos</p>
+      <div className="image-classification-wrapper"> {/* Nuevo contenedor para aplicar fondo */}
+        <div className="image-classification-level2"> {/* Contenedor existente */}
+          <h1 className="title-level2">Clasificación de Imágenes - Nivel 2</h1> {/* Agregar clase 'title-level2' */}
+          <p className="timer-level2">Tiempo: {timer} segundos</p> {/* Agregar clase 'timer-level2' */}
 
-        <div className="categories-container-level2">
-          {categoriesLevel2.map((category) => (
-            <Category
-              key={category.id}
-              category={category}
-              assignedImages={Object.keys(assignedCategories)
-                .filter((imageId) => assignedCategories[imageId] === category.name)
-                .map((imageId) => selectedImages.find((image) => image.id === parseInt(imageId)))}
-              onDrop={(image) => handleDrop(image, category)}
-            />
-          ))}
-        </div>
-
-        <div className="images-container-level2">
-          {selectedImages
-            .filter(image => !Object.keys(assignedCategories).includes(image.id.toString()))
-            .map((image) => (
-              <ImageItem key={image.id} image={image} />
+          <div className="categories-container-level2">
+            {categoriesLevel2.map((category) => (
+              <Category
+                key={category.id}
+                category={category}
+                assignedImages={Object.keys(assignedCategories)
+                  .filter((imageId) => assignedCategories[imageId] === category.name)
+                  .map((imageId) => selectedImages.find((image) => image.id === parseInt(imageId)))}
+                onDrop={(image) => handleDrop(image, category)}
+              />
             ))}
-        </div>
-
-        {!gameFinished && (
-          <button onClick={checkAnswers} className="submit-button-level2">
-            Enviar Respuesta
-          </button>
-        )}
-
-        {gameFinished && (
-          <div className="results-level2">
-            <h2>¡Juego Terminado!</h2>
-            <p>Puntaje: {score} / 5</p>
-            <p>Tiempo total: {timer} segundos</p>
-            <button onClick={restartGame} className="restart-button-level2">
-              Jugar de Nuevo
-            </button>
           </div>
-        )}
 
-        {/* Mostrar estado de guardado de la actividad */}
-        {isRecording && <p>Guardando actividad...</p>}
-        {recordError && <p>Error: {recordError?.data?.message || recordError.message}</p>}
-        
-        <ToastContainer />
+          <div className="images-container-level2">
+            {selectedImages
+              .filter(image => !Object.keys(assignedCategories).includes(image.id.toString()))
+              .map((image) => (
+                <ImageItem key={image.id} image={image} />
+              ))}
+          </div>
+
+          {!gameFinished && (
+            <button onClick={checkAnswers} className="submit-button-level2">
+              Enviar Respuesta
+            </button>
+          )}
+
+          {gameFinished && (
+            <div className="results-level2">
+              <h2>¡Juego Terminado!</h2>
+              <p>Puntaje: {score} / 5</p>
+              <p>Tiempo total: {timer} segundos</p>
+            </div>
+          )}
+
+          {/* Mostrar estado de guardado de la actividad */}
+          {isRecording && <p className="recording-level2">Guardando actividad...</p>}
+          {recordError && <p className="error-level2">Error: {recordError?.data?.message || recordError.message}</p>}
+          
+          <ToastContainer />
+        </div>
       </div>
     </DndProvider>
   );
@@ -334,37 +333,16 @@ const Category = ({ category, assignedImages, onDrop }) => {
     <div
       ref={drop}
       className="category-level2"
-      style={{
-        backgroundColor: isOver ? '#f0f0f0' : 'white',
-        padding: '20px',
-        border: '2px dashed gray',
-        minHeight: '200px',
-        margin: '10px',
-        borderRadius: '8px',
-        width: '30%' // Ajuste para tres categorías
-      }}
     >
       <h3>{category.name}</h3>
-      <div className="assigned-images-level2" style={{ display: 'flex', flexWrap: 'wrap' }}>
+      <div className="assigned-images-level2">
         {assignedImages.map((image) => (
           image && (
             <div
               key={image.id}
               className="image-item-level2"
-              style={{
-                width: '80px',
-                height: '80px',
-                margin: '5px',
-                border: '1px solid #ccc',
-                borderRadius: '8px',
-                overflow: 'hidden',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: '#f9f9f9'
-              }}
             >
-              <img src={image.src} alt={image.alt} style={{ maxWidth: '100%', maxHeight: '100%' }} />
+              <img src={image.src} alt={image.alt} />
             </div>
           )
         ))}

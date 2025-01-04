@@ -1,0 +1,96 @@
+/* src/assets/styles/ActivityReport.css */
+
+/* Ajusta o elimina cualquier `overflow: hidden` en contenedores padre */
+.activity-report-screen {
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    min-height: 100vh;
+  }
+  
+  .content {
+    /* IMPORTANTE: no uses overflow: hidden si quieres ver el tooltip */
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .selection-section, .charts-section {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    /* evita overflow hidden */
+    overflow: visible; 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Ajustes visuales */
+  .selection-section select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    background-color: #fafafa;
+    transition: border-color 0.3s ease;
+  }
+  
+  .selection-section select:focus {
+    border-color: #007bff;
+    outline: none;
+  }
+  
+  .charts-section h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #555;
+  }
+  
+  .charts-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    overflow: visible; /* Asegurarte de que sea visible */
+  }
+  
+  /* Leyenda */
+  .chart-legend {
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  /* El item de la leyenda */
+  .chart-legend .rv-discrete-color-legend__item {
+    margin-right: 15px;
+    margin-bottom: 10px;
+  }
+  
+  /* Tooltip forzado */
+  .tooltip {
+    position: absolute !important; /* forzar que sea absolute */
+    pointer-events: none !important;
+    z-index: 99999 !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid #ccc !important;
+    padding: 10px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+    white-space: nowrap;
+    color: #333 !important;
+    font-size: 14px !important;
+  }
+  
+  /* Responsividad */
+  @media (max-width: 768px) {
+    .charts-container {
+      gap: 20px;
+    }
+    .tooltip {
+      font-size: 12px !important;
+    }
+  }
+  

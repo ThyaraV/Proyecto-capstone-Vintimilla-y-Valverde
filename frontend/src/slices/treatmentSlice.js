@@ -121,6 +121,12 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         'Treatments',
       ],
     }),
+    getCompletedActivitiesByTreatment: builder.query({
+      query: (treatmentId) => `/api/treatments/${treatmentId}/completedActivities`,
+      providesTags: (result, error, treatmentId) => [
+        { type: 'CompletedActivities', id: treatmentId },
+      ],
+    }),
   }),
 });
 
@@ -148,5 +154,6 @@ export const {
   useRecordActivityMutation,
   useGetCompletedActivitiesQuery,
   useGetActiveTreatmentQuery,
-  useToggleActivateTreatmentMutation
+  useToggleActivateTreatmentMutation,
+  useGetCompletedActivitiesByTreatmentQuery
 } = treatmentApiSlice;
