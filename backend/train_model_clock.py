@@ -5,14 +5,6 @@ import numpy as np
 from tensorflow.keras import layers, models
 from PIL import Image
 
-# Rutas absolutas o relativas para tus datos
-# (opción 1) USAR RUTAS ABSOLUTAS:
-# TRAIN_DIR = r"C:\Users\asval\Downloads\tesis\Proyecto-capstone-Vintimilla-y-Valverde\backend\data_clock\train"
-# TRAIN_CSV = r"C:\Users\asval\Downloads\tesis\Proyecto-capstone-Vintimilla-y-Valverde\backend\data_clock\train\train_labels.csv"
-# VAL_DIR   = r"C:\Users\asval\Downloads\tesis\Proyecto-capstone-Vintimilla-y-Valverde\backend\data_clock\val"
-# VAL_CSV   = r"C:\Users\asval\Downloads\tesis\Proyecto-capstone-Vintimilla-y-Valverde\backend\data_clock\val\val_labels.csv"
-
-# (opción 2) USAR RUTAS RELATIVAS (si prefieres no colocar las rutas completas):
 TRAIN_DIR = "data_clock/train"
 TRAIN_CSV = "data_clock/train/train_labels.csv"
 VAL_DIR   = "data_clock/val"

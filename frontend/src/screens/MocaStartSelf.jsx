@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Button, Container, ProgressBar, Row, Col, ListGroup } from "react-bootstrap";
+import { Button, Container, ProgressBar, Row, Col, ListGroup, Alert, Spinner } from "react-bootstrap";
 import { useGetPatientsQuery } from "../slices/patientApiSlice";
-import { useMoca } from "../context/MocaContext";
+import { useCreateMocaSelfMutation } from "../slices/mocaSelfApiSlice"; // Importar hook para enviar datos
 import Visuoespacial from "./MOCAmodules/Visuoespacial";
 import Identificacion from "./MOCAmodules/Identificacion";
 import Memoria from "./MOCAmodules/Memoria";
@@ -31,7 +31,6 @@ const MocaStartSelf = () => {
   const { data: patients = [] } = useGetPatientsQuery();
   const selectedPatient = patients.find((patient) => patient._id === id);
 
-  const { totalScore, updateScore } = useMoca();
   const [testStarted, setTestStarted] = useState(false);
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -40,6 +39,10 @@ const MocaStartSelf = () => {
   const [individualScores, setIndividualScores] = useState({});
   const [moduleScores, setModuleScores] = useState({});
   const [selectedModuleIndex, setSelectedModuleIndex] = useState(null);
+  const [testCompleted, setTestCompleted] = useState(false); // Nuevo estado para detectar la finalización del test
+
+  // Hook para la mutación de crear MoCA Self
+  const [createMocaSelf, { isLoading: isSaving, isSuccess, isError, error: saveError }] = useCreateMocaSelfMutation();
 
   useEffect(() => {
     let interval;
@@ -64,18 +67,18 @@ const MocaStartSelf = () => {
     // Guardar puntaje del módulo
     setModuleScores((prevModuleScores) => ({
       ...prevModuleScores,
-      [moduleId]: moduleScore,
+      [MODULES[moduleId].name]: moduleScore,
     }));
 
     // Calcular puntaje actual
     const newCurrentScore = Object.values({
       ...moduleScores,
-      [moduleId]: moduleScore,
+      [MODULES[moduleId].name]: moduleScore,
     }).reduce((sum, score) => sum + score, 0);
 
     setCurrentScore(newCurrentScore);
 
-    // Guardar respuestas del modulo actual
+    // Guardar respuestas del módulo actual
     setIndividualScores((prevScores) => ({
       ...prevScores,
       [MODULES[moduleId].name]: { ...activityScores, total: moduleScore },
@@ -89,9 +92,7 @@ const MocaStartSelf = () => {
       if (currentModuleIndex < MODULES.length - 1) {
         setCurrentModuleIndex(currentModuleIndex + 1);
       } else {
-        alert(`¡Prueba completada! Puntaje final: ${newCurrentScore}`);
-        // Aquí podrías mandar todo a un backend o guardar los resultados
-        // individualScores contiene todas las respuestas y puntajes por módulo.
+        setTestCompleted(true); // Marcar que el test ha finalizado
       }
     }
   };
@@ -111,6 +112,78 @@ const MocaStartSelf = () => {
   };
 
   const CurrentModuleComponent = MODULES[currentModuleIndex].component;
+
+  // Función para manejar el envío de resultados simulados
+  const handleSimulateAndSaveResults = async () => {
+    if (!selectedPatient) {
+      alert("Paciente no seleccionado.");
+      return;
+    }
+
+    // Datos simulados de prueba
+    const simulatedScores = {
+      Visuoespacial: { alternancia: 0, cube: 0, clock: 1, total: 1 },
+      Identificación: { "1": "Un camello.", "2": "León.", "3": "Reina serán.", total: 0 },
+      Memoria: { responses: ["ROSA", "CLAVEL"], total: 1 },
+      Atención: { activity1: 0, activity2: 0, activity3: null, total: 0 },
+      Lenguaje: {
+        totalScore: 0,
+        activity1: {
+          activityScore: 0,
+          phraseAnswers: [
+            { phraseIndex: 0, response: "El gato se esconde." },
+            { phraseIndex: 1, response: "Espero que él entregue el mensaje una vez que ella se lo pida." },
+          ],
+        },
+        activity2: { activityScore: 0, words: [] },
+        total: 0,
+      },
+      Abstracción: {
+        totalScore: 1,
+        activity1: 0,
+        activity2: 1,
+        pairAnswers: [{ pairIndex: 0, input: "nada", correct: false }],
+        total: 1,
+      },
+      RecuerdoDiferido: {
+        totalScore: 0,
+        spontaneousScore: 0,
+        pairAnswers: {
+          spontaneousAnswers: [],
+          categoryAnswers: {},
+          multipleChoiceAnswers: { rojo: "rojo" },
+        },
+        total: 0,
+      },
+      Orientación: {
+        date: { day: "2", month: "marzo", year: "2023" },
+        weekday: "sábado",
+        location: "",
+        total: 0,
+      },
+    };
+
+    const totalScore = Object.values(simulatedScores).reduce(
+      (sum, module) => sum + (module.total || 0),
+      0
+    );
+
+    // Enviar datos simulados al backend
+    try {
+      await createMocaSelf({
+        patientId: selectedPatient._id,
+        patientName: selectedPatient.user?.name || "Paciente Desconocido",
+        modulesData: simulatedScores,
+        totalScore,
+      }).unwrap();
+
+      alert("Resultados simulados guardados exitosamente.");
+      setTestCompleted(true);
+    } catch (err) {
+      console.error("Error al guardar resultados simulados:", err);
+      alert("Hubo un error al guardar los resultados simulados. Por favor, intenta nuevamente.");
+    }
+  };
 
   return (
     <Container className="moca-container my-5">
@@ -198,6 +271,74 @@ const MocaStartSelf = () => {
               ))}
             </ListGroup>
           </div>
+
+          {/* Botón para guardar resultados reales, visible solo cuando el test está completado */}
+          {testCompleted && (
+            <Row className="mt-4">
+              <Col className="d-flex justify-content-end">
+                <Button
+                  variant="success"
+                  onClick={handleSimulateAndSaveResults}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <Spinner
+                        as="span"
+                        animation="border"
+                        size="sm"
+                        role="status"
+                        aria-hidden="true"
+                        className="me-2"
+                      />
+                      Guardando...
+                    </>
+                  ) : (
+                    "Guardar Resultados"
+                  )}
+                </Button>
+              </Col>
+            </Row>
+          )}
+
+          {/* Botón adicional para simular y guardar resultados */}
+          <Row className="mt-4">
+            <Col className="d-flex justify-content-end">
+              <Button
+                variant="secondary"
+                onClick={handleSimulateAndSaveResults}
+                disabled={isSaving || testCompleted}
+              >
+                {isSaving ? (
+                  <>
+                    <Spinner
+                      as="span"
+                      animation="border"
+                      size="sm"
+                      role="status"
+                      aria-hidden="true"
+                      className="me-2"
+                    />
+                    Simulando...
+                  </>
+                ) : (
+                  "Simular y Guardar Resultados"
+                )}
+              </Button>
+            </Col>
+          </Row>
+
+          {/* Mensajes de éxito o error al guardar */}
+          {isSuccess && (
+            <Alert variant="success" className="mt-3 text-center">
+              Resultados guardados exitosamente.
+            </Alert>
+          )}
+          {isError && (
+            <Alert variant="danger" className="mt-3 text-center">
+              {saveError?.data?.error || "Hubo un error al guardar los resultados."}
+            </Alert>
+          )}
         </>
       )}
     </Container>

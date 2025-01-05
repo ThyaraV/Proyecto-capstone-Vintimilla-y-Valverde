@@ -13,6 +13,7 @@ import patientRoutes from "./routes/patientRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import treatmentRoutes from "./routes/treatmentRoutes.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
+import mocaSelfRoutes from "./routes/mocaSelfRoutes.js";
 import axios from "axios"; // Importar axios para realizar solicitudes HTTP
 import { initSocket } from './socket.js';
 
@@ -40,6 +41,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/chats", chatRoutes);
+app.use("/api/mocaSelf", mocaSelfRoutes);
 
 // Montar las rutas de tratamientos y asignaciones en sus respectivas rutas
 app.use('/api/treatments', treatmentRoutes);
