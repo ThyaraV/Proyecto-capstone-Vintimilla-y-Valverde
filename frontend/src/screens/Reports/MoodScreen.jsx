@@ -1,17 +1,22 @@
+// src/screens/Reports/MoodScreen.jsx
 import React, { useState } from "react";
 import {
-  XYPlot,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
-  HorizontalGridLines,
-  LineSeries,
-  VerticalBarSeries,
-  RadialChart,
-  MarkSeries,
-  Hint,
-  DiscreteColorLegend,
-} from "react-vis";
-import "react-vis/dist/style.css";
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  ScatterChart,
+  Scatter,
+} from "recharts";
 import { useGetDoctorWithPatientsQuery } from "../../slices/doctorApiSlice";
 import "../../assets/styles/Mood.css"; // Archivo de estilos
 
@@ -19,7 +24,6 @@ const MoodScreen = () => {
   const { data: patients, isLoading, error } = useGetDoctorWithPatientsQuery();
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [moodData, setMoodData] = useState([]);
-  const [hintValue, setHintValue] = useState(null);
 
   const moodMap = {
     "😠": { value: 1, color: "#FF0000" }, // Rojo
@@ -68,8 +72,27 @@ const MoodScreen = () => {
   };
 
   const legendItems = Object.entries(moodMap).map(([mood, { color }]) => ({
-    title: mood,
+    name: mood,
     color,
+  }));
+
+  // Preparar datos para el gráfico de pastel
+  const pieData = moodData.reduce((acc, { mood, color }) => {
+    const found = acc.find((item) => item.name === mood);
+    if (found) {
+      found.value += 1;
+    } else {
+      acc.push({ name: mood, value: 1, color });
+    }
+    return acc;
+  }, []);
+
+  // Preparar datos para el ScatterChart (análogo a MarkSeries)
+  const scatterData = moodData.map((d) => ({
+    x: d.x,
+    y: d.y,
+    color: d.color,
+    mood: d.mood,
   }));
 
   return (
@@ -101,82 +124,118 @@ const MoodScreen = () => {
             <h3>Gráficas de {selectedPatient.user.name}</h3>
             {moodData.length > 0 ? (
               <div className="chart-container">
-                <DiscreteColorLegend
-                  items={legendItems}
-                  orientation="horizontal"
-                  className="chart-legend"
+                <Legend
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
+                  payload={legendItems.map((item) => ({
+                    value: item.name,
+                    type: "square",
+                    color: item.color,
+                  }))}
                 />
 
+                {/* Gráfica de Línea */}
                 <div className="chart-item">
                   <h4>Gráfica de Línea</h4>
-                  <XYPlot
-                    height={300}
-                    width={window.innerWidth > 768 ? 800 : window.innerWidth - 40}
-                    margin={{ left: 50, right: 50, top: 20, bottom: 50 }}
-                  >
-                    <HorizontalGridLines />
-                    <XAxis
-                      title="Tiempo"
-                      tickFormat={(v) => moodData[v]?.date || ""}
-                    />
-                    <YAxis title="Estado Emocional" />
-                    <LineSeries
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart
                       data={moodData}
-                      style={{ stroke: "#007bff", strokeWidth: 3 }}
-                    />
-                    <MarkSeries
-                      data={moodData.map((d) => ({
-                        x: d.x,
-                        y: d.y,
-                        color: d.color,
-                      }))}
-                      colorType="literal"
-                      size={5}
-                    />
-                  </XYPlot>
+                      margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="x"
+                        tickFormatter={(tick) => moodData[tick]?.date || ""}
+                        label={{
+                          value: "Tiempo",
+                          position: "insideBottom",
+                          offset: -40,
+                        }}
+                      />
+                      <YAxis
+                        label={{
+                          value: "Estado Emocional",
+                          angle: -90,
+                          position: "insideLeft",
+                        }}
+                      />
+                      <Tooltip
+                        formatter={(value, name, props) => {
+                          if (name === "y") {
+                            const mood = moodMap[props.payload.mood]?.mood || "Desconocido";
+                            return [`${mood} (${value})`, "Adherencia"];
+                          }
+                          return value;
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="y"
+                        stroke="#007bff"
+                        strokeWidth={3}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
 
+                {/* Gráfica de Barras */}
                 <div className="chart-item">
                   <h4>Gráfica de Barras</h4>
-                  <XYPlot
-                    height={300}
-                    width={window.innerWidth > 768 ? 800 : window.innerWidth - 40}
-                    margin={{ left: 50, right: 50, top: 20, bottom: 50 }}
-                  >
-                    <HorizontalGridLines />
-                    <XAxis
-                      title="Tiempo"
-                      tickFormat={(v) => moodData[v]?.date || ""}
-                    />
-                    <YAxis title="Estado Emocional" />
-                    <VerticalBarSeries
-                      data={moodData.map((d) => ({
-                        x: d.x,
-                        y: d.y,
-                        color: d.color,
-                      }))}
-                      colorType="literal"
-                    />
-                  </XYPlot>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart
+                      data={moodData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="x"
+                        tickFormatter={(tick) => moodData[tick]?.date || ""}
+                        label={{
+                          value: "Tiempo",
+                          position: "insideBottom",
+                          offset: -40,
+                        }}
+                      />
+                      <YAxis
+                        label={{
+                          value: "Estado Emocional",
+                          angle: -90,
+                          position: "insideLeft",
+                        }}
+                      />
+                      <Tooltip />
+                      <Bar dataKey="y" fill="#82ca9d" />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
 
+                {/* Gráfica de Pastel */}
                 <div className="chart-item">
                   <h4>Gráfica de Pastel</h4>
-                  <RadialChart
-                    data={moodData.reduce((acc, { mood, color }) => {
-                      const found = acc.find((item) => item.label === mood);
-                      if (found) {
-                        found.angle++;
-                      } else {
-                        acc.push({ label: mood, angle: 1, color });
-                      }
-                      return acc;
-                    }, [])}
-                    width={window.innerWidth > 768 ? 300 : 200}
-                    height={window.innerWidth > 768 ? 300 : 200}
-                    colorType="literal"
-                    showLabels
-                  />
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend
+                        layout="horizontal"
+                        verticalAlign="bottom"
+                        align="center"
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             ) : (
@@ -192,4 +251,3 @@ const MoodScreen = () => {
 };
 
 export default MoodScreen;
-

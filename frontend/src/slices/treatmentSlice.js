@@ -127,6 +127,16 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         { type: 'CompletedActivities', id: treatmentId },
       ],
     }),
+    takeMedication: builder.mutation({
+      query: ({ treatmentId, medicationId }) => ({
+        url: `/api/treatments/${treatmentId}/medications/${medicationId}/take`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: (result, error, { treatmentId }) => [
+        { type: 'Medications', id: treatmentId },
+        { type: 'Treatments', id: treatmentId },
+      ],
+    }),
   }),
 });
 
@@ -155,5 +165,6 @@ export const {
   useGetCompletedActivitiesQuery,
   useGetActiveTreatmentQuery,
   useToggleActivateTreatmentMutation,
-  useGetCompletedActivitiesByTreatmentQuery
+  useGetCompletedActivitiesByTreatmentQuery,
+  useTakeMedicationMutation
 } = treatmentApiSlice;

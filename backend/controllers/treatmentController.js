@@ -805,9 +805,50 @@ const getCompletedActivitiesByTreatment = asyncHandler(async (req, res) => {
   res.status(200).json(treatment.completedActivities);
 });
 
+// controllers/treatmentController.js
+
+// @desc    Marcar un medicamento como tomado
+// @route   PATCH /api/treatments/:treatmentId/medications/:medicationId/take
+// @access  Privado/Paciente
+const takeMedication = asyncHandler(async (req, res) => {
+  const { treatmentId, medicationId } = req.params;
+
+  // Validar treatmentId y medicationId
+  if (!mongoose.Types.ObjectId.isValid(treatmentId) || !mongoose.Types.ObjectId.isValid(medicationId)) {
+    res.status(400);
+    throw new Error("ID de tratamiento o medicamento inválido");
+  }
+
+  // Obtener el tratamiento activo del paciente
+  const treatment = await Treatment.findOne({ _id: treatmentId, active: true });
+
+  if (!treatment) {
+    res.status(404);
+    throw new Error("Tratamiento activo no encontrado");
+  }
+
+  // Verificar que el medicamento exista en el tratamiento
+  const medication = treatment.medications.id(medicationId);
+
+  if (!medication) {
+    res.status(404);
+    throw new Error("Medicamento no encontrado en este tratamiento");
+  }
+
+  // Actualizar el campo takenToday
+  medication.takenToday = true;
+
+  await treatment.save();
+
+  res.status(200).json({
+    message: "Medicamento marcado como tomado",
+    medication,
+  });
+});
+
 export { assignActivityToPatient, updateAssignmentResults, 
   getAssignedActivities,unassignActivityFromPatient,getMyAssignedActivities, 
   createTreatment, getMyTreatments, getActivitiesByUser,
   getTreatmentById, updateTreatment, getMyMedications, getDueMedications,
 getTreatmentsByPatient,recordActivity,getCompletedActivities, getActiveTreatment,toggleActivateTreatment,
-getCompletedActivitiesByTreatment};
+getCompletedActivitiesByTreatment, takeMedication};

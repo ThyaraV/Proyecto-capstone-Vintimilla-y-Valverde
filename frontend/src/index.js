@@ -59,6 +59,7 @@ import Activity9L3Screen from "./screens/Activity9L3Screen.jsx";
 import ReportsScreen from "./screens/Reports/ReportsScreen.jsx";
 import MoodScreen from "./screens/Reports/MoodScreen.jsx";
 import ActivitiesReportScreen from "./screens/Reports/activitiesReportScreen.jsx";
+import PatientsProgress from "./screens/Reports/PatientsProgress.jsx";
 
 import MocaScreen from "./screens/MocaScreen";
 import MocaRegisterResults from "./screens/MocaRegisterResults";
@@ -110,6 +111,8 @@ const router = createBrowserRouter(
         <Route path="/reports" element={<ReportsScreen />} />
         <Route path="/estado-animo" element={<MoodScreen />} />
         <Route path="/reports/activities" element={<ActivitiesReportScreen />} />
+        <Route path="/progreso-paciente" element={<PatientsProgress />} />
+
  
         <Route path="/treatments/:treatmentId/activities/play/:activityId" element={<ActivityPlay />} />
         <Route path="/activities/play/:activityId" element={<ActivityScreen2 />} />

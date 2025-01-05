@@ -1,33 +1,28 @@
-// src/screens/Reports/ActivityReportScreen.jsx
+// src/screens/Reports/activitiesReportScreen.jsx
 import React, { useState, useEffect } from "react";
 import {
-  XYPlot,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
-  HorizontalGridLines,
-  VerticalBarSeries,
-  DiscreteColorLegend,
-  Hint,
-  RadialChart,
-} from "react-vis";
-import "react-vis/dist/style.css";
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 import { skipToken } from "@reduxjs/toolkit/query/react";
-
-// Tus queries y hooks
 import { useGetDoctorWithPatientsQuery } from "../../slices/doctorApiSlice";
 import {
   useGetTreatmentsByPatientQuery,
   useGetCompletedActivitiesByTreatmentQuery,
 } from "../../slices/treatmentSlice";
-
-// Tu CSS y hooks
 import "../../assets/styles/ActivityReport.css";
 import useWindowSize from "../../hooks/useWindowSize";
 
 const ActivityReportScreen = () => {
-  // ---------------------------
-  //   QUERIES / DATA FETCHING
-  // ---------------------------
   const {
     data: patients,
     isLoading: isLoadingPatients,
@@ -53,81 +48,71 @@ const ActivityReportScreen = () => {
     selectedTreatment ? selectedTreatment._id : skipToken
   );
 
-  // ---------------------------
-  //   ESTADOS PARA GRÁFICAS
-  // ---------------------------
   const [groupedData, setGroupedData] = useState({});
   const [activityTypes, setActivityTypes] = useState([]);
   const [colorMap, setColorMap] = useState({});
-
-  // Tooltips (Barras y Pastel)
-  const [hoveredBar, setHoveredBar] = useState(null);
-  const [hoveredPie, setHoveredPie] = useState(null);
-
-  // Datos del pastel
   const [pieData, setPieData] = useState([]);
 
-  // Hook tamaño ventana
   const size = useWindowSize();
 
-  // Paleta de colores
   const predefinedColors = [
-    "#1f77b4", // Azul
-    "#ff7f0e", // Naranja
-    "#2ca02c", // Verde
-    "#d62728", // Rojo
-    "#9467bd", // Morado
-    "#8c564b", // Marrón
-    "#e377c2", // Rosa
-    "#7f7f7f", // Gris
-    "#bcbd22", // Amarillo
-    "#17becf", // Turquesa
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
   ];
 
-  // ---------------------------
-  //   useEffect: Procesar DATOS
-  // ---------------------------
   useEffect(() => {
     if (completedActivities && selectedTreatment) {
-      // 1. Tipos de actividad
+      // Obtener tipos únicos de actividades
       const types = [...new Set(completedActivities.map((a) => a.activity.name))];
       setActivityTypes(types);
 
-      // 2. Colores por actividad
+      // Asignar colores a cada tipo de actividad
       const colors = {};
       types.forEach((type, index) => {
         colors[type] = predefinedColors[index % predefinedColors.length];
       });
       setColorMap(colors);
 
-      // 3. Datos para barras
+      // Agrupar actividades por tipo y transformar los datos para Recharts
       const grouped = {};
       types.forEach((type) => {
         grouped[type] = completedActivities
           .filter((a) => a.activity.name === type)
-          .map((a) => ({
-            x: new Date(a.dateCompleted).toLocaleDateString("es-ES"),
-            y: Number(a.scoreObtained) || 0,
-            activity: a.activity.name,
-            date: new Date(a.dateCompleted).toLocaleDateString("es-ES"),
-          }));
+          .map((a) => {
+            const dateObj = new Date(a.dateCompleted);
+            const shortLabel = dateObj.toLocaleDateString("es-ES", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "2-digit",
+            });
+            return {
+              name: shortLabel, // Clave 'name' para Recharts
+              score: Math.max(Number(a.scoreObtained), 0), // Clave 'score' para Recharts
+              activity: a.activity.name,
+              dateFull: dateObj.toLocaleDateString("es-ES"),
+            };
+          });
       });
       setGroupedData(grouped);
 
-      // 4. Datos para pastel
-      const totalScores = types.map((type) => {
-        const total = completedActivities
-          .filter((a) => a.activity.name === type)
-          .reduce((sum, a) => sum + (Number(a.scoreObtained) || 0), 0);
-        return {
-          angle: total,
-          label: type,
-          color: colors[type],
-          total: total,
-        };
-      });
+      // Preparar datos para el gráfico de pastel
+      const totalScores = types.map((type) => ({
+        name: type,
+        value: grouped[type].reduce((sum, d) => sum + d.score, 0),
+        color: colors[type],
+        total: grouped[type].reduce((sum, d) => sum + d.score, 0),
+      }));
       setPieData(totalScores);
     } else {
+      // Limpiar datos si no hay actividades o tratamiento seleccionado
       setGroupedData({});
       setActivityTypes([]);
       setColorMap({});
@@ -135,21 +120,15 @@ const ActivityReportScreen = () => {
     }
   }, [completedActivities, selectedTreatment]);
 
-  // ---------------------------
-  //   DIMENSIONES (igual que CombinedChartsExample)
-  // ---------------------------
-  const barWidth = 400;
-  const barHeight = 300;
-  const pieSize = 300;
+  const plotWidth = Math.min(size.width * 0.9, 700);
+  const plotHeight = Math.min(size.height * 0.4, 350);
+  const pieSize = Math.min(size.width * 0.4, 400);
 
   return (
-    <div className="activity-report-screen">
+    <div className="activity-report-screen" style={{ padding: "1rem" }}>
       <h1>Reporte de Actividades de Pacientes</h1>
-
       <div className="content">
-        {/* ---------------------------
-            SELECCIÓN DE PACIENTE
-        --------------------------- */}
+        {/* Selección de Paciente */}
         <div className="selection-section">
           <h3>Seleccionar Paciente</h3>
           {isLoadingPatients ? (
@@ -175,9 +154,7 @@ const ActivityReportScreen = () => {
           )}
         </div>
 
-        {/* ---------------------------
-            SELECCIÓN DE TRATAMIENTO
-        --------------------------- */}
+        {/* Selección de Tratamiento */}
         {selectedPatient && (
           <div className="selection-section">
             <h3>Seleccionar Tratamiento</h3>
@@ -205,146 +182,104 @@ const ActivityReportScreen = () => {
           </div>
         )}
 
-        {/* ---------------------------
-            GRÁFICAS (SIDE BY SIDE)
-        --------------------------- */}
+        {/* Sección de Gráficos */}
         {selectedTreatment && (
-          <div className="charts-section">
+          <div className="charts-section" style={{ marginTop: "2rem" }}>
             <h3>Reporte de Actividades - {selectedTreatment.treatmentName}</h3>
             {isLoadingActivities ? (
               <p>Cargando actividades completadas...</p>
             ) : errorActivities ? (
-              <p>
-                Error al cargar actividades:{" "}
-                {errorActivities.data?.message || errorActivities.error}
-              </p>
+              <p>Error al cargar actividades: {errorActivities.message}</p>
             ) : completedActivities && completedActivities.length > 0 ? (
-              // Mismo layout que CombinedChartsExample
               <div
                 style={{
                   display: "flex",
-                  gap: "3rem",
-                  justifyContent: "center",
-                  marginTop: "2rem",
+                  gap: "2rem",
                   flexWrap: "wrap",
+                  justifyContent: "center",
+                  alignItems: "flex-start",
+                  marginTop: "1rem",
                 }}
               >
-                {/* =============================
-                    CONTENEDOR DEL DIAGRAMA DE BARRAS
-                ============================= */}
+                {/* Gráfica de Barras */}
                 <div
                   className="bar-chart-container"
-                  style={{ position: "relative", overflow: "visible" }}
+                  style={{
+                    border: "1px solid #ccc",
+                    borderRadius: "8px",
+                    padding: "1rem",
+                  }}
                 >
-                  <h2 style={{ textAlign: "center" }}>Barras</h2>
-                  <XYPlot
-                    xType="ordinal"
-                    width={barWidth}
-                    height={barHeight}
-                    // Al salir de la gráfica, borramos tooltip
-                    onMouseLeave={() => setHoveredBar(null)}
-                    style={{ zIndex: 1 }}
-                  >
-                    <HorizontalGridLines />
-                    <XAxis />
-                    <YAxis />
-
-                    {/* DIBUJO DE BARRAS */}
-                    {activityTypes.map((type) => (
-                      <VerticalBarSeries
-                        key={type}
-                        data={groupedData[type]}
-                        color={colorMap[type]}
-                        onValueMouseOver={(datapoint) => {
-                          // Guardamos info en hoveredBar
-                          setHoveredBar(datapoint);
+                  <h2 style={{ textAlign: "center", color: "#007bff" }}>Barras</h2>
+                  <ResponsiveContainer width={plotWidth} height={plotHeight}>
+                    <BarChart
+                      data={activityTypes.map((type) => ({
+                        name: type,
+                        ...groupedData[type]?.reduce(
+                          (acc, curr) => ({
+                            ...acc,
+                            [curr.name]: curr.score,
+                          }),
+                          {}
+                        ),
+                      }))}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" tick={{ angle: -45, textAnchor: "end" }} />
+                      <YAxis
+                        label={{
+                          value: "Puntaje",
+                          angle: -90,
+                          position: "insideLeft",
                         }}
-                        onValueMouseOut={() => {}}
                       />
-                    ))}
-
-                    {/* TOOLTIP BARRAS */}
-                    {hoveredBar && (
-                      <Hint
-                        value={{ x: hoveredBar.x, y: hoveredBar.y }}
-                        style={{ zIndex: 9999 }}
-                      >
-                        <div
-                          style={{
-                            background: "white",
-                            border: "1px solid #ccc",
-                            padding: "0.5rem",
-                            borderRadius: "6px",
-                            pointerEvents: "none",
-                          }}
-                        >
-                          <div>
-                            <strong>Actividad:</strong> {hoveredBar.activity}
-                          </div>
-                          <div>
-                            <strong>Fecha:</strong> {hoveredBar.date}
-                          </div>
-                          <div>
-                            <strong>Puntaje:</strong> {hoveredBar.y}
-                          </div>
-                        </div>
-                      </Hint>
-                    )}
-                  </XYPlot>
+                      <Tooltip />
+                      {activityTypes.map((type) => (
+                        <Bar
+                          key={type}
+                          dataKey={type}
+                          fill={colorMap[type]}
+                          stackId="a"
+                        />
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
 
-                {/* =============================
-                    CONTENEDOR DEL DIAGRAMA DE PASTEL
-                ============================= */}
+                {/* Gráfica de Pastel */}
                 <div
                   className="pie-chart-container"
-                  style={{ position: "relative", overflow: "visible" }}
+                  style={{
+                    border: "1px solid #ccc",
+                    borderRadius: "8px",
+                    padding: "1rem",
+                  }}
                 >
-                  <h2 style={{ textAlign: "center" }}>Pastel</h2>
-
-                  {/* Leyenda opcional */}
-                  <DiscreteColorLegend
-                    orientation="horizontal"
-                    items={pieData.map((d) => ({
-                      title: d.label,
-                      color: d.color,
-                    }))}
-                  />
-
-                  <RadialChart
-                    data={pieData}
-                    width={pieSize}
-                    height={pieSize}
-                    showLabels={true}
-                    colorType="literal"
-                    onMouseLeave={() => setHoveredPie(null)}
-                    onValueMouseOver={(datapoint) => {
-                      setHoveredPie(datapoint);
-                    }}
-                    onValueMouseOut={() => {}}
-                    style={{ zIndex: 1 }}
-                  >
-                    {hoveredPie && (
-                      <Hint value={hoveredPie} style={{ zIndex: 9999 }}>
-                        <div
-                          style={{
-                            background: "white",
-                            border: "1px solid #ccc",
-                            padding: "0.5rem",
-                            borderRadius: "6px",
-                            pointerEvents: "none",
-                          }}
-                        >
-                          <div>
-                            <strong>Actividad:</strong> {hoveredPie.label}
-                          </div>
-                          <div>
-                            <strong>Valor:</strong> {hoveredPie.angle}
-                          </div>
-                        </div>
-                      </Hint>
-                    )}
-                  </RadialChart>
+                  <h2 style={{ textAlign: "center", color: "#007bff" }}>Pastel</h2>
+                  <ResponsiveContainer width={pieSize} height={pieSize}>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        label
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend
+                        layout="horizontal"
+                        verticalAlign="bottom"
+                        align="center"
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             ) : (
