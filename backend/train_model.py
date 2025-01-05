@@ -99,8 +99,8 @@ test_loss, test_acc = model.evaluate(test_generator)
 print(f"Loss en Test: {test_loss:.4f} - Acc en Test: {test_acc:.4f}")
 
 # Guardamos el modelo en un archivo h5
-model.save('model.h5')
-print("Modelo guardado como model.h5")
+model.save('model_cube.h5')
+print("Modelo guardado como model_cube.h5")
 
 # Si quieres luego re-entrenar con fine-tuning, 
 # descongela las últimas capas del base_model y vuelve a entrenar.
