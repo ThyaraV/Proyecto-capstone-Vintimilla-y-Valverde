@@ -1,56 +1,56 @@
+/* frontend/src/assets/styles/Mood.css */
+
 .mood-screen {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    color: #333;
-  }
-  
-  .patients-list ul {
-    list-style: none;
-    padding: 0;
-    max-height: 300px;
-    overflow-y: auto;
-    margin-bottom: 20px;
-  }
-  
-  .patient-item {
-    padding: 10px;
-    background: #f9f9f9;
-    margin: 5px 0;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  .patient-item:hover {
-    background-color: #007bff;
-    color: white;
-  }
-  
-  .mood-chart {
-    margin-top: 20px;
-  }
-  
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  color: #333;
+}
+
+.patients-list ul {
+  list-style: none;
+  padding: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.patient-item {
+  padding: 10px;
+  background: #f9f9f9;
+  margin: 5px 0;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.patient-item:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+.mood-chart {
+  margin-top: 20px;
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  align-items: center;
+}
+
+.chart-item {
+  width: 100%;
+  text-align: center;
+}
+
+.chart-legend {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
   .chart-container {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
-    align-items: center;
-    
+    gap: 20px;
   }
-  
-  .chart-item {
-    width: 100%;
-    text-align: center;
-  }
-  
-  .chart-legend {
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  
-  @media (max-width: 768px) {
-    .chart-container {
-      gap: 20px;
-    }
-  }
-  
+}
