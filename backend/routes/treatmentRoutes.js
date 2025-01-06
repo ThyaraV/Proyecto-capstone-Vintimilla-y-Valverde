@@ -15,7 +15,9 @@ import {
   getActivitiesByUser,
   getActiveTreatment, toggleActivateTreatment,
   getCompletedActivitiesByTreatment,
-  takeMedication
+  takeMedication,
+  getTreatmentsByPatient2,
+  getTreatmentsByMultiplePatients
 } from '../controllers/treatmentController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -47,6 +49,9 @@ router.route('/:treatmentId/completedActivities').get(protect, getCompletedActiv
 
 
 router.route('/patient/:patientId/treatments').get(protect, admin, getTreatmentsByPatient);
+router.get('/patient/:patientId/treatments2', protect, getTreatmentsByPatient2);
+router.post('/patients/treatments', protect, getTreatmentsByMultiplePatients);
+
 router.route('/:treatmentId/assignedActivities').get(protect, getAssignedActivities);
 
 

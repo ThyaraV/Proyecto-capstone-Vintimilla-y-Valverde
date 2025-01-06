@@ -23,12 +23,19 @@ const getDoctorWithPatients = asyncHandler(async (req, res) => {
     // Encuentra todos los pacientes que tienen asignado este doctor, excluyendo al doctor mismo
     const patients = await Patient.find({
       doctor: doctor._id,
-      user: { $ne: req.user._id } // Excluir al doctor logueado
+      user: { $ne: req.user._id }, // Excluir al doctor logueado
     }).populate("user", "name lastName email phoneNumber cardId isActive");
 
     console.log("Pacientes encontrados:", patients);
 
-    res.json(patients); // Solo enviamos la lista de pacientes en la respuesta
+    // Mapea los pacientes para incluir tanto 'user' como 'idPaciente'
+    const patientsWithId = patients.map((patient) => ({
+      _id: patient._id,
+      idPaciente: patient.idPaciente, // Asegúrate de que 'idPaciente' es un campo en tu modelo
+      user: patient.user,
+    }));
+
+    res.json(patientsWithId); // Enviamos la lista de pacientes con 'idPaciente'
   } else {
     console.log("Doctor no encontrado o sin pacientes asignados");
     res.status(404).json({ message: "Doctor no encontrado o no tiene pacientes asignados" });

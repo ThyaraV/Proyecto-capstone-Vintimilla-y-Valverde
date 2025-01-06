@@ -228,24 +228,76 @@ const createTreatment = asyncHandler(async (req, res) => {
 const getMyTreatments = asyncHandler(async (req, res) => {
   const doctorId = req.user._id;
 
-  // Verificar que el usuario autenticado es un doctor
   const doctor = await Doctor.findOne({ user: doctorId });
-  /*if (!doctor) {
-    res.status(401);
-    throw new Error('Acceso no autorizado: No es un doctor');
-  }*/
 
-  // Obtener tratamientos creados por el doctor
   const treatments = await Treatment.find({ doctor: doctor._id })
     .populate({
       path: 'patients',
-      populate: { path: 'user', select: 'name lastName email' }, // Población anidada para usuarios
+      populate: { path: 'user', select: 'name lastName email' },
     })
     .populate('activities')
     .populate('doctor', 'user');
 
+  console.log('Tratamientos encontrados:', treatments);
+
   res.status(200).json(treatments);
 });
+
+// @desc    Obtener tratamientos para un paciente específico
+// @route   GET /api/treatments/patient/:patientId/treatments
+// @access  Privado/Admin (Doctor) o Privado/Paciente
+const getTreatmentsByPatient2 = asyncHandler(async (req, res) => {
+  const { patientId } = req.params;
+
+  // Validar patientId
+
+  if (!mongoose.Types.ObjectId.isValid(patientId)) {
+    res.status(400);
+    throw new Error('ID de paciente inválido');
+  }
+
+  // Verificar que el paciente existe
+  const patient = await Patient.findById(patientId);
+  if (!patient) {
+    res.status(404);
+    throw new Error('Paciente no encontrado');
+  }
+
+  // Verificar que el usuario autenticado está autorizado para ver los tratamientos de este paciente
+  const userId = req.user._id;
+
+  // Supongo que la relación doctor-paciente está en el modelo Patient (doctor: ObjectId)
+  const doctor = await Doctor.findOne({ user: userId });
+  const patientOfUser = await Patient.findOne({ user: userId });
+
+  if (doctor) {
+    // Si el usuario es un doctor, verificar que está asignado al paciente
+    if (!patient.doctor.equals(doctor._id)) {
+      res.status(403);
+      throw new Error('No autorizado: Doctor no está asignado a este paciente');
+    }
+  } else if (patientOfUser && patientOfUser._id.equals(patient._id)) {
+    // Si el usuario es un paciente, permitirle ver sus propios tratamientos
+    // No es necesario hacer nada más
+  } else {
+    res.status(403);
+    throw new Error('No autorizado para ver los tratamientos de este paciente');
+  }
+
+  // Buscar tratamientos donde el paciente está incluido
+  const treatments = await Treatment.find({ patients: patientId })
+    .populate({
+      path: 'patients',
+      populate: { path: 'user', select: 'name lastName email' },
+    })
+    .populate('doctor', 'user');
+
+  console.log(`Tratamientos para el paciente ${patientId}:`, treatments);
+
+  res.status(200).json(treatments);
+});
+
+
 
 // @desc    Obtener tratamiento por ID
 // @route   GET /api/treatments/:treatmentId
@@ -846,9 +898,62 @@ const takeMedication = asyncHandler(async (req, res) => {
   });
 });
 
+// controllers/treatmentController.js
+
+// @desc    Obtener tratamientos para uno o varios pacientes específicos
+// @route   POST /api/treatments/patients/treatments
+// @access  Privado/Admin (Doctor)
+const getTreatmentsByMultiplePatients = asyncHandler(async (req, res) => {
+  const { patientIds } = req.body;
+
+  console.log('Recibiendo patientIds:', patientIds);
+
+  // Validar que patientIds es un arreglo y que cada ID es válido
+  if (!Array.isArray(patientIds) || patientIds.some(id => !mongoose.Types.ObjectId.isValid(id))) {
+    res.status(400);
+    throw new Error('patientIds debe ser un arreglo de IDs de pacientes válidos');
+  }
+
+  // Verificar que el usuario autenticado es un doctor
+  const doctorId = req.user._id;
+  const doctor = await Doctor.findOne({ user: doctorId });
+  if (!doctor) {
+    res.status(401);
+    throw new Error('No autorizado: Usuario no es un doctor');
+  }
+
+  // Verificar que todos los pacientes están asignados a este doctor
+  const patients = await Patient.find({ _id: { $in: patientIds }, doctor: doctor._id });
+  if (patients.length !== patientIds.length) {
+    res.status(403);
+    throw new Error('No autorizado: Uno o más pacientes no están asignados a este doctor');
+  }
+
+  // Buscar tratamientos que incluyan a cualquiera de los pacientes
+  const treatments = await Treatment.find({ patients: { $in: patientIds } })
+    .populate({
+      path: 'patients',
+      populate: { path: 'user', select: 'name lastName email' },
+    })
+    .populate({
+      path: 'assignedActivities',
+      select: 'name description', // Ajusta los campos según tus necesidades
+      strictPopulate: false, // Añadido para evitar errores si no se encuentran actividades
+    })
+    .populate({
+      path: 'completedActivities.activity',
+      select: 'name description', // Popula el campo `activity` dentro de `completedActivities`
+      strictPopulate: false, // Añadido para evitar errores si no se encuentran actividades
+    })
+
+  console.log(`Tratamientos para los pacientes ${patientIds}:`, treatments);
+
+  res.status(200).json(treatments);
+});
+
 export { assignActivityToPatient, updateAssignmentResults, 
   getAssignedActivities,unassignActivityFromPatient,getMyAssignedActivities, 
   createTreatment, getMyTreatments, getActivitiesByUser,
   getTreatmentById, updateTreatment, getMyMedications, getDueMedications,
 getTreatmentsByPatient,recordActivity,getCompletedActivities, getActiveTreatment,toggleActivateTreatment,
-getCompletedActivitiesByTreatment, takeMedication};
+getCompletedActivitiesByTreatment, takeMedication, getTreatmentsByPatient2, getTreatmentsByMultiplePatients};

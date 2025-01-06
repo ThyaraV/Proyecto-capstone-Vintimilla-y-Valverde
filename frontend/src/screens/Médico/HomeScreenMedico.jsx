@@ -24,6 +24,7 @@ const HomeScreenMedico = () => {
   useEffect(() => {
     if (!isLoading && patients) {
       setLocalPatients(patients); // Actualizar con los datos correctos
+      console.log(patients);
       setIsFetchingData(false); // Ocultar el Loader una vez los datos estén listos
     }
   }, [isLoading, patients]);

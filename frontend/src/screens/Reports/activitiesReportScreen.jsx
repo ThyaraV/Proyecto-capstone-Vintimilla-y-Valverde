@@ -20,7 +20,6 @@ import {
   useGetCompletedActivitiesByTreatmentQuery,
 } from "../../slices/treatmentSlice";
 import "../../assets/styles/ActivityReport.css";
-import useWindowSize from "../../hooks/useWindowSize";
 
 const ActivityReportScreen = () => {
   const {
@@ -52,8 +51,7 @@ const ActivityReportScreen = () => {
   const [activityTypes, setActivityTypes] = useState([]);
   const [colorMap, setColorMap] = useState({});
   const [pieData, setPieData] = useState([]);
-
-  const size = useWindowSize();
+  const [barChartData, setBarChartData] = useState([]);
 
   const predefinedColors = [
     "#1f77b4",
@@ -71,44 +69,55 @@ const ActivityReportScreen = () => {
   useEffect(() => {
     if (completedActivities && selectedTreatment) {
       // Obtener tipos únicos de actividades
-      const types = [...new Set(completedActivities.map((a) => a.activity.name))];
+      const types = [
+        ...new Set(completedActivities.map((a) => a.activity.name)),
+      ];
       setActivityTypes(types);
 
       // Asignar colores a cada tipo de actividad
       const colors = {};
       types.forEach((type, index) => {
-        colors[type] = predefinedColors[index % predefinedColors.length];
+        colors[type] =
+          predefinedColors[index % predefinedColors.length] || "#000000";
       });
       setColorMap(colors);
 
-      // Agrupar actividades por tipo y transformar los datos para Recharts
-      const grouped = {};
-      types.forEach((type) => {
-        grouped[type] = completedActivities
-          .filter((a) => a.activity.name === type)
-          .map((a) => {
-            const dateObj = new Date(a.dateCompleted);
-            const shortLabel = dateObj.toLocaleDateString("es-ES", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "2-digit",
-            });
-            return {
-              name: shortLabel, // Clave 'name' para Recharts
-              score: Math.max(Number(a.scoreObtained), 0), // Clave 'score' para Recharts
-              activity: a.activity.name,
-              dateFull: dateObj.toLocaleDateString("es-ES"),
-            };
-          });
+      // Agrupar actividades por fecha y tipo
+      const groupedByDate = {};
+
+      completedActivities.forEach((activity) => {
+        const dateObj = new Date(activity.dateCompleted);
+        const formattedDate = dateObj.toLocaleDateString("es-ES", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "2-digit",
+        });
+
+        if (!groupedByDate[formattedDate]) {
+          groupedByDate[formattedDate] = { date: formattedDate };
+        }
+
+        const activityName = activity.activity.name;
+        const score = Math.max(Number(activity.scoreObtained), 0);
+
+        if (groupedByDate[formattedDate][activityName]) {
+          groupedByDate[formattedDate][activityName] += score;
+        } else {
+          groupedByDate[formattedDate][activityName] = score;
+        }
       });
-      setGroupedData(grouped);
+
+      // Transformar el objeto agrupado en un array
+      const transformedData = Object.values(groupedByDate);
+      setBarChartData(transformedData);
 
       // Preparar datos para el gráfico de pastel
       const totalScores = types.map((type) => ({
         name: type,
-        value: grouped[type].reduce((sum, d) => sum + d.score, 0),
+        value: completedActivities
+          .filter((a) => a.activity.name === type)
+          .reduce((sum, a) => sum + Math.max(Number(a.scoreObtained), 0), 0),
         color: colors[type],
-        total: grouped[type].reduce((sum, d) => sum + d.score, 0),
       }));
       setPieData(totalScores);
     } else {
@@ -117,12 +126,9 @@ const ActivityReportScreen = () => {
       setActivityTypes([]);
       setColorMap({});
       setPieData([]);
+      setBarChartData([]);
     }
   }, [completedActivities, selectedTreatment]);
-
-  const plotWidth = Math.min(size.width * 0.9, 700);
-  const plotHeight = Math.min(size.height * 0.4, 350);
-  const pieSize = Math.min(size.width * 0.4, 400);
 
   return (
     <div className="activity-report-screen" style={{ padding: "1rem" }}>
@@ -185,48 +191,51 @@ const ActivityReportScreen = () => {
         {/* Sección de Gráficos */}
         {selectedTreatment && (
           <div className="charts-section" style={{ marginTop: "2rem" }}>
-            <h3>Reporte de Actividades - {selectedTreatment.treatmentName}</h3>
+            <h2>Reporte de Actividades - {selectedTreatment.treatmentName}</h2>
             {isLoadingActivities ? (
               <p>Cargando actividades completadas...</p>
             ) : errorActivities ? (
               <p>Error al cargar actividades: {errorActivities.message}</p>
             ) : completedActivities && completedActivities.length > 0 ? (
               <div
+                className="charts-container"
                 style={{
                   display: "flex",
+                  flexDirection: "column", // Cambiar a columna
                   gap: "2rem",
-                  flexWrap: "wrap",
                   justifyContent: "center",
-                  alignItems: "flex-start",
+                  alignItems: "center", // Centrar horizontalmente
                   marginTop: "1rem",
                 }}
               >
-                {/* Gráfica de Barras */}
+              <h4>Gráfico por Fechas</h4>
+                {/* Gráfico de Barras */}
                 <div
                   className="bar-chart-container"
                   style={{
                     border: "1px solid #ccc",
                     borderRadius: "8px",
                     padding: "1rem",
+                    width: "100%", // Ancho completo
+                    maxWidth: "800px", // Ancho máximo para pantallas grandes
+                    height: "500px", // Altura aumentada para gráficos más grandes
                   }}
                 >
-                  <h2 style={{ textAlign: "center", color: "#007bff" }}>Barras</h2>
-                  <ResponsiveContainer width={plotWidth} height={plotHeight}>
+                  <h2 style={{ textAlign: "center", color: "#007bff" }}>
+                    Barras
+                  </h2>
+                  <ResponsiveContainer width="100%" height="90%">
                     <BarChart
-                      data={activityTypes.map((type) => ({
-                        name: type,
-                        ...groupedData[type]?.reduce(
-                          (acc, curr) => ({
-                            ...acc,
-                            [curr.name]: curr.score,
-                          }),
-                          {}
-                        ),
-                      }))}
+                      data={barChartData}
                       margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" tick={{ angle: -45, textAnchor: "end" }} />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ angle: -45, textAnchor: "end" }}
+                        interval={0}
+                        height={60} // Espacio para etiquetas inclinadas
+                      />
                       <YAxis
                         label={{
                           value: "Puntaje",
@@ -235,6 +244,7 @@ const ActivityReportScreen = () => {
                         }}
                       />
                       <Tooltip />
+                      <Legend verticalAlign="top" height={36} />
                       {activityTypes.map((type) => (
                         <Bar
                           key={type}
@@ -246,18 +256,24 @@ const ActivityReportScreen = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-
-                {/* Gráfica de Pastel */}
+                
+                <h4>Gráfico por Actividades</h4>
+                {/* Gráfico de Pastel */}
                 <div
                   className="pie-chart-container"
                   style={{
                     border: "1px solid #ccc",
                     borderRadius: "8px",
                     padding: "1rem",
+                    width: "100%", // Ancho completo
+                    maxWidth: "600px", // Ancho máximo para pantallas grandes
+                    height: "500px", // Altura aumentada para gráficos más grandes
                   }}
                 >
-                  <h2 style={{ textAlign: "center", color: "#007bff" }}>Pastel</h2>
-                  <ResponsiveContainer width={pieSize} height={pieSize}>
+                  <h2 style={{ textAlign: "center", color: "#007bff" }}>
+                    Pastel
+                  </h2>
+                  <ResponsiveContainer width="100%" height="90%">
                     <PieChart>
                       <Pie
                         data={pieData}
@@ -265,7 +281,7 @@ const ActivityReportScreen = () => {
                         nameKey="name"
                         cx="50%"
                         cy="50%"
-                        outerRadius={100}
+                        outerRadius={150} // Ajusta el radio para hacer el pastel más grande
                         label
                       >
                         {pieData.map((entry, index) => (

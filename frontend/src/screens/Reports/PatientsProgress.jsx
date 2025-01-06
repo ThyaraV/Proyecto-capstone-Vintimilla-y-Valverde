@@ -1,53 +1,201 @@
 // src/screens/Reports/PatientsProgress.jsx
-import React from 'react';
-import { Container, Grid, CircularProgress, Typography } from '@mui/material';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import {
-  useGetActiveTreatmentQuery,
-  useGetCompletedActivitiesByTreatmentQuery,
-  useGetMyMedicationsQuery,
-} from '../../slices/treatmentSlice'; // Asegúrate de que la ruta es correcta
+  Container,
+  Grid,
+  CircularProgress,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Checkbox,
+  ListItemText,
+  OutlinedInput,
+  Box,
+} from '@mui/material';
+import {
+  useGetTreatmentsByMultiplePatientsMutation,
+  useTakeMedicationMutation,
+} from '../../slices/treatmentSlice'; // Asegúrate de que el path es correcto
+import { useGetDoctorWithPatientsQuery } from '../../slices/doctorApiSlice'; // Asegúrate de que el path es correcto
 import KPICard from '../../components/KPICard';
 import ChartsSection from '../../components/ChartsSection';
 import ActivitiesList from '../../components/ActivitiesList';
 import MedicationsList from '../../components/MedicationsList';
-import useAuth from '../../hooks/useAuth';
-import { SnackbarProvider, useSnackbar } from 'notistack';
+import { useSnackbar } from 'notistack';
+
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
 
 const PatientsProgressContent = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const { user } = useAuth();
-  const userId = user?._id;
 
-  // Obtener el tratamiento activo del usuario
+  // **1. Llamar a los Hooks de manera incondicional**
   const {
-    data: activeTreatment,
-    isLoading: isLoadingTreatment,
-    isError: isErrorTreatment,
-    error: errorTreatment,
-  } = useGetActiveTreatmentQuery(userId, {
-    skip: !userId,
+    data: doctorPatients,
+    isLoading: isLoadingPatients,
+    isError: isErrorPatients,
+    error: errorPatients,
+  } = useGetDoctorWithPatientsQuery();
+
+  // **2. Definir la lista de pacientes desde doctorPatients**
+  const patients = useMemo(() => {
+    if (!doctorPatients) return [];
+    return doctorPatients.map(patient => ({
+      ...patient,
+      _id: patient._id.toString(),
+    }));
+  }, [doctorPatients]);
+
+  // **3. Estados para los filtros**
+  const [selectedPatients, setSelectedPatients] = useState([]);
+  const [treatmentStatus, setTreatmentStatus] = useState('all'); // Opciones: 'all', 'active', 'inactive'
+
+  // **4. Manejar cambios en los filtros**
+  const handlePatientChange = (event) => {
+    const {
+      target: { value },
+    } = event;
+    setSelectedPatients(
+      typeof value === 'string' ? value.split(',') : value
+    );
+  };
+
+  const handleStatusChange = (event) => {
+    setTreatmentStatus(event.target.value);
+  };
+
+  // **5. Obtener tratamientos para los pacientes seleccionados**
+  const [fetchTreatments, { data: treatmentsData, isLoading: isLoadingTreatments, isError: isErrorTreatments, error: errorTreatments }] = useGetTreatmentsByMultiplePatientsMutation();
+
+  useEffect(() => {
+    if (selectedPatients.length > 0) {
+      console.log('Enviando patientIds:', selectedPatients);
+      fetchTreatments({ patientIds: selectedPatients })
+        .unwrap()
+        .then((data) => {
+          console.log('Tratamientos recibidos:', data);
+        })
+        .catch((error) => {
+          console.error('Error al obtener tratamientos:', error);
+          enqueueSnackbar(`Error: ${error.data?.message || error.error}`, { variant: 'error' });
+        });
+    }
+  }, [selectedPatients, fetchTreatments, enqueueSnackbar]);
+
+  // **6. Filtrar tratamientos según el estado seleccionado**
+  const filteredTreatments = useMemo(() => {
+    if (!treatmentsData) return [];
+
+    let filtered = treatmentsData;
+
+    // Filtrar por estado del tratamiento
+    if (treatmentStatus === 'active') {
+      filtered = filtered.filter((treatment) => treatment.active === true);
+    } else if (treatmentStatus === 'inactive') {
+      filtered = filtered.filter((treatment) => treatment.active === false);
+    }
+
+    console.log('Selected Patients IDs:', selectedPatients);
+    console.log('Filtered Treatments after applying filters:', filtered);
+
+    return filtered;
+  }, [treatmentsData, treatmentStatus]);
+
+  // **7. Filtrar actividades completadas según los tratamientos filtrados y pacientes seleccionados**
+  const filteredActivities = useMemo(() => {
+    if (!filteredTreatments) return [];
+
+    let activities = [];
+    filteredTreatments.forEach((treatment) => {
+      if (treatment.completedActivities && treatment.completedActivities.length > 0) {
+        // Filtrar actividades que pertenecen a los pacientes seleccionados
+        const patientActivities = treatment.completedActivities.filter((activity) =>
+          selectedPatients.includes(activity.patient.toString())
+        );
+        activities = activities.concat(patientActivities);
+      }
+    });
+    return activities;
+  }, [filteredTreatments, selectedPatients]);
+
+  // **8. Filtrar medicamentos según los tratamientos filtrados**
+  const filteredMedications = useMemo(() => {
+    if (!filteredTreatments) return [];
+
+    let medications = [];
+    filteredTreatments.forEach((treatment) => {
+      if (treatment.medications && treatment.medications.length > 0) {
+        medications = medications.concat(
+          treatment.medications.map((med) => ({
+            ...med,
+            treatmentId: treatment._id.toString(),
+          }))
+        );
+      }
+    });
+    return medications;
+  }, [filteredTreatments]);
+
+  // **9. Calcular KPIs basados en los datos filtrados**
+  const totalTreatments = filteredTreatments.length;
+  const completedTreatments = filteredTreatments.filter(
+    (t) => t.progress === 'empeorando' || t.progress === 'mejorando'
+  ).length;
+  const treatmentCompletionRate =
+    totalTreatments > 0
+      ? ((completedTreatments / totalTreatments) * 100).toFixed(2)
+      : 0;
+
+  const totalActivities = filteredActivities.length;
+  const uniqueActivities = [
+    ...new Set(filteredActivities.map((a) => a.activity?.name || 'Sin Nombre')),
+  ].length;
+
+  const totalMedications = filteredMedications.length;
+  const medicationsTaken = filteredMedications.filter(
+    (m) => m.takenToday
+  ).length;
+  const medicationsComplianceRate =
+    totalMedications > 0
+      ? ((medicationsTaken / totalMedications) * 100).toFixed(2)
+      : 0;
+
+  console.log('KPIs:', {
+    totalTreatments,
+    completedTreatments,
+    treatmentCompletionRate,
+    totalActivities,
+    uniqueActivities,
+    totalMedications,
+    medicationsTaken,
+    medicationsComplianceRate,
   });
 
-  // Obtener actividades completadas del tratamiento activo
-  const {
-    data: completedActivities,
-    isLoading: isLoadingActivities,
-    isError: isErrorActivities,
-    error: errorActivities,
-  } = useGetCompletedActivitiesByTreatmentQuery(activeTreatment?._id, {
-    skip: !activeTreatment,
-  });
+  // **10. Manejar la acción de marcar un medicamento como tomado**
+  const [takeMedication] = useTakeMedicationMutation();
 
-  // Obtener medicamentos del tratamiento activo
-  const {
-    data: medications,
-    isLoading: isLoadingMedications,
-    isError: isErrorMedications,
-    error: errorMedications,
-  } = useGetMyMedicationsQuery();
+  const handleTakeMedicationAction = async (medicationId, treatmentId) => {
+    try {
+      await takeMedication({ treatmentId, medicationId }).unwrap();
+      enqueueSnackbar('Medicamento marcado como tomado', { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar('Error al marcar medicamento como tomado', { variant: 'error' });
+    }
+  };
 
-  // Manejo de estados de carga y error
-  if (isLoadingTreatment || isLoadingActivities || isLoadingMedications) {
+  // **11. Manejo de estados de carga y error**
+  if (isLoadingPatients || (selectedPatients.length > 0 && isLoadingTreatments)) {
     return (
       <Container style={{ textAlign: 'center', marginTop: '50px' }}>
         <CircularProgress />
@@ -56,39 +204,82 @@ const PatientsProgressContent = () => {
     );
   }
 
-  if (isErrorTreatment || isErrorActivities || isErrorMedications) {
+  if (isErrorPatients || isErrorTreatments) {
     return (
       <Container style={{ textAlign: 'center', marginTop: '50px' }}>
         <Typography variant="h6" color="error">
-          Hubo un error al cargar los datos del dashboard: {errorTreatment?.data?.message || errorActivities?.data?.message || errorMedications?.data?.message}
+          Hubo un error al cargar los datos del dashboard: {errorPatients?.data?.message || errorTreatments?.data?.message || "Ocurrió un problema inesperado"}
         </Typography>
       </Container>
     );
   }
 
-  // Preparar datos para los KPIs
-  const totalTreatments = activeTreatment ? 1 : 0; // Suponiendo un solo tratamiento activo
-  const treatmentCompletionRate = activeTreatment ? activeTreatment.adherence : 0;
-
-  const totalActivities = completedActivities ? completedActivities.length : 0;
-  const uniqueActivities = completedActivities ? [...new Set(completedActivities.map(a => a.activity.name))].length : 0;
-
-  const totalMedications = medications ? medications.length : 0;
-  const medicationsTaken = medications ? medications.filter(m => m.takenToday).length : 0;
-  const medicationsComplianceRate = totalMedications > 0 ? ((medicationsTaken / totalMedications) * 100).toFixed(2) : 0;
-
+  // **12. Renderizar el Dashboard**
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
-        Dashboard de Progreso del Paciente
+        Dashboard de Progreso de los Pacientes
       </Typography>
-      <Grid container spacing={3}>
-        {/* KPIs */}
+
+      {/* Sección de Filtros */}
+      <Box mb={3}>
+        <Grid container spacing={2}>
+          {/* Filtro por Paciente */}
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth>
+              <InputLabel id="patient-select-label">Filtrar por Paciente</InputLabel>
+              <Select
+                labelId="patient-select-label"
+                multiple
+                value={selectedPatients}
+                onChange={handlePatientChange}
+                input={<OutlinedInput label="Filtrar por Paciente" />}
+                renderValue={(selected) =>
+                  selected
+                    .map((id) => {
+                      const patient = patients.find((p) => p._id === id);
+                      return patient ? `${patient.user.name} ${patient.user.lastName}` : id;
+                    })
+                    .join(', ')
+                }
+                MenuProps={MenuProps}
+              >
+                {patients.map((patient) => (
+                  <MenuItem key={patient._id} value={patient._id}>
+                    <Checkbox checked={selectedPatients.indexOf(patient._id) > -1} />
+                    <ListItemText primary={`${patient.user.name} ${patient.user.lastName}`} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* Filtro por Estado del Tratamiento */}
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth>
+              <InputLabel id="status-select-label">Estado del Tratamiento</InputLabel>
+              <Select
+                labelId="status-select-label"
+                value={treatmentStatus}
+                onChange={handleStatusChange}
+                label="Estado del Tratamiento"
+              >
+                <MenuItem value="all">Todos</MenuItem>
+                <MenuItem value="active">Activo</MenuItem>
+                <MenuItem value="inactive">Inactivo</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* Sección de KPIs */}
+      <Grid container spacing={3} mb={3}>
         <Grid item xs={12} md={4}>
           <KPICard
-            title="Adherencia del Tratamiento"
+            title="Adherencia de Tratamientos"
             value={`${treatmentCompletionRate}%`}
-            subtitle="Nivel de adherencia al tratamiento"
+            subtitle="Nivel promedio de adherencia a los tratamientos"
           />
         </Grid>
         <Grid item xs={12} md={4}>
@@ -105,23 +296,24 @@ const PatientsProgressContent = () => {
             subtitle={`${medicationsTaken}/${totalMedications} tomados`}
           />
         </Grid>
+      </Grid>
 
-        {/* Gráficos */}
+      {/* Sección de Gráficos */}
+      <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <ChartsSection
-            treatments={activeTreatment ? [activeTreatment] : []}
-            completedActivities={completedActivities || []}
-            medications={medications || []}
+            treatments={filteredTreatments}
+            completedActivities={filteredActivities}
+            medications={filteredMedications}
           />
         </Grid>
 
-        {/* Listados */}
+        {/* Sección de Listados */}
         <Grid item xs={12} md={6}>
-          <ActivitiesList activities={activeTreatment ? activeTreatment.assignedActivities : []} />
+          <ActivitiesList activities={filteredActivities} />
           <MedicationsList
-            medications={medications || []}
-            treatmentId={activeTreatment ? activeTreatment._id : null}
-            onMedicationTaken={() => enqueueSnackbar('Medicamento marcado como tomado', { variant: 'success' })}
+            medications={filteredMedications}
+            onMedicationTaken={handleTakeMedicationAction}
           />
         </Grid>
       </Grid>
@@ -130,9 +322,7 @@ const PatientsProgressContent = () => {
 };
 
 const PatientsProgress = () => (
-  <SnackbarProvider maxSnack={3}>
-    <PatientsProgressContent />
-  </SnackbarProvider>
+  <PatientsProgressContent />
 );
 
 export default PatientsProgress;

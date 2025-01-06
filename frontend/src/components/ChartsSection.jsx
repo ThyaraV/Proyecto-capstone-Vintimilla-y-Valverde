@@ -1,5 +1,6 @@
 // src/components/ChartsSection.jsx
-import React from 'react';
+
+import React, { useMemo } from 'react';
 import { Card, CardContent, Typography } from '@mui/material';
 import {
   BarChart,
@@ -8,7 +9,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
@@ -16,114 +16,147 @@ import {
 } from 'recharts';
 
 // Definir colores para el gráfico de medicamentos
-const COLORS = ['#12939A', '#79C7E3'];
+const COLORS = ['#12939A', '#79C7E3', '#FFBB28', '#FF8042', '#0088FE', '#00C49F', '#FF6666', '#9966FF'];
 
 const ChartsSection = ({ treatments, completedActivities, medications }) => {
-  // KPI Data
-  const totalTreatments = treatments.length;
-  const completedTreatments = treatments.filter(
-    (t) => t.progress === 'empeorando' || t.progress === 'mejorando'
-  ).length;
-  const treatmentCompletionRate =
-    totalTreatments > 0
-      ? ((completedTreatments / totalTreatments) * 100).toFixed(2)
-      : 0;
+  // Preparar datos para el Gráfico de Progreso de Tratamientos
+  const treatmentProgressData = useMemo(() => {
+    if (!treatments || treatments.length === 0) return [];
+    return treatments.map((treatment) => ({
+      name: treatment.treatmentName || 'Sin Nombre',
+      Adherencia: treatment.adherence || 0, // Asegurar que no sea undefined
+    }));
+  }, [treatments]);
 
-  const totalActivities = completedActivities.length;
-  const uniqueActivities = [
-    ...new Set(completedActivities.map((a) => a.activity.name)),
-  ].length;
+  // Preparar datos para el Gráfico de Actividades Completadas
+  const activitiesData = useMemo(() => {
+    if (!completedActivities || completedActivities.length === 0) return [];
+    const activityMap = {};
 
-  const totalMedications = medications.length;
-  const medicationsTaken = medications.filter((m) => m.taken).length; // Suponiendo que hay un campo 'taken'
+    completedActivities.forEach((activity) => {
+      const name = activity.activity.name || 'Sin Nombre';
+      const score = activity.scoreObtained || 0;
+      if (activityMap[name]) {
+        activityMap[name] += score;
+      } else {
+        activityMap[name] = score;
+      }
+    });
 
-  const medicationsComplianceRate =
-    totalMedications > 0
-      ? ((medicationsTaken / totalMedications) * 100).toFixed(2)
-      : 0;
+    return Object.keys(activityMap).map((name) => ({
+      name,
+      Score: activityMap[name],
+    }));
+  }, [completedActivities]);
 
-  // Gráfico de Progreso de Tratamientos
-  const treatmentProgressData = treatments.map((treatment) => ({
-    name: treatment.treatmentName,
-    Adherencia: treatment.adherence, // Usando adherencia como métrica de progreso
-  }));
-
-  // Gráfico de Actividades Completadas
-  const activitiesData = completedActivities.map((activity) => ({
-    name: activity.activity.name,
-    Score: activity.scoreObtained || 0,
-  }));
-
-  // Gráfico de Medicamentos
-  const medicationsData = [
-    { name: 'Tomados', value: medicationsTaken },
-    { name: 'Pendientes', value: totalMedications - medicationsTaken },
-  ];
+  // Preparar datos para el Gráfico de Cumplimiento de Medicamentos
+  const medicationsData = useMemo(() => {
+    if (!medications || medications.length === 0) return [];
+    return [
+      { name: 'Tomados', value: medications.filter((m) => m.takenToday).length },
+      { name: 'Pendientes', value: medications.filter((m) => !m.takenToday).length },
+    ];
+  }, [medications]);
 
   return (
     <div>
       {/* Gráfico de Progreso de Tratamientos */}
-      <Card style={{ marginBottom: '20px' }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Progreso de Tratamientos
-          </Typography>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              data={treatmentProgressData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+      {treatmentProgressData.length === 0 ? (
+        <Typography>No hay datos para el Gráfico de Progreso de Tratamientos.</Typography>
+      ) : (
+        <Card style={{ marginBottom: '20px' }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Progreso de Tratamientos
+            </Typography>
+            <div
+              className="bar-chart-container"
+              style={{
+                width: '100%',
+                height: 300,
+                overflowX: 'auto',
+              }}
             >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis
-                label={{
-                  value: 'Adherencia (%)',
-                  angle: -90,
-                  position: 'insideLeft',
-                }}
-              />
-              <Tooltip />
-              <Bar dataKey="Adherencia" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+              <BarChart
+                width={Math.max(600, treatments.length * 100)} // Ajustar el ancho según el número de tratamientos
+                height={300}
+                data={treatmentProgressData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="name"
+                  angle={-45}
+                  textAnchor="end"
+                  interval={0}
+                  height={60}
+                />
+                <YAxis
+                  label={{
+                    value: 'Adherencia (%)',
+                    angle: -90,
+                    position: 'insideLeft',
+                  }}
+                  domain={[0, 100]}
+                />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="Adherencia" fill="#8884d8" />
+              </BarChart>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Gráfico de Actividades Completadas */}
-      <Card style={{ marginBottom: '20px' }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Actividades Completadas
-          </Typography>
-          <ResponsiveContainer width="100%" height={300}>
+      {activitiesData.length === 0 ? (
+        <Typography>No hay datos para el Gráfico de Actividades Completadas.</Typography>
+      ) : (
+        <Card style={{ marginBottom: '20px' }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Actividades Completadas
+            </Typography>
             <BarChart
+              width={600}
+              height={300}
               data={activitiesData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
             >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
+              <XAxis
+                dataKey="name"
+                angle={-45}
+                textAnchor="end"
+                interval={0}
+                height={60}
+              />
               <YAxis
                 label={{
-                  value: 'Score Obtained',
+                  value: 'Score Obtenido',
                   angle: -90,
                   position: 'insideLeft',
                 }}
+                domain={[0, 'auto']}
               />
               <Tooltip />
+              <Legend />
               <Bar dataKey="Score" fill="#82ca9d" />
             </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Gráfico de Cumplimiento de Medicamentos */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Cumplimiento de Medicamentos
-          </Typography>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
+      {medicationsData.length === 0 ? (
+        <Typography>No hay datos para el Gráfico de Cumplimiento de Medicamentos.</Typography>
+      ) : (
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Cumplimiento de Medicamentos
+            </Typography>
+            <PieChart width={400} height={300}>
               <Pie
                 data={medicationsData}
                 dataKey="value"
@@ -140,9 +173,9 @@ const ChartsSection = ({ treatments, completedActivities, medications }) => {
               <Tooltip />
               <Legend verticalAlign="bottom" height={36} />
             </PieChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

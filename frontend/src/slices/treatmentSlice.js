@@ -137,6 +137,20 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         { type: 'Treatments', id: treatmentId },
       ],
     }),
+    getTreatmentsByPatient2: builder.query({
+      query: (patientId) => `/api/treatments/patient/${patientId}/treatments2`,
+      providesTags: (result, error, patientId) => [
+        { type: 'TreatmentsByPatient', id: patientId },
+      ],
+    }),
+    getTreatmentsByMultiplePatients: builder.mutation({
+      query: ({ patientIds }) => ({
+        url: '/api/treatments/patients/treatments',
+        method: 'POST',
+        body: { patientIds },
+      }),
+      invalidatesTags: ['TreatmentsByPatient'],
+    }),
   }),
 });
 
@@ -155,6 +169,8 @@ export const {
   useUpdateTreatmentMutation,
   useGetTreatmentsByPatientQuery,
   useGetActivitiesByUserQuery,
+  useGetTreatmentsByPatient2Query,
+  useGetTreatmentsByMultiplePatientsMutation,
 
   // **Medicamentos Hooks**
   useGetMyMedicationsQuery,
