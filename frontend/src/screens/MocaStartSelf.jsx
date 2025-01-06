@@ -1,7 +1,7 @@
 // src/screens/MOCAmodules/MocaStartSelf.jsx
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom"; // Importar useNavigate
 import { Button, Container, ProgressBar, Row, Col, ListGroup, Alert, Spinner } from "react-bootstrap";
 import { useGetPatientsQuery } from "../slices/patientApiSlice";
 import { useCreateMocaSelfMutation } from "../slices/mocaSelfApiSlice"; // Importar hook para enviar datos
@@ -28,6 +28,7 @@ const MODULES = [
 
 const MocaStartSelf = () => {
   const { id } = useParams();
+  const navigate = useNavigate(); // Inicializar useNavigate
   const { data: patients = [] } = useGetPatientsQuery();
   const selectedPatient = patients.find((patient) => patient._id === id);
 
@@ -113,6 +114,30 @@ const MocaStartSelf = () => {
 
   const CurrentModuleComponent = MODULES[currentModuleIndex].component;
 
+  // Función para manejar el envío de resultados reales
+  const handleSaveResults = async () => {
+    if (!selectedPatient) {
+      alert("Paciente no seleccionado.");
+      return;
+    }
+
+    const mocaData = {
+      patientId: selectedPatient._id,
+      patientName: selectedPatient.user?.name || "Paciente Desconocido",
+      modulesData: individualScores,
+      totalScore: currentScore,
+    };
+
+    try {
+      const savedRecord = await createMocaSelf(mocaData).unwrap(); // Enviar datos al backend
+      alert("Resultados guardados exitosamente.");
+      navigate(`/moca-final/${savedRecord._id}`); // Navegar a la pantalla final con el ID del registro
+    } catch (err) {
+      console.error("Error al guardar resultados:", err);
+      alert("Hubo un error al guardar los resultados. Por favor, intenta nuevamente.");
+    }
+  };
+
   // Función para manejar el envío de resultados simulados
   const handleSimulateAndSaveResults = async () => {
     if (!selectedPatient) {
@@ -170,7 +195,7 @@ const MocaStartSelf = () => {
 
     // Enviar datos simulados al backend
     try {
-      await createMocaSelf({
+      const savedRecord = await createMocaSelf({
         patientId: selectedPatient._id,
         patientName: selectedPatient.user?.name || "Paciente Desconocido",
         modulesData: simulatedScores,
@@ -178,7 +203,7 @@ const MocaStartSelf = () => {
       }).unwrap();
 
       alert("Resultados simulados guardados exitosamente.");
-      setTestCompleted(true);
+      navigate(`/moca-final/${savedRecord._id}`); // Navegar a la pantalla final con el ID del registro
     } catch (err) {
       console.error("Error al guardar resultados simulados:", err);
       alert("Hubo un error al guardar los resultados simulados. Por favor, intenta nuevamente.");
@@ -278,7 +303,7 @@ const MocaStartSelf = () => {
               <Col className="d-flex justify-content-end">
                 <Button
                   variant="success"
-                  onClick={handleSimulateAndSaveResults}
+                  onClick={handleSaveResults}
                   disabled={isSaving}
                 >
                   {isSaving ? (

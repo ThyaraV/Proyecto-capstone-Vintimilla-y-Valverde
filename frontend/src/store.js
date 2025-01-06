@@ -1,15 +1,22 @@
-import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 import { apiSlice } from "./slices/apiSlice.js";
 import authSliceReducer from "./slices/authSlice.js";
 import treatmentApiSlice from './slices/treatmentSlice.js';
-const store=configureStore({
-    reducer:{ 
-        [apiSlice.reducerPath]:apiSlice.reducer,
-        auth: authSliceReducer,
-    },
-    middleware:(getDefaultMiddleware)=>
-        getDefaultMiddleware().concat(apiSlice.middleware),
-        devTools:true,
+import { mocaSelfApiSlice } from "./slices/mocaSelfApiSlice";
+
+const store = configureStore({
+  reducer: {
+    [apiSlice.reducerPath]: apiSlice.reducer,
+    auth: authSliceReducer,
+    [mocaSelfApiSlice.reducerPath]: mocaSelfApiSlice.reducer,
+    [treatmentApiSlice.reducerPath]: treatmentApiSlice.reducer, // Agregado
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware()
+      .concat(apiSlice.middleware)
+      .concat(mocaSelfApiSlice.middleware) // Agregado
+      .concat(treatmentApiSlice.middleware), // Agregado
+  devTools: true, // Habilitar DevTools
 });
 
 export default store;

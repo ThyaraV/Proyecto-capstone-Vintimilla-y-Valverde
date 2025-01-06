@@ -75,6 +75,7 @@ import Lenguaje from "./screens/MOCAmodules/Lenguaje";
 import Abstraccion from "./screens/MOCAmodules/Abstraccion";
 import RecuerdoDiferido from "./screens/MOCAmodules/RecuerdoDiferido";
 import Orientacion from "./screens/MOCAmodules/Orientacion";
+import MocaFinalScreen from "./screens/MOCAmodules/MocaFinalScreen";
 
 import { MocaProvider } from "./context/MocaContext";
 
@@ -184,6 +185,7 @@ const router = createBrowserRouter(
       <Route path="/moca/abstraccion" element={<Abstraccion />} />
       <Route path="/moca/recuerdo-diferido" element={<RecuerdoDiferido />} />
       <Route path="/moca/orientacion" element={<Orientacion />} />
+      <Route path="/moca-final/:id" element={<MocaFinalScreen />} />
     </Route>
   )
 );

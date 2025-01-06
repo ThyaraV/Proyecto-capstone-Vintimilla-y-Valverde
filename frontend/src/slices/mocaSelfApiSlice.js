@@ -1,3 +1,5 @@
+// src/slices/mocaSelfApiSlice.js
+
 import { apiSlice } from "./apiSlice";
 
 export const mocaSelfApiSlice = apiSlice.injectEndpoints({
@@ -9,10 +11,12 @@ export const mocaSelfApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: mocaData,
       }),
-      invalidatesTags: ["MocaSelf"],
+      invalidatesTags: (result, error, arg) => [
+        { type: "MocaSelf", id: "LIST" },
+      ],
     }),
 
-    // Obtener todos los MocaSelf (opcional: filtrar por patientId)
+    // Obtener todos los MocaSelf (filtrado por patientId)
     getAllMocaSelfs: builder.query({
       query: (patientId) => {
         let url = "/api/mocaSelf";
@@ -21,13 +25,19 @@ export const mocaSelfApiSlice = apiSlice.injectEndpoints({
         }
         return url;
       },
-      providesTags: ["MocaSelf"],
+      providesTags: (result) =>
+        result
+          ? [
+              { type: "MocaSelf", id: "LIST" },
+              ...result.map(({ _id }) => ({ type: "MocaSelf", id: _id })),
+            ]
+          : [{ type: "MocaSelf", id: "LIST" }],
     }),
 
     // Obtener un MocaSelf por ID
     getMocaSelfById: builder.query({
       query: (id) => `/api/mocaSelf/${id}`,
-      providesTags: ["MocaSelf"],
+      providesTags: (result, error, id) => [{ type: "MocaSelf", id }],
     }),
 
     // Actualizar un registro MocaSelf
@@ -37,7 +47,7 @@ export const mocaSelfApiSlice = apiSlice.injectEndpoints({
         method: "PUT",
         body: data,
       }),
-      invalidatesTags: ["MocaSelf"],
+      invalidatesTags: (result, error, arg) => [{ type: "MocaSelf", id: arg.id }],
     }),
 
     // Eliminar un registro MocaSelf
@@ -46,7 +56,10 @@ export const mocaSelfApiSlice = apiSlice.injectEndpoints({
         url: `/api/mocaSelf/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["MocaSelf"],
+      invalidatesTags: (result, error, id) => [
+        { type: "MocaSelf", id },
+        { type: "MocaSelf", id: "LIST" },
+      ],
     }),
   }),
 });
