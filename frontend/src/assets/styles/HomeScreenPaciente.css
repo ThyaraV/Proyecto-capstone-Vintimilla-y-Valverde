@@ -5,8 +5,9 @@
   padding: 2rem;
   position: relative;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f5f5f5;
-  min-height: 100vh;
+  background-color: #eeecec;
+  border-radius: 15px;
+  min-height: 80vh;
 }
 
 /* Contenido principal: Agenda y Calendario */
@@ -33,6 +34,7 @@
   max-width: 60%; /* Define un ancho mayor para el calendario */
   display: flex;
   justify-content: flex-end; /* Alinea el calendario hacia la derecha */
+  
 }
 
 .custom-calendar {
@@ -231,4 +233,21 @@ ul.message-icon-container li:hover .title {
   ul.message-icon-container li:hover .title {
     right: 70px;
   }
+}
+
+/* Archivo CSS */
+.custom-popup-scroll {
+  max-height: 300px; /* Define la altura máxima del popup */
+  overflow-y: auto; /* Activa el scroll vertical */
+  padding: 10px; /* Espaciado opcional */
+}
+/* Estilos para el popup de "Ver más" */
+.rbc-overlay {
+  max-height: 300px; /* Altura máxima */
+  overflow-y: auto; /* Scroll vertical */
+  padding: 10px;
+  background-color: #ffffff; /* Fondo blanco opcional */
+  border: 1px solid #ddd; /* Opcional: bordes */
+  border-radius: 5px; /* Opcional: esquinas redondeadas */
+  z-index: 1000; /* Asegúrate de que el popup esté por encima */
 }
