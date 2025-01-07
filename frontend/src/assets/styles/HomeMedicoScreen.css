@@ -1,10 +1,11 @@
-/* HomeMedicoScreen.css */
+/* Tabla */
 .table-container {
   width: 100%;
   padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1); /* Sombra más suave */
+  overflow-x: auto; /* Para pantallas pequeñas */
 }
 
 .assigned-patients-table {
@@ -12,33 +13,91 @@
   border-collapse: collapse;
   margin-top: 20px;
   font-size: 16px;
-  font-family: Arial, sans-serif;
+  font-family: 'Roboto', Arial, sans-serif; /* Fuente moderna */
 }
 
 .assigned-patients-table thead {
-  background-color: #fcb64c;
+  background-color: #ffa726; /* Naranja más vibrante */
   color: white;
+  text-transform: uppercase;
+  font-weight: bold;
+  
 }
 
-.assigned-patients-table th, .assigned-patients-table td {
-  padding: 12px 15px;
+.assigned-patients-table th,
+.assigned-patients-table td {
+  padding: 14px 20px;
   text-align: left;
+  border-bottom: 1px solid #e0e0e0; /* Línea sutil */
 }
 
 .assigned-patients-table tbody tr:nth-child(even) {
-  background-color: #f2f2f2;
+  background-color: #f8f8f8; /* Alternar colores */
+}
+
+.assigned-patients-table tbody tr:nth-child(odd) {
+  background-color: #ffffff; /* Blanco */
 }
 
 .assigned-patients-table tbody tr:hover {
-  background-color: #ddd;
+  background-color: #f0f0f0; /* Resalte al pasar el cursor */
+  transition: background-color 0.3s ease;
 }
 
+/* Enlaces */
 .report-link {
-  color: #1986f3;
+  color: #007bff; /* Azul vibrante */
   text-decoration: none;
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .report-link:hover {
   text-decoration: underline;
+  color: #0056b3; /* Azul más oscuro */
+}
+
+/* Botón */
+.table-button {
+  margin: 20px auto; /* Centrado */
+  display: block;
+  width: 200px;
+  height: 3.5rem;
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 700;
+  border-radius: 15rem;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+.table-button:hover {
+  background-color: #2563eb; /* Azul más oscuro */
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+  .assigned-patients-table th,
+  .assigned-patients-table td {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .table-button {
+    font-size: 0.9rem;
+    height: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .assigned-patients-table th,
+  .assigned-patients-table td {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  .table-container {
+    padding: 10px;
+  }
 }

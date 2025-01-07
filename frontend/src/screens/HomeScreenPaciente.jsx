@@ -19,9 +19,40 @@ import MedicationReminder from '../components/FloatingMessage.jsx';
 import MedicationPopup from '../components/MedicationPopup.jsx';
 import { useSelector } from 'react-redux';
 import io from 'socket.io-client';
+/*IMPORTACIONES PARA CALENDARIO GRANDE*/
+import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
+import moment from 'moment';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import 'moment/locale/es'; // Importa el idioma español
+import { startOfDay } from 'date-fns';
+
+moment.locale('es');
+const localizer = momentLocalizer(moment);
+
+const messages = {
+  allDay: 'Todo el día',
+  previous: 'Anterior',
+  next: 'Siguiente',
+  today: 'Hoy',
+  month: 'Mes',
+  week: 'Semana',
+  day: 'Día',
+  agenda: 'Agenda',
+  date: 'Fecha',
+  time: 'Hora',
+  event: 'Evento',
+  noEventsInRange: 'No hay eventos en este rango.',
+  showMore: (total) => `+ Ver más (${total})`,
+};
 
 const HomeScreenPaciente = () => {
   const navigate = useNavigate();
+  const [events, setEvents] = useState([]);
+  const [isEventPopupOpen, setIsEventPopupOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
+
+
 
   const { userInfo } = useSelector((state) => state.auth);
   const userId = userInfo?._id;
@@ -127,15 +158,20 @@ const HomeScreenPaciente = () => {
     }
   }, [selectedDate, calendarEvents, completedActivities, activeTreatment]);
 
+  const isLoading =
+    isActiveTreatmentLoading ||
+    isAssignedActivitiesLoading ||
+    isMedLoading ||
+    isCompletedActivitiesLoading;
   // Procesar medicamentos y actividades para el calendario
   useEffect(() => {
     if (
-      activeTreatment &&
+      !isLoading && activeTreatment &&
       (allMedications || isMedLoading === false) &&
       (assignedActivities || isAssignedActivitiesLoading === false) &&
       (completedActivities || isCompletedActivitiesLoading === false)
     ) {
-      const events = {};
+      const tempEvents = [];
 
       // Crear un set de IDs de actividades completadas
       const completedActivityIds = new Set(
@@ -151,71 +187,83 @@ const HomeScreenPaciente = () => {
         const currentDate = addDays(startDate, i);
         const dateKey = format(currentDate, 'yyyy-MM-dd');
 
-        if (!events[dateKey]) {
-          events[dateKey] = { medications: [], activities: [], completedActivities: [] };
-        }
-
-        // Agregar medicamentos programados para la fecha actual
+        // Procesar medicamentos
         allMedications?.forEach((med) => {
           const medStart = new Date(med.startDate);
           const medEnd = med.endDate ? new Date(med.endDate) : addDays(new Date(), 365);
 
-          if (currentDate >= medStart && currentDate <= medEnd) {
-            const frequency = med.frequency;
-            let isDue = false;
+          if (!isNaN(medStart) && !isNaN(medEnd)) {
+            if (currentDate >= medStart && currentDate <= medEnd) {
+              const frequency = med.frequency;
+              let isDue = false;
 
-            switch (frequency) {
-              case 'Diaria':
-                isDue = true;
-                break;
-              case 'Semanal':
-                if (currentDate.getDay() === medStart.getDay()) {
+              switch (frequency) {
+                case 'Diaria':
                   isDue = true;
-                }
-                break;
-              case 'Mensual':
-                if (currentDate.getDate() === medStart.getDate()) {
-                  isDue = true;
-                }
-                break;
-              default:
-                break;
-            }
+                  break;
+                case 'Semanal':
+                  if (currentDate.getDay() === medStart.getDay()) {
+                    isDue = true;
+                  }
+                  break;
+                case 'Mensual':
+                  if (currentDate.getDate() === medStart.getDate()) {
+                    isDue = true;
+                  }
+                  break;
+                default:
+                  break;
+              }
 
-            if (isDue) {
-              events[dateKey].medications.push(med);
+              if (isDue) {
+                tempEvents.push({
+                  title: `Medicamento: ${med.name}`,
+                  start: currentDate,
+                  end: currentDate,
+                  allDay: true,
+                  type: 'medication',
+                });
+              }
             }
           }
         });
 
-        // Agregar actividades pendientes para la fecha actual, excluyendo las completadas
+        // Procesar actividades pendientes
         assignedActivities?.forEach((activity) => {
           const activityIdStr = activity._id.toString();
           const isCompleted = completedActivityIds.has(activityIdStr);
 
           if (!isCompleted) {
-            events[dateKey].activities.push(activity);
+            tempEvents.push({
+              title: `Pendiente: ${activity.name}`,
+              start: startOfDay(currentDate),
+              end: startOfDay(currentDate),
+              allDay: true,
+              type: 'pending',
+            });
           }
         });
-
-        // Agregar actividades completadas
-        events[dateKey].completedActivities = completedActivities || [];
       }
 
-      // Determinar si todas las actividades han sido completadas en un día
-      for (const dateKey in events) {
-        const dayEvents = events[dateKey];
-        const totalAssigned =
-          dayEvents.activities.length + completedActivityIds.size;
-        const totalCompleted = completedActivityIds.size;
+      // Agregar actividades completadas
+      completedActivities?.forEach((completedActivity) => {
+        if (completedActivity?.activity?.name && completedActivity.dateCompleted) {
+          const completedDate = startOfDay(new Date(completedActivity.dateCompleted));
+          tempEvents.push({
+            title: `Completada: ${completedActivity.activity.name}`,
+            start: completedDate,
+            end: completedDate,
+            allDay: true,
+            type: 'completed',
+          });
+        }
+      });
 
-        dayEvents.allActivitiesCompleted = totalAssigned > 0 && totalCompleted >= totalAssigned;
-      }
-
-      setCalendarEvents(events);
-      console.log('Calendar Events:', events);
+      setEvents(tempEvents);
+      console.log('Eventos procesados para BigCalendar:', tempEvents);
     }
   }, [
+    isLoading,
     activeTreatment,
     allMedications,
     isMedLoading,
@@ -224,6 +272,83 @@ const HomeScreenPaciente = () => {
     completedActivities,
     isCompletedActivitiesLoading,
   ]);
+
+ 
+
+  useEffect(() => {
+    if (calendarEvents) {
+      const eventArray = [];
+      Object.entries(calendarEvents).forEach(([date, data]) => {
+        if (data) {
+          data.medications?.forEach((med) => {
+            if (med?.name) {
+              console.log(`Procesando medicamento para BigCalendar:`, med, `Fecha:`, date);
+              const parsedDate = new Date(date);
+              if (!isNaN(parsedDate)) {
+                eventArray.push({
+                  title: `Medicamento: ${med.name}`,
+                  start: parsedDate,
+                  end: parsedDate,
+                  allDay: true,
+                  type: 'medication',
+                });
+              }
+
+            }
+          });
+
+          data.activities?.forEach((activity) => {
+            if (activity?.name) {
+              eventArray.push({
+                title: `Pendiente: ${activity.name}`,
+                start: new Date(date),
+                end: new Date(date),
+                allDay: true,
+                type: 'pending',
+              });
+            }
+          });
+
+          /*data.completedActivities?.forEach((completedActivity) => {
+            if (completedActivity?.activity?.name && completedActivity.dateCompleted) {
+              eventArray.push({
+                title: `Completada: ${completedActivity.activity.name}`,
+                start: new Date(completedActivity.dateCompleted),
+                end: new Date(completedActivity.dateCompleted),
+                allDay: true,
+                type: 'completed',
+              });              
+            } 
+          }); */
+          data.completedActivities?.forEach((completedActivity) => {
+            if (completedActivity?.activity?.name && completedActivity.dateCompleted) {
+              const completedDate = new Date(completedActivity.dateCompleted);
+              const normalizedDateKey = format(startOfDay(completedDate), 'yyyy-MM-dd'); // Normalizar fecha
+
+              if (!events[normalizedDateKey]) {
+                events[normalizedDateKey] = { medications: [], activities: [], completedActivities: [] };
+              }
+
+              events[normalizedDateKey].completedActivities.push(completedActivity);
+
+              console.log(
+                `Procesando actividad completada:`,
+                completedActivity.activity.name,
+                `Fecha completada:`,
+                completedActivity.dateCompleted,
+                `Fecha normalizada:`,
+                normalizedDateKey
+              );
+            }
+          });
+
+
+        }
+      });
+      setEvents(eventArray);
+    }
+  }, [calendarEvents]);
+
 
   // Configurar Socket.io para actualizaciones en tiempo real
   useEffect(() => {
@@ -301,6 +426,21 @@ const HomeScreenPaciente = () => {
     );
   }
 
+  console.log('Validando cada evento:');
+  events.forEach((event, index) => {
+    if (!event.title) {
+      console.error(`Evento en índice ${index} no tiene título:`, event);
+    }
+    if (!(event.start instanceof Date) || isNaN(event.start)) {
+      console.error(`La propiedad 'start' no es válida en el evento ${index}:`, event.start);
+    }
+    if (!(event.end instanceof Date) || isNaN(event.end)) {
+      console.error(`La propiedad 'end' no es válida en el evento ${index}:`, event.end);
+    }
+  });
+
+
+
   // ** Retorno principal del componente **
   return (
     <div className="home-screen-container">
@@ -327,6 +467,59 @@ const HomeScreenPaciente = () => {
           }}
         />
       )}
+      {/* Mostrar Tratamiento Activo */}
+      {activeTreatment && (
+        <div className="active-treatment-container">
+          <h2>Tratamiento Activo</h2>
+          <div>
+            <strong>{activeTreatment.treatmentName}</strong>
+          </div>
+          <div>{activeTreatment.description}</div>
+          {/* Puedes agregar más detalles según tus necesidades */}
+        </div>
+      )}
+
+<h2>Calendario de Actividades</h2>
+  <BigCalendar
+    localizer={localizer}
+    events={events} // Garantizar que siempre sea un array
+    startAccessor="start"
+    endAccessor="end"
+    style={{ height: 500 }}
+    messages={messages}
+    eventPropGetter={(event) => {
+      const backgroundColor =
+        event.type === 'medication'
+          ? '#FFD700'
+          : event.type === 'completed'
+          ? '#32CD32'
+          : '#FF6347';
+      return { style: { backgroundColor, color: '#ffffff', borderRadius: '5px', padding: '5px' } };
+    }}
+    onSelectEvent={(event) => {
+      console.log('Evento seleccionado:', event);
+      setSelectedEvent(event);
+      setIsEventPopupOpen(true);
+    }}
+    popup
+    showAllEvents={false} // Permite forzar la opción de ver más
+    components={{
+      event: ({ event }) => <span>{event.title}</span>,
+      agenda: {
+        event: ({ event }) => (
+          <div className="custom-popup-scroll">
+            <span>{event.title}</span>
+          </div>
+        ),
+      },
+    }}
+  />
+
+
+      
+
+
+
 
       {/* Mostrar el mensaje de recordatorio si el popup de estado de ánimo está cerrado y hay medicamentos debido */}
       {!isMoodPopupOpen &&
@@ -353,107 +546,6 @@ const HomeScreenPaciente = () => {
           Error al guardar tu estado de ánimo:{' '}
           {saveMoodError.data?.message || saveMoodError.error}
         </p>
-      )}
-
-      {/* Calendario y Agenda */}
-      {!isMoodPopupOpen && (
-        <div className="main-content">
-          {/* Mostrar Tratamiento Activo */}
-          {activeTreatment && (
-            <div className="active-treatment-container">
-              <h2>Tratamiento Activo</h2>
-              <div>
-                <strong>{activeTreatment.treatmentName}</strong>
-              </div>
-              <div>{activeTreatment.description}</div>
-              {/* Puedes agregar más detalles según tus necesidades */}
-            </div>
-          )}
-
-          {/* Agenda */}
-          <div className="agenda-container">
-            <h2>Agenda</h2>
-            <div className="selected-date">{format(selectedDate, 'dd MMMM yyyy')}</div>
-            {/* Sección de Medicamentos */}
-            <div className="medications-list">
-              <h3>Medicamentos</h3>
-              {medsForSelectedDate.length > 0 ? (
-                <ul>
-                  {medsForSelectedDate.map((med, index) => (
-                    <li key={index}>
-                      <strong>{med.name}</strong> - {med.dosage}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No tienes medicamentos programados para este día.</p>
-              )}
-            </div>
-
-            {/* Sección de Actividades Pendientes */}
-            <div className="activities-list">
-              <h3>Actividades Pendientes</h3>
-              {activitiesForSelectedDate.length > 0 ? (
-                <ul>
-                  {activitiesForSelectedDate.map((activity, index) => (
-                    <li key={index}>
-                      <strong>{activity.name}</strong> - {activity.description}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No tienes actividades pendientes para este día.</p>
-              )}
-            </div>
-
-            {/* Sección de Actividades Completadas */}
-            <div className="completed-activities-list">
-              <h3>Actividades Completadas</h3>
-              {completedActivitiesForSelectedDate.length > 0 ? (
-                <ul>
-                  {completedActivitiesForSelectedDate.map((completedActivity, index) => (
-                    <li key={index}>
-                      <strong>{completedActivity.activity.name}</strong> -{' '}
-                      {completedActivity.dateCompleted
-                        ? format(
-                            new Date(completedActivity.dateCompleted),
-                            'dd/MM/yyyy HH:mm'
-                          )
-                        : 'Sin fecha'}
-                      {/* Mostrar fecha y hora */}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No has completado actividades para este período.</p>
-              )}
-            </div>
-          </div>
-
-          {/* Calendario */}
-          <div className="calendar-container">
-            <Calendar
-              onClickDay={handleDateClick}
-              value={selectedDate}
-              tileContent={({ date, view }) => {
-                if (view === 'month') {
-                  const dateKey = format(date, 'yyyy-MM-dd');
-                  if (calendarEvents[dateKey]?.allActivitiesCompleted) {
-                    return <div className="dot green"></div>;
-                  } else if (
-                    calendarEvents[dateKey]?.medications.length > 0 ||
-                    calendarEvents[dateKey]?.activities.length > 0 ||
-                    calendarEvents[dateKey]?.completedActivities.length > 0
-                  ) {
-                    return <div className="dot"></div>;
-                  }
-                }
-                return null;
-              }}
-              className="custom-calendar"
-            />
-          </div>
-        </div>
       )}
 
       {/* Icono de mensajes */}

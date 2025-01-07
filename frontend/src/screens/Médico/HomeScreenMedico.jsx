@@ -68,7 +68,15 @@ const HomeScreenMedico = () => {
       ) : (
         <p>No tienes pacientes asignados.</p>
       )}
+      <div className="buttonContainer">
+      <button
+        className="table-button"
+      >
+        Asignar Pacientes
+      </button>
+      </div>
     </div>
+
   );
 };
 
