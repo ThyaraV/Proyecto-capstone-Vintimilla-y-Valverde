@@ -9,7 +9,7 @@ const ReportsScreen = () => {
 
   const reportOptions = [
     { title: 'Historial Médico', img: '/path/to/historial-medico.jpg', route: '/historial-medico' },
-    { title: 'Resultados MOCA', img: '/path/to/medicacion-actual.jpg', route: '/results-moca' },
+    { title: 'Resultados MOCA', img: '/path/to/medicacion-actual.jpg', route: '/moca' },
     { title: 'Resultado de Evaluaciones diagnósticas', img: '/path/to/resultado-evaluaciones.jpg', route: '/resultado-evaluaciones' },
     { title: 'Progreso del Paciente', img: '/path/to/progreso-paciente.jpg', route: '/progreso-paciente' },
     { title: 'Resultados de actividades', img: '/path/to/progreso-paciente.jpg', route: '/reports/activities' }, // Ruta fija
