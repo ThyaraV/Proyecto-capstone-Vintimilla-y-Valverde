@@ -862,7 +862,7 @@ const getCompletedActivitiesByTreatment = asyncHandler(async (req, res) => {
 // @desc    Marcar un medicamento como tomado
 // @route   PATCH /api/treatments/:treatmentId/medications/:medicationId/take
 // @access  Privado/Paciente
-const takeMedication = asyncHandler(async (req, res) => {
+/*const takeMedication = asyncHandler(async (req, res) => {
   const { treatmentId, medicationId } = req.params;
 
   // Validar treatmentId y medicationId
@@ -896,7 +896,7 @@ const takeMedication = asyncHandler(async (req, res) => {
     message: "Medicamento marcado como tomado",
     medication,
   });
-});
+});*/
 
 // controllers/treatmentController.js
 
@@ -929,31 +929,67 @@ const getTreatmentsByMultiplePatients = asyncHandler(async (req, res) => {
     throw new Error('No autorizado: Uno o más pacientes no están asignados a este doctor');
   }
 
-  // Buscar tratamientos que incluyan a cualquiera de los pacientes
+  // Buscar tratamientos que incluyan a cualquiera de los pacientes y poblar los campos necesarios
   const treatments = await Treatment.find({ patients: { $in: patientIds } })
     .populate({
       path: 'patients',
       populate: { path: 'user', select: 'name lastName email' },
     })
     .populate({
-      path: 'assignedActivities',
-      select: 'name description', // Ajusta los campos según tus necesidades
-      strictPopulate: false, // Añadido para evitar errores si no se encuentran actividades
+      path: 'completedActivities.activity',
+      select: 'name description', // Selecciona solo los campos necesarios
     })
     .populate({
-      path: 'completedActivities.activity',
-      select: 'name description', // Popula el campo `activity` dentro de `completedActivities`
-      strictPopulate: false, // Añadido para evitar errores si no se encuentran actividades
+      path: 'assignedActivities',
+      select: 'name description', // Ajusta los campos según tus necesidades
     })
+    .populate({
+      path: 'doctor',
+      populate: { path: 'user', select: 'name lastName email' }, // Si deseas poblar el doctor
+    });
 
   console.log(`Tratamientos para los pacientes ${patientIds}:`, treatments);
 
   res.status(200).json(treatments);
 });
 
+export const updateMedicationTakenToday = async (req, res) => {
+  const { treatmentId, medicationId } = req.params;
+
+  try {
+    // Buscar el tratamiento por su ID
+    const treatment = await Treatment.findById(treatmentId);
+    if (!treatment) {
+      return res.status(404).json({ message: 'Tratamiento no encontrado' });
+    }
+
+    // Encontrar el medicamento dentro del tratamiento
+    const medication = treatment.medications.id(medicationId);
+    if (!medication) {
+      return res.status(404).json({ message: 'Medicamento no encontrado' });
+    }
+
+    // Actualizar el campo takenToday
+    medication.takenToday = !medication.takenToday; // Alternar el estado
+
+    // Guardar los cambios en la base de datos
+    await treatment.save();
+
+    return res.status(200).json({
+      message: 'Estado de medicamento actualizado correctamente',
+      medication,
+    });
+  } catch (error) {
+    console.error('Error al actualizar el medicamento:', error);
+    return res.status(500).json({ message: 'Error del servidor' });
+  }
+};
+
 export { assignActivityToPatient, updateAssignmentResults, 
   getAssignedActivities,unassignActivityFromPatient,getMyAssignedActivities, 
   createTreatment, getMyTreatments, getActivitiesByUser,
   getTreatmentById, updateTreatment, getMyMedications, getDueMedications,
 getTreatmentsByPatient,recordActivity,getCompletedActivities, getActiveTreatment,toggleActivateTreatment,
-getCompletedActivitiesByTreatment, takeMedication, getTreatmentsByPatient2, getTreatmentsByMultiplePatients};
+getCompletedActivitiesByTreatment, getTreatmentsByPatient2, getTreatmentsByMultiplePatients};
+
+//takeMedication

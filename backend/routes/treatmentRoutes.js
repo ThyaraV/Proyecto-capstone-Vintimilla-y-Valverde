@@ -15,9 +15,10 @@ import {
   getActivitiesByUser,
   getActiveTreatment, toggleActivateTreatment,
   getCompletedActivitiesByTreatment,
-  takeMedication,
+  //takeMedication,
   getTreatmentsByPatient2,
-  getTreatmentsByMultiplePatients
+  getTreatmentsByMultiplePatients,
+  updateMedicationTakenToday
 } from '../controllers/treatmentController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -30,7 +31,7 @@ router.route('/my-medications').get(protect, getMyMedications);
 // Ruta para obtener medicamentos debido
 router.route('/due-medications').get(protect, getDueMedications);
 
-router.route('/:treatmentId/medications/:medicationId/take').patch(protect, takeMedication);
+//router.route('/:treatmentId/medications/:medicationId/take').patch(protect, takeMedication);
 
 
 // Ruta para obtener tratamientos del médico
@@ -60,6 +61,11 @@ router.route('/activities').get(protect, getActivitiesByUser);
 router.route('/:treatmentId/activate').patch(protect, toggleActivateTreatment);
 
 router.route('/:userId/active-treatment').get(protect, getActiveTreatment);
+
+router.patch(
+  '/:treatmentId/medications/:medicationId/take',
+  updateMedicationTakenToday
+);
 
 // Ruta para obtener detalles de un tratamiento específico
 router

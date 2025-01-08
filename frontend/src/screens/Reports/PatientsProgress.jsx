@@ -18,8 +18,8 @@ import {
 import {
   useGetTreatmentsByMultiplePatientsMutation,
   useTakeMedicationMutation,
-} from '../../slices/treatmentSlice'; // Asegúrate de que el path es correcto
-import { useGetDoctorWithPatientsQuery } from '../../slices/doctorApiSlice'; // Asegúrate de que el path es correcto
+} from '../../slices/treatmentSlice';
+import { useGetDoctorWithPatientsQuery } from '../../slices/doctorApiSlice';
 import KPICard from '../../components/KPICard';
 import ChartsSection from '../../components/ChartsSection';
 import ActivitiesList from '../../components/ActivitiesList';
@@ -119,15 +119,13 @@ const PatientsProgressContent = () => {
     let activities = [];
     filteredTreatments.forEach((treatment) => {
       if (treatment.completedActivities && treatment.completedActivities.length > 0) {
-        // Filtrar actividades que pertenecen a los pacientes seleccionados
-        const patientActivities = treatment.completedActivities.filter((activity) =>
-          selectedPatients.includes(activity.patient.toString())
-        );
-        activities = activities.concat(patientActivities);
+        // Agregar todas las actividades completadas
+        activities = activities.concat(treatment.completedActivities);
       }
     });
+    console.log('Filtered Activities:', activities); // Añadir log
     return activities;
-  }, [filteredTreatments, selectedPatients]);
+  }, [filteredTreatments]);
 
   // **8. Filtrar medicamentos según los tratamientos filtrados**
   const filteredMedications = useMemo(() => {
@@ -305,15 +303,6 @@ const PatientsProgressContent = () => {
             treatments={filteredTreatments}
             completedActivities={filteredActivities}
             medications={filteredMedications}
-          />
-        </Grid>
-
-        {/* Sección de Listados */}
-        <Grid item xs={12} md={6}>
-          <ActivitiesList activities={filteredActivities} />
-          <MedicationsList
-            medications={filteredMedications}
-            onMedicationTaken={handleTakeMedicationAction}
           />
         </Grid>
       </Grid>

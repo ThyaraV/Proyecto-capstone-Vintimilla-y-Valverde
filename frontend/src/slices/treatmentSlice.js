@@ -127,7 +127,7 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         { type: 'CompletedActivities', id: treatmentId },
       ],
     }),
-    takeMedication: builder.mutation({
+    /*takeMedication: builder.mutation({
       query: ({ treatmentId, medicationId }) => ({
         url: `/api/treatments/${treatmentId}/medications/${medicationId}/take`,
         method: 'PATCH',
@@ -136,7 +136,7 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         { type: 'Medications', id: treatmentId },
         { type: 'Treatments', id: treatmentId },
       ],
-    }),
+    }),*/
     getTreatmentsByPatient2: builder.query({
       query: (patientId) => `/api/treatments/patient/${patientId}/treatments2`,
       providesTags: (result, error, patientId) => [
@@ -150,6 +150,16 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         body: { patientIds },
       }),
       invalidatesTags: ['TreatmentsByPatient'],
+    }),
+    takeMedication: builder.mutation({
+      query: ({ treatmentId, medicationId }) => ({
+        url: `/api/treatments/${treatmentId}/medications/${medicationId}/take`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: (result, error, { treatmentId }) => [
+        { type: 'Medications', id: treatmentId },
+        { type: 'Treatments', id: treatmentId },
+      ],
     }),
   }),
 });
@@ -175,6 +185,7 @@ export const {
   // **Medicamentos Hooks**
   useGetMyMedicationsQuery,
   useGetDueMedicationsQuery,
+  useTakeMedicationMutation,
 
   // **Nuevos Hooks para Actividades Completadas**
   useRecordActivityMutation,
@@ -182,5 +193,5 @@ export const {
   useGetActiveTreatmentQuery,
   useToggleActivateTreatmentMutation,
   useGetCompletedActivitiesByTreatmentQuery,
-  useTakeMedicationMutation
+  /*useTakeMedicationMutation*/
 } = treatmentApiSlice;

@@ -51,9 +51,6 @@ const HomeScreenPaciente = () => {
   const [isEventPopupOpen, setIsEventPopupOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-
-
-
   const { userInfo } = useSelector((state) => state.auth);
   const userId = userInfo?._id;
 
@@ -92,7 +89,7 @@ const HomeScreenPaciente = () => {
     isSuccess: isMedDueSuccess,
     isLoading: isMedDueLoading,
     error: medDueError,
-  } = useGetDueMedicationsQuery(undefined, {
+  } = useGetDueMedicationsQuery(activeTreatment?._id, { // Pasa treatmentId aquí
     skip: !userId || !activeTreatment,
   });
 
@@ -137,6 +134,13 @@ const HomeScreenPaciente = () => {
     console.log('Mood Popup abierto (temporal)');
   }, []);
 
+  // Añadir log para verificar treatmentId
+  useEffect(() => {
+    if (activeTreatment) {
+      console.log('Treatment ID en ParentComponent:', activeTreatment._id);
+    }
+  }, [activeTreatment]);
+
   // Actualizar la agenda cuando se cambia la fecha seleccionada
   useEffect(() => {
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
@@ -163,6 +167,7 @@ const HomeScreenPaciente = () => {
     isAssignedActivitiesLoading ||
     isMedLoading ||
     isCompletedActivitiesLoading;
+
   // Procesar medicamentos y actividades para el calendario
   useEffect(() => {
     if (
@@ -273,8 +278,6 @@ const HomeScreenPaciente = () => {
     isCompletedActivitiesLoading,
   ]);
 
- 
-
   useEffect(() => {
     if (calendarEvents) {
       const eventArray = [];
@@ -293,7 +296,6 @@ const HomeScreenPaciente = () => {
                   type: 'medication',
                 });
               }
-
             }
           });
 
@@ -309,17 +311,6 @@ const HomeScreenPaciente = () => {
             }
           });
 
-          /*data.completedActivities?.forEach((completedActivity) => {
-            if (completedActivity?.activity?.name && completedActivity.dateCompleted) {
-              eventArray.push({
-                title: `Completada: ${completedActivity.activity.name}`,
-                start: new Date(completedActivity.dateCompleted),
-                end: new Date(completedActivity.dateCompleted),
-                allDay: true,
-                type: 'completed',
-              });              
-            } 
-          }); */
           data.completedActivities?.forEach((completedActivity) => {
             if (completedActivity?.activity?.name && completedActivity.dateCompleted) {
               const completedDate = new Date(completedActivity.dateCompleted);
@@ -341,14 +332,11 @@ const HomeScreenPaciente = () => {
               );
             }
           });
-
-
         }
       });
       setEvents(eventArray);
     }
   }, [calendarEvents]);
-
 
   // Configurar Socket.io para actualizaciones en tiempo real
   useEffect(() => {
@@ -394,9 +382,11 @@ const HomeScreenPaciente = () => {
     console.log('Se hizo clic en el mensaje flotante de medicamentos.');
     if (dueMedications) {
       console.log('Medications due:', dueMedications);
-      setMedicationsForPopup(dueMedications);
+      // Filtrar medicamentos que NO han sido tomados hoy
+      const pendingMeds = dueMedications.filter(med => !med.takenToday);
+      setMedicationsForPopup(pendingMeds);
       setIsPopupOpen(true);
-      console.log('Popup de Medicamentos abierto');
+      console.log('Popup de Medicamentos abierto con medicamentos pendientes:', pendingMeds);
     } else {
       console.log('No hay medicamentos para mostrar en el popup.');
     }
@@ -439,8 +429,6 @@ const HomeScreenPaciente = () => {
     }
   });
 
-
-
   // ** Retorno principal del componente **
   return (
     <div className="home-screen-container">
@@ -479,47 +467,41 @@ const HomeScreenPaciente = () => {
         </div>
       )}
 
-<h2>Calendario de Actividades</h2>
-  <BigCalendar
-    localizer={localizer}
-    events={events} // Garantizar que siempre sea un array
-    startAccessor="start"
-    endAccessor="end"
-    style={{ height: 500 }}
-    messages={messages}
-    eventPropGetter={(event) => {
-      const backgroundColor =
-        event.type === 'medication'
-          ? '#FFD700'
-          : event.type === 'completed'
-          ? '#32CD32'
-          : '#FF6347';
-      return { style: { backgroundColor, color: '#ffffff', borderRadius: '5px', padding: '5px' } };
-    }}
-    onSelectEvent={(event) => {
-      console.log('Evento seleccionado:', event);
-      setSelectedEvent(event);
-      setIsEventPopupOpen(true);
-    }}
-    popup
-    showAllEvents={false} // Permite forzar la opción de ver más
-    components={{
-      event: ({ event }) => <span>{event.title}</span>,
-      agenda: {
-        event: ({ event }) => (
-          <div className="custom-popup-scroll">
-            <span>{event.title}</span>
-          </div>
-        ),
-      },
-    }}
-  />
-
-
-      
-
-
-
+      <h2>Calendario de Actividades</h2>
+      <BigCalendar
+        localizer={localizer}
+        events={events} // Garantizar que siempre sea un array
+        startAccessor="start"
+        endAccessor="end"
+        style={{ height: 500 }}
+        messages={messages}
+        eventPropGetter={(event) => {
+          const backgroundColor =
+            event.type === 'medication'
+              ? '#FFD700'
+              : event.type === 'completed'
+              ? '#32CD32'
+              : '#FF6347';
+          return { style: { backgroundColor, color: '#ffffff', borderRadius: '5px', padding: '5px' } };
+        }}
+        onSelectEvent={(event) => {
+          console.log('Evento seleccionado:', event);
+          setSelectedEvent(event);
+          setIsEventPopupOpen(true);
+        }}
+        popup
+        showAllEvents={false} // Permite forzar la opción de ver más
+        components={{
+          event: ({ event }) => <span>{event.title}</span>,
+          agenda: {
+            event: ({ event }) => (
+              <div className="custom-popup-scroll">
+                <span>{event.title}</span>
+              </div>
+            ),
+          },
+        }}
+      />
 
       {/* Mostrar el mensaje de recordatorio si el popup de estado de ánimo está cerrado y hay medicamentos debido */}
       {!isMoodPopupOpen &&
@@ -537,6 +519,7 @@ const HomeScreenPaciente = () => {
         isOpen={isPopupOpen}
         onRequestClose={() => setIsPopupOpen(false)}
         medications={medicationsForPopup}
+        treatmentId={activeTreatment._id} // Asegúrate de pasar el treatmentId aquí
       />
 
       {/* Mostrar indicadores de carga y errores para guardar el estado de ánimo */}
