@@ -12,7 +12,7 @@ import {
 } from '../slices/treatmentSlice.js';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import { format, addDays, isValid, differenceInDays } from 'date-fns';
+import { format, addDays, differenceInDays, startOfDay, isSameDay, isSameWeek, isSameMonth } from 'date-fns';
 import { useSaveMoodMutation } from '../slices/usersApiSlice';
 import Popup from '../components/Popup.jsx';
 import MedicationReminder from '../components/FloatingMessage.jsx';
@@ -24,7 +24,6 @@ import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'moment/locale/es'; // Importa el idioma español
-import { startOfDay } from 'date-fns';
 
 moment.locale('es');
 const localizer = momentLocalizer(moment);
@@ -89,9 +88,13 @@ const HomeScreenPaciente = () => {
     isSuccess: isMedDueSuccess,
     isLoading: isMedDueLoading,
     error: medDueError,
+    refetch: refetchDueMedications, // Añade refetch para actualizar los datos
   } = useGetDueMedicationsQuery(activeTreatment?._id, { // Pasa treatmentId aquí
     skip: !userId || !activeTreatment,
   });
+
+  // Medicamentos pendientes ya filtrados por la API
+  const pendingMedications = dueMedications || [];
 
   // Obtener actividades completadas (solo del tratamiento activo)
   const {
@@ -360,6 +363,8 @@ const HomeScreenPaciente = () => {
       );
       // Refetch de actividades completadas
       refetchCompletedActivities();
+      // También refetch de medicamentos debidos para reflejar cualquier cambio
+      refetchDueMedications();
     });
 
     socket.on('disconnect', () => {
@@ -371,7 +376,7 @@ const HomeScreenPaciente = () => {
       socket.disconnect();
       console.log('Socket desconectado en cleanup');
     };
-  }, [activeTreatment, refetchCompletedActivities]);
+  }, [activeTreatment, refetchCompletedActivities, refetchDueMedications]);
 
   const handleDateClick = (date) => {
     setSelectedDate(date);
@@ -380,15 +385,12 @@ const HomeScreenPaciente = () => {
   // Manejar el clic en el mensaje de recordatorio
   const handleMedicationReminderClick = () => {
     console.log('Se hizo clic en el mensaje flotante de medicamentos.');
-    if (dueMedications) {
-      console.log('Medications due:', dueMedications);
-      // Filtrar medicamentos que NO han sido tomados hoy
-      const pendingMeds = dueMedications.filter(med => !med.takenToday);
-      setMedicationsForPopup(pendingMeds);
+    if (pendingMedications.length > 0) {
+      setMedicationsForPopup(pendingMedications);
       setIsPopupOpen(true);
-      console.log('Popup de Medicamentos abierto con medicamentos pendientes:', pendingMeds);
+      console.log('Popup de Medicamentos abierto con medicamentos pendientes:', pendingMedications);
     } else {
-      console.log('No hay medicamentos para mostrar en el popup.');
+      console.log('No hay medicamentos pendientes para mostrar en el popup.');
     }
   };
 
@@ -503,13 +505,12 @@ const HomeScreenPaciente = () => {
         }}
       />
 
-      {/* Mostrar el mensaje de recordatorio si el popup de estado de ánimo está cerrado y hay medicamentos debido */}
+      {/* Mostrar el mensaje de recordatorio si el popup de estado de ánimo está cerrado y hay medicamentos pendientes */}
       {!isMoodPopupOpen &&
         isMedDueSuccess &&
-        dueMedications &&
-        dueMedications.length > 0 && (
+        pendingMedications.length > 0 && (
           <MedicationReminder
-            count={dueMedications.length}
+            count={pendingMedications.length} // Usa pendingMedications.length
             onClick={handleMedicationReminderClick}
           />
         )}
@@ -519,7 +520,8 @@ const HomeScreenPaciente = () => {
         isOpen={isPopupOpen}
         onRequestClose={() => setIsPopupOpen(false)}
         medications={medicationsForPopup}
-        treatmentId={activeTreatment._id} // Asegúrate de pasar el treatmentId aquí
+        treatmentId={activeTreatment._id}
+        onUpdate={refetchDueMedications} // Pasa la función de refetch
       />
 
       {/* Mostrar indicadores de carga y errores para guardar el estado de ánimo */}

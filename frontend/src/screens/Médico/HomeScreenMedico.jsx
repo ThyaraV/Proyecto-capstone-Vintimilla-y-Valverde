@@ -30,53 +30,75 @@ const HomeScreenMedico = () => {
   }, [isLoading, patients]);
 
   return (
-    <div className="table-container">
-      <h2>Pacientes Asignados</h2>
-      {isFetchingData ? (
-        <Loader /> // Mostrar Loader hasta que los datos correctos estén listos
-      ) : error ? (
-        <p>Error al cargar los pacientes: {error?.data?.message || "Ocurrió un problema inesperado"}</p>
-      ) : localPatients && localPatients.length > 0 ? (
-        <table className="assigned-patients-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Apellido</th>
-              <th>Email</th>
-              <th>Teléfono</th>
-              <th>Estado</th>
-              <th>Reporte</th>
-            </tr>
-          </thead>
-          <tbody>
-            {localPatients.map((patient) => (
-              <tr key={patient._id}>
-                <td>{patient.user?.name || "No disponible"}</td>
-                <td>{patient.user?.lastName || "No disponible"}</td>
-                <td>{patient.user?.email || "No disponible"}</td>
-                <td>{patient.user?.phoneNumber || "No disponible"}</td>
-                <td>{patient.user?.isActive ? "Activo" : "Inactivo"}</td>
-                <td>
-                  <Link to={`/patient/${patient._id}/report`} className="report-link">
-                    Ver reporte
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>No tienes pacientes asignados.</p>
-      )}
-      <div className="buttonContainer">
-      <button
-        className="table-button"
-      >
-        Asignar Pacientes
-      </button>
+    <div className="home-medico-container">
+      <h1>Bienvenido, Dr. {userInfo?.name || 'Médico'}</h1>
+      
+      <div className="shortcut-cards">
+        <Link to="/admin/userlist" className="shortcut-card">
+          <div className="card-icon">
+            {/* Puedes reemplazar esto con un ícono de tu elección */}
+            🗂️
+          </div>
+          <div className="card-title">Asignar Pacientes</div>
+        </Link>
+        
+        <Link to="/admin/UsersActivities" className="shortcut-card">
+          <div className="card-icon">
+            💊
+          </div>
+          <div className="card-title">Visualizar Tratamientos</div>
+        </Link>
+        
+        <Link to="/reports" className="shortcut-card">
+          <div className="card-icon">
+            📄
+          </div>
+          <div className="card-title">Buscar Reportes</div>
+        </Link>
+      </div>
+      
+      <div className="patients-section">
+        <h2>Pacientes Asignados</h2>
+        {isFetchingData ? (
+          <Loader /> // Mostrar Loader hasta que los datos correctos estén listos
+        ) : error ? (
+          <p className="error-message">Error al cargar los pacientes: {error?.data?.message || "Ocurrió un problema inesperado"}</p>
+        ) : localPatients && localPatients.length > 0 ? (
+          <div className="table-responsive">
+            <table className="assigned-patients-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Apellido</th>
+                  <th>Email</th>
+                  <th>Teléfono</th>
+                  <th>Estado</th>
+                  <th>Reporte</th>
+                </tr>
+              </thead>
+              <tbody>
+                {localPatients.map((patient) => (
+                  <tr key={patient._id}>
+                    <td>{patient.user?.name || "No disponible"}</td>
+                    <td>{patient.user?.lastName || "No disponible"}</td>
+                    <td>{patient.user?.email || "No disponible"}</td>
+                    <td>{patient.user?.phoneNumber || "No disponible"}</td>
+                    <td>{patient.user?.isActive ? "Activo" : "Inactivo"}</td>
+                    <td>
+                      <Link to={`/patient/${patient._id}/report`} className="report-link">
+                        Ver reporte
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p>No tienes pacientes asignados.</p>
+        )}
       </div>
     </div>
-
   );
 };
 

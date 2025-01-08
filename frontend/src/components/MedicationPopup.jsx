@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import '../assets/styles/MedicationPopup.css';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { useTakeMedicationMutation } from '../slices/treatmentSlice';
 
 Modal.setAppElement('#root');
@@ -12,10 +12,6 @@ const MedicationPopup = ({ isOpen, onRequestClose, medications = [], treatmentId
   console.log('MedicationPopup - treatmentId:', treatmentId); // Verifica que se reciba correctamente
   const [takeMedication] = useTakeMedicationMutation();
   const [localMeds, setLocalMeds] = useState(medications);
-  
-  // Estados para manejo de carga y errores
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [updateError, setUpdateError] = useState(null);
 
   // Sincronizar el estado local cuando cambian las props de medicamentos o treatmentId
   useEffect(() => {
@@ -29,27 +25,27 @@ const MedicationPopup = ({ isOpen, onRequestClose, medications = [], treatmentId
       return;
     }
 
-    setIsUpdating(true);
-    setUpdateError(null);
-
     try {
       console.log(`Enviando solicitud para actualizar medicamento: treatmentId=${treatmentId}, medicationId=${medicationId}`);
       const result = await takeMedication({ treatmentId, medicationId }).unwrap();
       console.log('Respuesta de la mutación:', result);
 
-      // Filtrar el medicamento tomado de la lista local
-      const updatedMeds = localMeds.filter(med => med._id !== medicationId);
+      // Actualizar el estado local con la respuesta actualizada del backend
+      const updatedMeds = localMeds.map((med) => {
+        if (med._id === medicationId) {
+          return { ...med, lastTaken: result.medication.lastTaken };
+        }
+        return med;
+      });
       setLocalMeds(updatedMeds);
 
-      // Notificar al componente padre si es necesario
+      // Notificar al componente padre para refetch
       if (onUpdate) {
         onUpdate();
       }
     } catch (error) {
       console.error('Error al marcar el medicamento como tomado:', error);
-      setUpdateError('Hubo un error al actualizar el medicamento. Por favor, intenta nuevamente.');
-    } finally {
-      setIsUpdating(false);
+      alert('Hubo un error al actualizar el estado. Por favor, intenta nuevamente.');
     }
   };
 
@@ -65,8 +61,6 @@ const MedicationPopup = ({ isOpen, onRequestClose, medications = [], treatmentId
         <h2>🩺 Medicamentos de hoy</h2>
         <button className="close-icon" onClick={onRequestClose}>✖</button>
       </div>
-      {isUpdating && <p>Actualizando...</p>}
-      {updateError && <p className="error-message">{updateError}</p>}
       {localMeds.length > 0 ? (
         <div className="medication-list">
           {localMeds.map((med) => (
@@ -87,7 +81,7 @@ const MedicationPopup = ({ isOpen, onRequestClose, medications = [], treatmentId
                 <label>
                   <input
                     type="checkbox"
-                    checked={med.takenToday}
+                    checked={med.lastTaken && isSameDay(new Date(med.lastTaken), new Date())}
                     onChange={() => handleCheckboxChange(med._id)}
                   />
                   Tomado
