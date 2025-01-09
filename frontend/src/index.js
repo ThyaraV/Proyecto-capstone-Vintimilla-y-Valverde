@@ -90,6 +90,7 @@ import TreatmentsListScreen from "./screens/Médico/TreatmentsListScreen.jsx";
 import EditTreatmentScreen from "./screens/Médico/treatmentsEditScreen.jsx";
 import ActivityPlay from "./components/ActivityPlay.jsx";
 import MedicalHistory from "./screens/Médico/medicalHistory.jsx"
+import MedicalHistoryReport from "./screens/Reports/MedicalHistoryReport.jsx";
 
 const HomeScreenSelector = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -117,6 +118,8 @@ const router = createBrowserRouter(
         <Route path="/reports/activities" element={<ActivitiesReportScreen />} />
         <Route path="/progreso-paciente" element={<PatientsProgress />} />
         <Route path="/patients/:id/historial-medico" element={<MedicalHistory/>} />
+        <Route path="/patients/:id/historial-medico" element={<MedicalHistory/>} />
+
 
  
         <Route path="/treatments/:treatmentId/activities/play/:activityId" element={<ActivityPlay />} />

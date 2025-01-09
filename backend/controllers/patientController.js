@@ -16,7 +16,7 @@ const getPatients = asyncHandler(async (req, res) => {
 // @access Private/Admin
 const getPatientById = asyncHandler(async (req, res) => {
   const patient = await Patient.findById(req.params.id)
-    .populate("user", "name") // Popula el campo 'user' y específicamente el 'name'
+    .populate("user", "name lastName cardId email phoneNumber") // Popula el campo 'user' y específicamente el 'name'
     .populate("doctor", "user");
 
   if (patient) {
@@ -29,14 +29,14 @@ const getPatientById = asyncHandler(async (req, res) => {
 
 // controllers/patientController.js
 
-// @desc Actualizar un paciente
-// @route PUT /api/patients/:id
-// @access Private/Admin
+// @desc    Actualizar un paciente
+// @route   PUT /api/patients/:id
+// @access  Private/Admin
 const updatePatient = asyncHandler(async (req, res) => {
   const patient = await Patient.findById(req.params.id);
 
   if (patient) {
-    // Actualizar los campos según lo recibido en el cuerpo de la solicitud
+    // Actualizar los campos editables
     patient.school = req.body.school || patient.school;
     patient.birthdate = req.body.birthdate || patient.birthdate;
     patient.gender = req.body.gender || patient.gender;
@@ -50,7 +50,21 @@ const updatePatient = asyncHandler(async (req, res) => {
     patient.doctor = req.body.doctor || patient.doctor;
 
     const updatedPatient = await patient.save();
-    res.json(updatedPatient);
+
+    res.json({
+      _id: updatedPatient._id,
+      school: updatedPatient.school,
+      birthdate: updatedPatient.birthdate,
+      gender: updatedPatient.gender,
+      educationalLevel: updatedPatient.educationalLevel,
+      familyRepresentative: updatedPatient.familyRepresentative,
+      address: updatedPatient.address,
+      maritalStatus: updatedPatient.maritalStatus,
+      profession: updatedPatient.profession,
+      cognitiveStage: updatedPatient.cognitiveStage,
+      referredTo: updatedPatient.referredTo,
+      doctor: updatedPatient.doctor,
+    });
   } else {
     res.status(404);
     throw new Error("Paciente no encontrado");

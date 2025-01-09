@@ -5,18 +5,27 @@
     top: 0;
     right: 0;
     width: 50%;
-    height: 100%;
-    background-image: url('../cerebro.png');
+    height: 100%;   
     background-size: cover;
     background-position: center;
-    z-index: -10;
-    background: linear-gradient(to right, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.1)), url('../cerebro.png');
+    z-index: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.1));
     background-size: cover;
     background-position: center;
-    filter: blur(2px); /* Aplica un desenfoque suave */
-    
+    filter: blur(2px); /* Aplica un desenfoque suave */  
     
 }
+
+.background-image {
+    width: 100%; /* Ancho completo del contenedor */
+    height: 100%; /* Alto completo del contenedor */
+    object-fit: cover; /* Ajusta la imagen para cubrir el contenedor sin deformarla */
+    display: block; /* Evita espacios extra alrededor de la imagen */
+    position: absolute; /* Asegura que siempre ocupe el contenedor */
+    top: 0;
+    left: 0;
+}
+
 
 /* Contenedor del formulario */
 .login-container {
@@ -25,7 +34,8 @@
     justify-content: left;
     width: 100%;
     height: 100vh;    
-   padding-bottom: 3rem;
+   padding-bottom: 3rem;  
+   position: relative; 
 }
 
 input,
@@ -42,15 +52,16 @@ a {
     align-items: center;
     justify-content: center;   
     z-index: 2;
+    flex-direction: column;
+    align-items: center;
+   
     
 }
 
 .form-wrapper {
     position: relative;
     padding: 15px;
-    border-radius: 1rem;
-    background: rgb(255, 255, 255);
-    
+    border-radius: 1rem;   
     backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.3);
     display: flex;
@@ -412,6 +423,38 @@ a {
     }
   }
   
+/* Responsividad */
+@media (max-width: 768px) {
+    .fullscreen-background {
+        display: none; /* Oculta el fondo en pantallas pequeñas */
+    }
+
+    .text-container {
+        display: none; /* Oculta el texto lateral en pantallas pequeñas */
+    }
+
+    .login-container {
+        justify-content: center; /* Centra el formulario */
+        align-items: center; /* Asegura que quede verticalmente centrado */
+    }
+
+    .login-page {
+        width: 90%; /* Ajusta el ancho del formulario a pantallas pequeñas */
+        max-width: 30rem; /* Asegura que no exceda el tamaño máximo */
+        padding: 1.5rem; /* Reduce el padding */
+    }
+}
+
+@media (max-width: 480px) {
+    .login-page {
+        width: 95%; /* Aumenta el ancho relativo en pantallas muy pequeñas */
+        padding: 1rem; /* Reduce más el padding */
+    }
+}
+
+
+
+
 
 
 
@@ -425,6 +468,7 @@ a {
     position: relative; /* Asegura un stacking context para los elementos hijos */
     z-index: 10; /* Asegura que este contenedor esté sobre el fondo */
     overflow: hidden; /* Evita que los elementos sobresalgan */
+    
 }
 
 
@@ -434,12 +478,20 @@ a {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
-    background-image: url('../cerebro.png');
+    height: 100%;    
     background-size: cover;
     background-position: center;
-    z-index: -1;   
+    z-index: 0;   
 
+}
+.background-image2 {
+    position: absolute; /* Permite que la imagen se ajuste al contenedor */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Cubre completamente el área del contenedor */
+    z-index: -1;
 }
 
 .form-wrapper2 {
@@ -554,15 +606,61 @@ a {
 }
 @media (max-width: 768px) {
     .typing-animation-container {
+      display:none;
       right: 1rem;
       font-size: 1rem; /* más pequeño para tablets */
       max-width: 200px; /* reduce el ancho */
     }
   }
   
-  @media (max-width: 480px) {
-    .typing-animation-container {
-      font-size: 0.9rem; /* todavía más pequeño en móviles */
-      max-width: 150px;
+
+
+
+  /* Media Queries para pantallas pequeñas */
+@media (max-width: 768px) {
+    .register-page {
+        align-items: flex-start; /* Cambia a inicio para permitir scroll */
+        padding-top: 20px; /* Añade espacio en la parte superior */
+        overflow-y: auto; /* Asegura que el contenido pueda desplazarse */
     }
-  }
+
+    .form-wrapper2 {
+        margin-top: 20px; /* Añade margen superior para evitar recortes */
+        padding: 1rem; /* Reduce el padding en pantallas pequeñas */
+        max-width: 90%; /* Ajusta el ancho máximo para dispositivos más pequeños */
+    }
+
+    .form-inner2 {
+        padding: 1.5rem; /* Reduce el padding interno */
+    }
+
+    .form-grid {
+        flex-direction: column; /* Coloca los elementos en una columna */
+        gap: 1rem;
+    }
+
+    .form-column {
+        min-width: 100%; /* Asegura que las columnas ocupen el ancho completo */
+    }
+
+    .input-field2 {
+        font-size: 0.9rem; /* Reduce el tamaño de fuente */
+        height: 2.8rem; /* Ajusta la altura del input */
+    }
+}
+
+@media (max-width: 480px) {
+    .form-wrapper2 {
+        margin-top: 10px; /* Menor margen superior */
+        padding: 0.5rem; /* Reduce aún más el padding */
+    }
+
+    .form-inner2 {
+        padding: 1rem; /* Reduce el padding interno */
+    }
+
+    .input-field2 {
+        font-size: 0.85rem; /* Reduce aún más el tamaño de fuente */
+        height: 2.5rem; /* Ajusta la altura de los campos */
+    }
+}

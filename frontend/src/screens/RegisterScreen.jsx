@@ -6,6 +6,7 @@ import { setCredentials } from "../slices/authSlice.js";
 import { toast } from "react-toastify";
 import "../assets/styles/Login.css"; // Reutiliza el mismo archivo de estilos de Login
 import { Modal, Button } from "react-bootstrap";
+import cerebro from '../assets/cerebro.png';
 
 const RegisterScreen = () => {
   const [name, setName] = useState("");
@@ -145,7 +146,9 @@ const RegisterScreen = () => {
 
   return (
     <div className="register-container">
-      <div className="fullscreen-background2"></div>
+      <div className="fullscreen-background2">
+      <img src={cerebro} alt="Fondo cerebro" className="background-image2" />
+      </div>
 
       <div
         className="register-page"

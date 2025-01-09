@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
 import { FaUser, FaComments, FaBrain, FaBars, FaBell } from "react-icons/fa"; // Importar FaBell
-import logo from "../assets/logo.png";
+import logo from "../assets/logoHigeasinfondo.png";
 import { LinkContainer } from "react-router-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 import { useLogoutMutation } from "../slices/usersApiSlice";
@@ -65,8 +65,8 @@ const Header = () => {
 
           {/* Marca y logo */}
           <Navbar.Brand className="d-flex align-items-center" onClick={() => navigateTo('/')}>
-            <img src={logo} alt="Seguimiento" height="40" />
-            <span className="ms-2">Clínica del Cerebro</span>
+            <img src={logo} alt="Seguimiento" height="70" />
+            
           </Navbar.Brand>
 
           {/* Menú de navegación principal */}

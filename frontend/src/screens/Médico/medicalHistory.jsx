@@ -16,7 +16,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { useSnackbar } from 'notistack'; // Importar useSnackbar
+import { useSnackbar } from 'notistack'; // Para notificaciones
 
 const genderOptions = [
   { value: 'Male', label: 'Masculino' },
@@ -34,10 +34,12 @@ const maritalStatusOptions = [
 const MedicalHistory = () => {
   const { id } = useParams(); // ID del paciente
   const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar(); // Usar notistack
+  const { enqueueSnackbar } = useSnackbar(); // Para notificaciones
+
+  console.log('Patient ID from useParams:', id); // Verificación
 
   // **1. Llamar a los Hooks de Forma Incondicional**
-  const { data: patient, isLoading, isError, error } = useGetPatientByIdQuery(id);
+  const { data: patient, isLoading, isError, error } = useGetPatientByIdQuery(id, { skip: !id });
   const [updatePatient, { isLoading: isUpdating }] = useUpdatePatientMutation();
 
   // **2. Definir el Esquema de Validación con Yup**
@@ -55,7 +57,7 @@ const MedicalHistory = () => {
     profession: yup.string().required('La profesión es requerida'),
     cognitiveStage: yup.string().required('La etapa cognitiva es requerida'),
     referredTo: yup.string().required('Referencia es requerida'),
-    doctor: yup.string().required('El doctor es requerido'),
+    // doctor: yup.string().required('El doctor es requerido'), // Eliminado
   });
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
@@ -71,14 +73,14 @@ const MedicalHistory = () => {
       profession: '',
       cognitiveStage: '',
       referredTo: '',
-      doctor: '',
+      // doctor: '', // Eliminado
     },
   });
 
   // **3. Actualizar el Formulario Cuando los Datos del Paciente Cargan**
   useEffect(() => {
     if (patient) {
-      console.log("Datos del paciente:", patient); // Verificar en la consola
+      console.log('Patient Data:', patient); // Verificación
       reset({
         school: patient.school || '',
         birthdate: patient.birthdate ? patient.birthdate.split('T')[0] : '',
@@ -90,17 +92,21 @@ const MedicalHistory = () => {
         profession: patient.profession || '',
         cognitiveStage: patient.cognitiveStage || '',
         referredTo: patient.referredTo || '',
-        doctor: patient.doctor || '',
+        // doctor: patient.doctor || '', // Eliminado
       });
     }
   }, [patient, reset]);
 
   // **4. Manejar la Envío del Formulario**
   const onSubmit = async (data) => {
+    console.log('Formulario enviado con datos:', data);
     try {
+      console.log('Enviando mutación updatePatient');
       await updatePatient({ id, ...data }).unwrap();
+      console.log('Mutación updatePatient exitosa');
       enqueueSnackbar('Historial médico actualizado exitosamente', { variant: 'success' });
-      navigate(`/patients/${id}`, { replace: true });
+      // Redirigir a la ruta raíz después de la actualización
+      navigate(`/`, { replace: true });
     } catch (err) {
       console.error('Failed to update patient:', err);
       enqueueSnackbar('Error al actualizar el historial médico', { variant: 'error' });
@@ -113,8 +119,12 @@ const MedicalHistory = () => {
         {patient?.user?.name} {patient?.user?.lastName} - Historial Médico
       </Typography>
 
-      {/* **5. Manejar Estados de Carga y Errores Dentro del JSX** */}
-      {isLoading ? (
+      {/* **5. Manejar Casos donde `id` es Undefined, Carga y Errores Dentro del JSX** */}
+      {!id ? (
+        <Typography color="error" variant="h6" align="center" mt={5}>
+          ID de paciente no proporcionado.
+        </Typography>
+      ) : isLoading ? (
         <Box display="flex" justifyContent="center" mt={5}>
           <CircularProgress />
         </Box>
@@ -125,15 +135,13 @@ const MedicalHistory = () => {
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <Grid container spacing={3}>
-            {/* Campos de Usuario - Solo Lectura */}
+            {/* Campos de Usuario - Deshabilitados */}
             <Grid item xs={12} sm={6}>
               <TextField
                 label="Nombre"
                 value={patient?.user?.name || ''}
                 fullWidth
-                InputProps={{
-                  readOnly: true,
-                }}
+                disabled // Deshabilitado
                 variant="outlined"
               />
             </Grid>
@@ -142,9 +150,7 @@ const MedicalHistory = () => {
                 label="Apellido"
                 value={patient?.user?.lastName || ''}
                 fullWidth
-                InputProps={{
-                  readOnly: true,
-                }}
+                disabled // Deshabilitado
                 variant="outlined"
               />
             </Grid>
@@ -153,9 +159,7 @@ const MedicalHistory = () => {
                 label="Cédula"
                 value={patient?.user?.cardId || ''}
                 fullWidth
-                InputProps={{
-                  readOnly: true,
-                }}
+                disabled // Deshabilitado
                 variant="outlined"
               />
             </Grid>
@@ -164,9 +168,7 @@ const MedicalHistory = () => {
                 label="Email"
                 value={patient?.user?.email || ''}
                 fullWidth
-                InputProps={{
-                  readOnly: true,
-                }}
+                disabled // Deshabilitado
                 variant="outlined"
               />
             </Grid>
@@ -175,9 +177,7 @@ const MedicalHistory = () => {
                 label="Número de Teléfono"
                 value={patient?.user?.phoneNumber || ''}
                 fullWidth
-                InputProps={{
-                  readOnly: true,
-                }}
+                disabled // Deshabilitado
                 variant="outlined"
               />
             </Grid>
@@ -361,6 +361,24 @@ const MedicalHistory = () => {
                 )}
               />
             </Grid>
+            {/* 
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name="doctor"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Doctor"
+                    fullWidth
+                    variant="outlined"
+                    error={!!errors.doctor}
+                    helperText={errors.doctor?.message}
+                  />
+                )}
+              />
+            </Grid>
+            */}
 
             {/* Botones */}
             <Grid item xs={12} display="flex" justifyContent="flex-end" spacing={2}>
