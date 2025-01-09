@@ -29,7 +29,7 @@ const router = express.Router();
 router.route('/my-medications').get(protect, getMyMedications);
 
 // Ruta para obtener medicamentos debido
-router.route('/due-medications').get(protect, getDueMedications);
+router.route('/:treatmentId/medications/due').get(protect, getDueMedications);
 
 //router.route('/:treatmentId/medications/:medicationId/take').patch(protect, takeMedication);
 

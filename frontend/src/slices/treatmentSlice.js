@@ -80,10 +80,10 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
       query: () => '/api/treatments/my-medications',
       providesTags: ['Medications'],
     }), 
-    getDueMedications: builder.query({
+    /*]getDueMedications: builder.query({
       query: () => '/api/treatments/due-medications',
       providesTags: ['Medications'],
-    }),
+    }),*/
     getTreatmentsByPatient: builder.query({
       query: (patientId) => `/api/treatments/patient/${patientId}/treatments`,
     }),
@@ -151,6 +151,14 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['TreatmentsByPatient'],
     }),
+    getDueMedications: builder.query({
+      query: (treatmentId) => `/api/treatments/${treatmentId}/medications/due`,
+      providesTags: (result, error, treatmentId) => [
+        { type: 'Medications', id: treatmentId },
+      ],
+    }),
+
+    // Marcar un medicamento como tomado
     takeMedication: builder.mutation({
       query: ({ treatmentId, medicationId }) => ({
         url: `/api/treatments/${treatmentId}/medications/${medicationId}/take`,
@@ -158,7 +166,6 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: (result, error, { treatmentId }) => [
         { type: 'Medications', id: treatmentId },
-        { type: 'Treatments', id: treatmentId },
       ],
     }),
   }),

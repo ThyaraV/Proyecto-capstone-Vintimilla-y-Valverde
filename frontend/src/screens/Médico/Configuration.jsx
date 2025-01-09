@@ -29,7 +29,7 @@ const Configuration = () => {
     } else if (tab === 'actividades') {
       navigate('/admin/UsersActivities');
     } else if (tab === 'informacion_paciente') {
-      navigate('/informacion_paciente');
+      navigate('/admin/userlist');
     }
   };
 

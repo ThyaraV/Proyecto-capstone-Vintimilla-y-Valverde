@@ -1,3 +1,5 @@
+// src/components/FloatingMessage.jsx
+
 import React from 'react';
 import '../assets/styles/FloatingMessage.css';
 

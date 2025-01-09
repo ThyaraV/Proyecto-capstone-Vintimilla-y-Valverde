@@ -5,6 +5,7 @@ import { useRegisterMutation } from "../slices/usersApiSlice.js";
 import { setCredentials } from "../slices/authSlice.js";
 import { toast } from "react-toastify";
 import "../assets/styles/Login.css"; // Reutiliza el mismo archivo de estilos de Login
+import { Modal, Button } from "react-bootstrap";
 
 const RegisterScreen = () => {
   const [name, setName] = useState("");
@@ -23,6 +24,11 @@ const RegisterScreen = () => {
   const { search } = useLocation();
   const sp = new URLSearchParams(search);
   const redirect = sp.get("redirect") || "/";
+  /*PARA POP UP DE TERMINOS Y CONDICIONES*/
+  const [showTerms, setShowTerms] = useState(false);
+
+  const handleOpenTerms = () => setShowTerms(true);
+  const handleCloseTerms = () => setShowTerms(false);
 
   useEffect(() => {
     if (userInfo) {
@@ -202,6 +208,8 @@ const RegisterScreen = () => {
                 </div>
               </div>
 
+
+
               <div className="form-row">
                 <div className="form-column">
                   <label className="input-label">
@@ -238,6 +246,51 @@ const RegisterScreen = () => {
                   />
                 </div>
               </div>
+              <div className="terms-container" style={{ marginTop: "1rem" }}>
+                <input
+                  type="checkbox"
+                  id="terms"
+                  style={{ marginRight: "0.5rem" }}
+                  required
+                />
+                <label
+                  htmlFor="terms"
+                  style={{ fontSize: "0.9rem", cursor: "pointer", textDecoration: "underline" }}
+                  onClick={handleOpenTerms}
+                >
+                  Acepto los términos y condiciones
+                </label>
+              </div>
+
+              <Modal show={showTerms} onHide={handleCloseTerms} centered>
+                <Modal.Header closeButton>
+                  <Modal.Title>Términos y Condiciones</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                  <p>
+                    <strong>1. Protección de Datos Personales</strong><br />
+                    Cumplimos con la Ley Orgánica de Protección de Datos Personales (LOPDP) de Ecuador. Tus datos serán tratados con estricta confidencialidad y usados solo para el seguimiento médico y mejoras del servicio.<br /><br />
+
+                    <strong>2. Recolección y Uso de Datos</strong><br />
+                    Recopilamos información como nombre, cédula, correo, teléfono y datos de salud. Estos serán utilizados exclusivamente para tu registro, monitoreo médico, y generación de informes.<br /><br />
+
+                    <strong>3. Seguridad</strong><br />
+                    Tus datos están protegidos mediante encriptación, autenticación segura y acceso restringido al personal autorizado.<br /><br />
+
+                    <strong>4. Derechos del Usuario</strong><br />
+                    Puedes acceder, rectificar, eliminar tus datos o revocar tu consentimiento enviando una solicitud a soporte@higea.com.<br /><br />
+
+                    <strong>5. Responsabilidades del Usuario</strong><br />
+                    Debes proporcionar información veraz, mantener la confidencialidad de tus credenciales y usar la plataforma solo para fines legítimos.<br /><br />
+
+                  </p>
+                </Modal.Body>
+                <Modal.Footer>
+                  <Button variant="secondary" onClick={handleCloseTerms} centered>
+                    Cerrar
+                  </Button>
+                </Modal.Footer>
+              </Modal>
 
               <button
                 className="primary-button"
@@ -272,6 +325,7 @@ const RegisterScreen = () => {
         </div>
       </div>
     </div>
+
   );
 };
 

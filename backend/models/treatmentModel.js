@@ -29,7 +29,7 @@ const treatmentSchema = new mongoose.Schema({
       startDate: { type: Date, required: true }, // Fecha de inicio
       endDate: { type: Date }, // Fecha de fin
       imageUrl: { type: String }, // URL de la imagen
-      takenToday: { type: Boolean, default: false },
+      lastTaken: { type: Date, default: null },
     },
   ],
   exerciseVideos: [

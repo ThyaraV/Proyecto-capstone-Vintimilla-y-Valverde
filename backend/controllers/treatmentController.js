@@ -6,7 +6,7 @@ import Activity from '../models/activityModel.js';
 import Doctor from '../models/doctorModel.js';
 import { io } from 'socket.io-client';
 import { getIO } from '../socket.js';
-
+import { startOfDay, isSameDay, addDays, isBefore, isAfter, isSameWeek, isSameMonth } from 'date-fns';
 
 // @desc    Asignar una actividad a un paciente
 // @route   POST /api/assignments
@@ -493,7 +493,7 @@ const getDueMedications = asyncHandler(async (req, res) => {
     throw new Error('Paciente no encontrado');
   }
 
-  const today = new Date();
+  const today = startOfDay(new Date());
 
   // Obtener el tratamiento activo
   const activeTreatment = await Treatment.findOne({
@@ -509,27 +509,30 @@ const getDueMedications = asyncHandler(async (req, res) => {
   let dueMedications = [];
 
   activeTreatment.medications.forEach((med) => {
+    // Verificar si la fecha actual está dentro del rango de fechas del medicamento
     if (med.startDate <= today && (!med.endDate || med.endDate >= today)) {
-      // Determinar si el medicamento está programado para hoy según su frecuencia
       const frequency = med.frequency;
       let isDue = false;
 
-      switch (frequency) {
-        case 'Diaria':
-          isDue = true;
-          break;
-        case 'Semanal':
-          if (today.getDay() === new Date(med.startDate).getDay()) {
-            isDue = true;
-          }
-          break;
-        case 'Mensual':
-          if (today.getDate() === new Date(med.startDate).getDate()) {
-            isDue = true;
-          }
-          break;
-        default:
-          break;
+      if (!med.lastTaken) {
+        // Nunca se ha tomado, está debido
+        isDue = true;
+      } else {
+        const lastTaken = startOfDay(new Date(med.lastTaken));
+
+        switch (frequency) {
+          case 'Diaria':
+            isDue = !isSameDay(lastTaken, today);
+            break;
+          case 'Semanal':
+            isDue = !isSameWeek(lastTaken, today, { weekStartsOn: 1 }); // Asumiendo que la semana comienza el lunes
+            break;
+          case 'Mensual':
+            isDue = !isSameMonth(lastTaken, today) || lastTaken.getDate() !== today.getDate();
+            break;
+          default:
+            break;
+        }
       }
 
       if (isDue) {
@@ -955,25 +958,32 @@ const getTreatmentsByMultiplePatients = asyncHandler(async (req, res) => {
 
 export const updateMedicationTakenToday = async (req, res) => {
   const { treatmentId, medicationId } = req.params;
+  console.log(`Received PATCH request: treatmentId=${treatmentId}, medicationId=${medicationId}`);
 
   try {
     // Buscar el tratamiento por su ID
     const treatment = await Treatment.findById(treatmentId);
     if (!treatment) {
+      console.log('Tratamiento no encontrado');
       return res.status(404).json({ message: 'Tratamiento no encontrado' });
     }
+    console.log('Tratamiento encontrado:', treatment);
 
-    // Encontrar el medicamento dentro del tratamiento
+    // Encontrar el medicamento dentro del tratamiento usando el medicationId
     const medication = treatment.medications.id(medicationId);
     if (!medication) {
+      console.log('Medicamento no encontrado');
       return res.status(404).json({ message: 'Medicamento no encontrado' });
     }
+    console.log('Medicamento encontrado:', medication);
 
-    // Actualizar el campo takenToday
-    medication.takenToday = !medication.takenToday; // Alternar el estado
+    // Actualizar el campo lastTaken a la fecha actual
+    medication.lastTaken = new Date();
+    console.log(`Actualizando lastTaken a: ${medication.lastTaken}`);
 
     // Guardar los cambios en la base de datos
     await treatment.save();
+    console.log('Tratamiento actualizado:', treatment);
 
     return res.status(200).json({
       message: 'Estado de medicamento actualizado correctamente',

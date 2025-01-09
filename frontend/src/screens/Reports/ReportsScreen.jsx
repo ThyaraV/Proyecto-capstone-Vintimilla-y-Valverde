@@ -1,46 +1,95 @@
 // src/screens/Reports/ReportsScreen.jsx
-
 import React from 'react';
-import '../../assets/styles/ReportsScreen.css'; // Archivo de estilos
 import { useNavigate } from 'react-router-dom';
+import {
+  Grid,
+  Card,
+  CardActionArea,
+  CardMedia,
+  CardContent,
+  Typography,
+  Container,
+  Box,
+} from '@mui/material';
+import '../../assets/styles/ReportsScreen.css';
+
+// Importar las imágenes
+import historialMedicoImg from '../../images/Reports/historial-medico.webp';
+import resultadosMocaImg from '../../images/Reports/resultados-moca.webp';
+import progresoPacienteImg from '../../images/Reports/progreso-paciente.webp';
+import resultadosActividadesImg from '../../images/Reports/resultados-actviidades.webp';
+import estadoAnimoImg from '../../images/Reports/estado-ánimo.webp';
 
 const ReportsScreen = () => {
   const navigate = useNavigate();
 
   const reportOptions = [
-    { title: 'Historial Médico', img: '/path/to/historial-medico.jpg', route: '/historial-medico' },
-    { title: 'Resultados MOCA', img: '/path/to/medicacion-actual.jpg', route: '/moca' },
-    { title: 'Resultado de Evaluaciones diagnósticas', img: '/path/to/resultado-evaluaciones.jpg', route: '/resultado-evaluaciones' },
-    { title: 'Progreso del Paciente', img: '/path/to/progreso-paciente.jpg', route: '/progreso-paciente' },
-    { title: 'Resultados de actividades', img: '/path/to/progreso-paciente.jpg', route: '/reports/activities' }, // Ruta fija
-    { title: 'Resultados de estado de ánimo', img: '/path/to/progreso-paciente.jpg', route: '/estado-animo' },
+    { title: 'Historial Médico', img: historialMedicoImg, route: '/historial-medico' },
+    { title: 'Resultados MOCA', img: resultadosMocaImg, route: '/moca' },
+    { title: 'Progreso del Paciente', img: progresoPacienteImg, route: '/progreso-paciente' },
+    { title: 'Resultados de Actividades', img: resultadosActividadesImg, route: '/reports/activities' },
+    { title: 'Resultados de Estado de Ánimo', img: estadoAnimoImg, route: '/estado-animo' },
   ];
 
   return (
-    <div className="reports-screen">
-      <h1>Seleccionar Reporte</h1>
-      <div className="report-options">
+    <Container maxWidth="lg" style={{ padding: '2rem 0' }}>
+      {/* Título Principal */}
+      <Typography variant="h4" align="center" gutterBottom>
+        Seleccionar Reporte
+      </Typography>
+      
+      {/* Grid de Reportes */}
+      <Grid container spacing={4} justifyContent="center">
         {reportOptions.map((option, index) => (
-          <div
-            key={index}
-            className="report-card"
-            onClick={() => navigate(option.route)}
-          >
-            <img src={option.img} alt={option.title} />
-            <p>{option.title}</p>
-          </div>
+          <Grid item key={index} xs={12} sm={6} md={4}>
+            <Card
+              sx={{
+                maxWidth: 300, // Reducir el ancho máximo de la tarjeta
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                  boxShadow: 6,
+                },
+                margin: '0 auto', // Centrar la tarjeta dentro del Grid item
+              }}
+            >
+              <CardActionArea onClick={() => navigate(option.route)}>
+                {/* Box para mantener la relación de aspecto de la imagen */}
+                <Box
+                  sx={{
+                    position: 'relative',
+                    width: '100%',
+                    paddingTop: '75%', // Ajustar la relación de aspecto a 4:3 (puedes modificar según tus imágenes)
+                    overflow: 'hidden',
+                  }}
+                >
+                  <CardMedia
+                    component="img"
+                    image={option.img}
+                    alt={option.title}
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover', // Cambiado a 'cover' para llenar el contenedor
+                    }}
+                  />
+                </Box>
+                
+                {/* Contenido de la Tarjeta */}
+                <CardContent>
+                  <Typography gutterBottom variant="h6" component="div" align="center">
+                    {option.title}
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
+          </Grid>
         ))}
-      </div>
-      <div className="filters-section">
-        <h3>Filtros</h3>
-        <label htmlFor="period">Periodo:</label>
-        <input type="date" id="period" />
-        <button onClick={() => console.log('Guardar Reporte')}>Guardar Reporte</button>
-        <button onClick={() => console.log('Imprimir Reporte')}>Imprimir Reporte</button>
-        <button onClick={() => console.log('Exportar Reporte')}>Exportar Reporte</button>
-        <button onClick={() => console.log('Editar Reporte')}>Editar Reporte</button>
-      </div>
-    </div>
+      </Grid>
+    </Container>
   );
 };
 
