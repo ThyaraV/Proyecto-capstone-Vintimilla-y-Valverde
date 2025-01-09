@@ -64,6 +64,7 @@ import ActivitiesReportScreen from "./screens/Reports/activitiesReportScreen.jsx
 import PatientsProgress from "./screens/Reports/PatientsProgress.jsx";
 
 import MocaScreen from "./screens/Reports/MocaScreen.jsx";
+import MocaPanel from "./screens/MocaScreen.jsx";
 import MocaRegisterResults from "./screens/MocaRegisterResults";
 import MocaHistory from "./screens/MocaHistory";
 import MocaStart from "./screens/MocaStart";
@@ -150,6 +151,7 @@ const router = createBrowserRouter(
       {/* Rutas para el médico/admin */}
       <Route path="" element={<AdminRoute />}>
       <Route path="/moca" element={<MocaScreen />} />
+      <Route path="/mocaPanel" element={<MocaPanel />} />
 
         <Route path="/moca/register/:id" element={<MocaRegisterResults />} />
         <Route path="/moca/history/:id" element={<MocaHistory />} />

@@ -62,6 +62,98 @@
   margin: 0;
 }
 
+/* Search Bar */
+.search-bar {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+/* Pacientes List */
+.patients-list {
+  margin-bottom: 30px;
+}
+
+.patients-list h4 {
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.patient-item {
+  cursor: pointer;
+}
+
+.patient-item.active {
+  background-color: #007bff;
+  color: white;
+}
+
+/* Grid for Buttons */
+.moca-options-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+/* Instructions Container */
+.instructions-container {
+  text-align: center;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.instructions-container h2 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+.instructions-container p {
+  color: #555;
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+.instructions-container .instruction-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  margin: 5px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.instructions-container .instruction-button:hover {
+  background-color: #0056b3;
+}
+
+.instructions-container .instruction-button.disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Microphone Test Section */
+.microphone-test {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.microphone-test button {
+  margin: 10px;
+}
+
 /* Responsividad */
 
 @media (max-width: 768px) {
@@ -75,6 +167,10 @@
 
   .report-card-title p {
     font-size: 14px;
+  }
+
+  .moca-options-container {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 }
 
@@ -90,41 +186,13 @@
   .report-card-title p {
     font-size: 14px;
   }
-}
 
-/* src/assets/styles/ReportsScreen.css */
+  .moca-options-container {
+    grid-template-columns: 1fr;
+  }
 
-.reports-screen-container {
-  padding: 2rem 0;
-}
-
-.report-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2rem;
-  justify-content: center;
-}
-
-.report-card {
-  cursor: pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.report-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-
-.report-card-image img {
-  width: 100%;
-  height: auto;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
-}
-
-.report-card-title {
-  text-align: center;
-  padding: 1rem 0;
-  font-size: 1.2rem;
-  font-weight: bold;
+  .instructions-container .instruction-button {
+    width: 100%;
+    justify-content: center;
+  }
 }

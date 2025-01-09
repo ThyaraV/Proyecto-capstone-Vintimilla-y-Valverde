@@ -79,7 +79,7 @@ const Header = () => {
               </Nav.Link>
 
               {/* Enlace a MoCA */}
-              <Nav.Link onClick={() => navigateTo('/moca')}>
+              <Nav.Link onClick={() => navigateTo('/mocaPanel')}>
                 <FaBrain /> MoCA
               </Nav.Link>
 

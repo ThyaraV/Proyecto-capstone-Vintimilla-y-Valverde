@@ -1,87 +1,213 @@
+/* src/assets/styles/MocaTest.css */
+
 /* Estilo para el título de la sección con fondo */
 .section-title {
-    background-color: #f0f0f0;
-    padding: 10px;
-    width: 100%;
-    text-align: left;
-    font-weight: bold;
-    font-size: 1.1rem;
-    color: #333;
-    margin-top: 20px;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  /* Estilo para las instrucciones con separadores */
-  .instructions-text {
-    color: #555;
-    font-size: 0.9rem;
-    text-align: center;
-    margin: 10px 0;
-  }
-  
-  .instructions-text::after {
-    content: '| Seguimiento visual | Precisión';
-    font-weight: normal;
-    color: #777;
-    padding-left: 5px;
-  }
-  
-  /* Estilo para el botón activo */
-  .toggle-button.active {
-    background-color: #007bff;
-    color: white;
-  }
-  
-  .toggle-button.active.success {
-    background-color: #28a745;
-  }
-  
-  .toggle-button.active.danger {
-    background-color: #dc3545;
-  }
-  
-  /* Botones en stack con ancho completo */
-  .toggle-button {
-    width: 100%;
-    text-align: center;
-  }
-  
+  background-color: #f0f0f0;
+  padding: 10px;
+  width: 100%;
+  text-align: left;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #333;
+  margin-top: 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Estilo para las instrucciones con separadores */
+.instructions-text {
+  color: #555;
+  font-size: 1rem;
+  text-align: justify;
+  margin-bottom: 20px;
+}
+
+/* Estilo para el botón activo */
+.toggle-button.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.toggle-button.active.success {
+  background-color: #28a745;
+}
+
+.toggle-button.active.danger {
+  background-color: #dc3545;
+}
+
+/* Botones en stack con ancho completo */
+.toggle-button {
+  width: 100%;
+  text-align: center;
+}
+
+.moca-container {
+  max-width: 1200px;
+  margin: auto;
+}
+
+.instructions-container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.instructions-container h2 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.instructions-container p {
+  color: #555;
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+/* Botones de instrucciones y prueba de micrófono */
+.instructions-container .instruction-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  margin: 5px 0;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  min-width: 180px;
+}
+
+.instructions-container .instruction-button:hover {
+  background-color: #0056b3;
+}
+
+.instructions-container .instruction-button.disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Botón grande y verde para iniciar la prueba */
+.instructions-container .start-button {
+  display: block;
+  margin: 20px auto 0 auto;
+  width: 100%;
+  max-width: 300px;
+  padding: 15px;
+  font-size: 1.2rem;
+  background-color: #28a745;
+  border: none;
+  text-align: center;
+}
+
+.instructions-container .start-button:hover {
+  background-color: #218838;
+}
+
+/* Estilos para las alertas */
+.instructions-container .alert {
+  margin-top: 15px;
+}
+
+/* Microphone Test Section */
+.microphone-test {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.microphone-test button {
+  margin: 10px 0;
+}
+
+/* Instrucciones y descripción en columna izquierda */
+.instructions-text {
+  text-align: justify;
+}
+
+/* Estilos para los botones grandes y centrados */
+.instructions-container .start-button {
+  display: block;
+  margin: 20px auto 0 auto;
+}
+
+/* Estilos para los botones de reproducción y grabación */
+.microphone-test .instruction-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 15px;
+  font-size: 1rem;
+  min-width: 180px;
+}
+
+/* Animación de audio reproducido */
+.microphone-test .audio-playing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.microphone-test .audio-playing span {
+  margin-left: 10px;
+  font-size: 0.9rem;
+}
+
+/* Responsividad */
+
+@media (max-width: 1200px) {
   .moca-container {
-    max-width: 800px;
-    margin: auto;
+    max-width: 1000px;
   }
-  
-  .instructions-container {
-    text-align: center;
+}
+
+@media (max-width: 992px) {
+  .moca-options-container {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
-  
+
+  .instructions-container .instruction-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
   .module-container {
-    border: 2px solid #007bff;
-    border-radius: 8px;
-    padding: 20px;
+    padding: 15px;
   }
-  
-  .progress-container {
-    text-align: center;
+
+  .module-title {
+    font-size: 1.2rem;
   }
-  
-  .module-status {
-    margin-top: 10px;
+
+  .moca-options-container {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
-  
-  .module-dot {
-    display: inline-block;
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    margin-right: 8px;
+
+  .instructions-container .instruction-button {
+    width: 100%;
+    justify-content: center;
   }
-  
-  .module-dot.completed {
-    background-color: #28a745;
+}
+
+@media (max-width: 576px) {
+  .moca-options-container {
+    grid-template-columns: 1fr;
   }
-  
-  .module-dot.pending {
-    background-color: #d3d3d3;
+
+  .instructions-container .instruction-button {
+    width: 100%;
+    justify-content: center;
   }
-  
+
+  .module-title {
+    font-size: 1rem;
+  }
+
+  .module-container {
+    padding: 10px;
+  }
+}

@@ -1,8 +1,18 @@
 // src/screens/MOCAmodules/MocaStartSelf.jsx
 
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Importar useNavigate
-import { Button, Container, ProgressBar, Row, Col, ListGroup, Alert, Spinner } from "react-bootstrap";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Button,
+  Container,
+  ProgressBar,
+  Row,
+  Col,
+  ListGroup,
+  Alert,
+  Spinner,
+  Form,
+} from "react-bootstrap";
 import { useGetPatientsQuery } from "../slices/patientApiSlice";
 import { useCreateMocaSelfMutation } from "../slices/mocaSelfApiSlice"; // Importar hook para enviar datos
 import Visuoespacial from "./MOCAmodules/Visuoespacial";
@@ -13,6 +23,7 @@ import Lenguaje from "./MOCAmodules/Lenguaje";
 import Abstraccion from "./MOCAmodules/Abstraccion";
 import RecuerdoDiferido from "./MOCAmodules/RecuerdoDiferido";
 import Orientacion from "./MOCAmodules/Orientacion";
+import { FaPlay, FaStop, FaMicrophone } from "react-icons/fa"; // Importar iconos
 import "../assets/styles/MocaTest.css";
 
 const MODULES = [
@@ -28,7 +39,7 @@ const MODULES = [
 
 const MocaStartSelf = () => {
   const { id } = useParams();
-  const navigate = useNavigate(); // Inicializar useNavigate
+  const navigate = useNavigate();
   const { data: patients = [] } = useGetPatientsQuery();
   const selectedPatient = patients.find((patient) => patient._id === id);
 
@@ -43,7 +54,10 @@ const MocaStartSelf = () => {
   const [testCompleted, setTestCompleted] = useState(false); // Nuevo estado para detectar la finalización del test
 
   // Hook para la mutación de crear MoCA Self
-  const [createMocaSelf, { isLoading: isSaving, isSuccess, isError, error: saveError }] = useCreateMocaSelfMutation();
+  const [
+    createMocaSelf,
+    { isLoading: isSaving, isSuccess, isError, error: saveError },
+  ] = useCreateMocaSelfMutation();
 
   useEffect(() => {
     let interval;
@@ -93,7 +107,7 @@ const MocaStartSelf = () => {
       if (currentModuleIndex < MODULES.length - 1) {
         setCurrentModuleIndex(currentModuleIndex + 1);
       } else {
-        setTestCompleted(true); // Marcar que el test ha finalizado
+        setTestCompleted(true);
       }
     }
   };
@@ -101,7 +115,9 @@ const MocaStartSelf = () => {
   const handlePreviousModule = () => {
     if (selectedModuleIndex !== null) {
       setSelectedModuleIndex(null);
-      setCurrentModuleIndex(currentModuleIndex - 1 >= 0 ? currentModuleIndex - 1 : 0);
+      setCurrentModuleIndex(
+        currentModuleIndex - 1 >= 0 ? currentModuleIndex - 1 : 0
+      );
     } else if (currentModuleIndex > 0) {
       setCurrentModuleIndex(currentModuleIndex - 1);
     }
@@ -129,9 +145,9 @@ const MocaStartSelf = () => {
     };
 
     try {
-      const savedRecord = await createMocaSelf(mocaData).unwrap(); // Enviar datos al backend
+      const savedRecord = await createMocaSelf(mocaData).unwrap();
       alert("Resultados guardados exitosamente.");
-      navigate(`/moca-final/${savedRecord._id}`); // Navegar a la pantalla final con el ID del registro
+      navigate(`/moca-final/${savedRecord._id}`);
     } catch (err) {
       console.error("Error al guardar resultados:", err);
       alert("Hubo un error al guardar los resultados. Por favor, intenta nuevamente.");
@@ -203,33 +219,234 @@ const MocaStartSelf = () => {
       }).unwrap();
 
       alert("Resultados simulados guardados exitosamente.");
-      navigate(`/moca-final/${savedRecord._id}`); // Navegar a la pantalla final con el ID del registro
+      navigate(`/moca-final/${savedRecord._id}`);
     } catch (err) {
       console.error("Error al guardar resultados simulados:", err);
       alert("Hubo un error al guardar los resultados simulados. Por favor, intenta nuevamente.");
     }
   };
 
+  // Función para hablar instrucciones
+  const speakInstructions = (text) => {
+    if ("speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "es-ES";
+      utterance.onstart = () => setIsSpeakingInstructions(true);
+      utterance.onend = () => setIsSpeakingInstructions(false);
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("Tu navegador no soporta la síntesis de voz.");
+    }
+  };
+
+  // Funciones para manejar el micrófono
+  const [listening, setListening] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [showButtons, setShowButtons] = useState(false);
+  const [isSpeakingInstructions, setIsSpeakingInstructions] = useState(false);
+
+  useEffect(() => {
+    // Cleanup on unmount
+    return () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  const handleStartListening = () => {
+    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
+      alert("Tu navegador no soporta reconocimiento de voz.");
+      return;
+    }
+
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "es-ES";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.start();
+    setListening(true);
+
+    recognition.onresult = (event) => {
+      const speechResult = event.results[0][0].transcript;
+      setTranscript(speechResult);
+      setShowButtons(true);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Error en reconocimiento de voz:", event.error);
+      setListening(false);
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+    };
+  };
+
+  const handleStopListening = () => {
+    window.speechSynthesis.cancel();
+    setListening(false);
+  };
+
+  const handleConfirmWord = () => {
+    // Aquí puedes manejar la confirmación de la palabra
+    setShowButtons(false);
+  };
+
+  const handleRetry = () => {
+    setTranscript("");
+    setShowButtons(false);
+    handleStartListening();
+  };
+
+  const handleSpeakModuleInstructions = (moduleName) => {
+    const instructions = `Instrucciones para ${moduleName}: Por favor, sigue las indicaciones para completar esta actividad.`;
+    speakInstructions(instructions);
+  };
+
+  const handleTestDescription = () => {
+    const description =
+      "La prueba MoCA es una evaluación breve diseñada para detectar deterioro cognitivo leve. Está dividida en varios módulos, cada uno con actividades específicas que evalúan diferentes aspectos de la función cognitiva, como la memoria, la atención, el lenguaje y la orientación.";
+    speakInstructions(description);
+  };
+
   return (
     <Container className="moca-container my-5">
       {!testStarted ? (
-        <div className="instructions-container text-center">
-          <h2>Instrucciones para la Prueba MoCA</h2>
-          <p>Por favor, siga las instrucciones y complete las actividades en cada sección.</p>
-          {selectedPatient && (
-            <>
-              <p><strong>Paciente:</strong> {selectedPatient.user?.name}</p>
-              <p><strong>ID del Paciente:</strong> {selectedPatient._id}</p>
-            </>
-          )}
-          <Button variant="primary" onClick={handleStartTest}>
-            Iniciar Prueba
-          </Button>
+        <div className="instructions-container">
+          <Row>
+            {/* Columna izquierda: Instrucciones y descripción */}
+            <Col md={6} className="instructions-text">
+              <h2>Instrucciones para la Prueba MoCA</h2>
+              <Button
+                variant="link"
+                onClick={handleTestDescription}
+                disabled={isSpeakingInstructions}
+                className="mb-3 text-decoration-none"
+                style={{ whiteSpace: "nowrap", minWidth: "180px" }}
+              >
+                {isSpeakingInstructions ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
+              </Button>
+              <p style={{ textAlign: "justify" }}>
+                Bienvenido a la Evaluación Cognitiva Montreal (MoCA). Esta prueba está dividida en
+                varios módulos, y cada módulo consta de diferentes actividades. Por favor, sigue las
+                instrucciones de cada actividad cuidadosamente. En ciertas actividades, tendrás
+                que dar respuestas habladas o escritas. Asegúrate de tener tu micrófono funcionando
+                correctamente antes de iniciar la prueba.
+              </p>
+              {selectedPatient && (
+                <>
+                  <p>
+                    <strong>Paciente:</strong> {selectedPatient.user?.name}
+                  </p>
+                  <p>
+                    <strong>ID del Paciente:</strong> {selectedPatient._id}
+                  </p>
+                </>
+              )}
+            </Col>
+
+            {/* Columna derecha: Audio y micrófono */}
+            <Col md={6} className="microphone-test">
+              <h4>Prueba de Audio y Micrófono</h4>
+              <p>Utiliza estos botones para asegurarte de que tu audio y micrófono funcionan correctamente.</p>
+              {/* Botón Escuchar */}
+              <Button
+                variant="link"
+                onClick={() => speakInstructions("Esta es una prueba de audio.")}
+                disabled={isSpeakingInstructions}
+                className="instruction-button mb-3 text-decoration-none"
+                style={{ whiteSpace: "nowrap", minWidth: "180px" }}
+              >
+                {isSpeakingInstructions ? <FaStop /> : <FaPlay />} Escuchar
+              </Button>
+              {/* Botón Hablar */}
+              <div className="d-flex flex-column align-items-center">
+                {listening ? (
+                  <div className="d-flex flex-column align-items-center mb-3">
+                    <Spinner animation="grow" variant="primary" className="mb-2" />
+                    <p>Escuchando...</p>
+                    {/* No se incluye botón de detener */}
+                  </div>
+                ) : (
+                  <Button
+                    variant="primary"
+                    onClick={handleStartListening}
+                    className="instruction-button mb-3"
+                    style={{ minWidth: "180px" }}
+                  >
+                    <FaMicrophone className="me-2" />
+                    Hablar
+                  </Button>
+                )}
+              </div>
+              {/* Mostrar botones de confirmación si hay transcript */}
+              {showButtons && (
+                <div className="mt-3">
+                  <Alert variant="secondary">
+                    <p>¿Es correcta su palabra?</p>
+                    <strong>{transcript}</strong>
+                  </Alert>
+                  <Row>
+                    <Col className="d-flex justify-content-start">
+                      <Button variant="warning" onClick={handleRetry}>
+                        Reintentar
+                      </Button>
+                    </Col>
+                    <Col className="d-flex justify-content-end">
+                      <Button variant="success" onClick={handleConfirmWord}>
+                        Sí
+                      </Button>
+                    </Col>
+                  </Row>
+                </div>
+              )}
+              {/* Animación de audio reproducido */}
+              {isSpeakingInstructions && (
+                <div className="d-flex align-items-center mt-3">
+                  <Spinner animation="border" variant="info" className="me-2" />
+                  <span>Reproduciendo audio...</span>
+                </div>
+              )}
+            </Col>
+          </Row>
+
+          {/* Botón "Iniciar Prueba" centrado y verde */}
+          <div className="text-center mt-4">
+            <Button
+              variant="success"
+              size="lg"
+              onClick={handleStartTest}
+              disabled={!selectedPatient}
+              className="start-button"
+            >
+              Iniciar Prueba
+            </Button>
+            {!selectedPatient && (
+              <Alert variant="warning" className="mt-3">
+                Por favor, selecciona un paciente para iniciar la prueba.
+              </Alert>
+            )}
+          </div>
         </div>
       ) : (
         <>
           <h3 className="module-title text-center mb-4">
             {MODULES[currentModuleIndex].icon} {MODULES[currentModuleIndex].name}
+            <Button
+              variant="link"
+              onClick={() =>
+                handleSpeakModuleInstructions(MODULES[currentModuleIndex].name)
+              }
+              disabled={isSpeakingInstructions}
+              className="ms-3 text-decoration-none"
+              style={{ whiteSpace: "nowrap", minWidth: "180px" }}
+            >
+              {isSpeakingInstructions ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
+            </Button>
           </h3>
 
           <div className="module-container border p-4 mb-4">
@@ -237,7 +454,11 @@ const MocaStartSelf = () => {
               <Col>
                 <CurrentModuleComponent
                   onComplete={(score, activityScores) =>
-                    handleCompleteModule(currentModuleIndex, score, activityScores)
+                    handleCompleteModule(
+                      currentModuleIndex,
+                      score,
+                      activityScores
+                    )
                   }
                   onPrevious={handlePreviousModule}
                   isFirstModule={currentModuleIndex === 0}
@@ -252,8 +473,18 @@ const MocaStartSelf = () => {
             <h5>Tiempo transcurrido: {formatTime(timeElapsed)}</h5>
             <h5>Puntaje Actual: {currentScore}</h5>
             <ProgressBar
-              now={((selectedModuleIndex !== null ? 1 : currentModuleIndex + 1) / MODULES.length) * 100}
-              label={`${selectedModuleIndex !== null ? 1 : currentModuleIndex + 1} / ${MODULES.length}`}
+              now={
+                ((selectedModuleIndex !== null
+                  ? 1
+                  : currentModuleIndex + 1) /
+                  MODULES.length) *
+                100
+              }
+              label={`${
+                selectedModuleIndex !== null
+                  ? 1
+                  : currentModuleIndex + 1
+              } / ${MODULES.length}`}
               className="mb-3"
             />
             <div className="module-status">
@@ -261,7 +492,10 @@ const MocaStartSelf = () => {
                 <span
                   key={module.id}
                   className={`module-dot ${
-                    index < currentModuleIndex || index === selectedModuleIndex ? "completed" : "pending"
+                    index < currentModuleIndex ||
+                    index === selectedModuleIndex
+                      ? "completed"
+                      : "pending"
                   }`}
                 ></span>
               ))}
@@ -284,7 +518,8 @@ const MocaStartSelf = () => {
                 <ListGroup.Item key={module.id} className="m-2">
                   <Button
                     variant={
-                      index === currentModuleIndex || index === selectedModuleIndex
+                      index === currentModuleIndex ||
+                      index === selectedModuleIndex
                         ? "primary"
                         : "outline-primary"
                     }
@@ -305,6 +540,7 @@ const MocaStartSelf = () => {
                   variant="success"
                   onClick={handleSaveResults}
                   disabled={isSaving}
+                  size="lg"
                 >
                   {isSaving ? (
                     <>
@@ -333,6 +569,7 @@ const MocaStartSelf = () => {
                 variant="secondary"
                 onClick={handleSimulateAndSaveResults}
                 disabled={isSaving || testCompleted}
+                size="lg"
               >
                 {isSaving ? (
                   <>
