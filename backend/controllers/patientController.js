@@ -27,4 +27,36 @@ const getPatientById = asyncHandler(async (req, res) => {
   }
 });
 
-export { getPatients, getPatientById };
+// controllers/patientController.js
+
+// @desc Actualizar un paciente
+// @route PUT /api/patients/:id
+// @access Private/Admin
+const updatePatient = asyncHandler(async (req, res) => {
+  const patient = await Patient.findById(req.params.id);
+
+  if (patient) {
+    // Actualizar los campos según lo recibido en el cuerpo de la solicitud
+    patient.school = req.body.school || patient.school;
+    patient.birthdate = req.body.birthdate || patient.birthdate;
+    patient.gender = req.body.gender || patient.gender;
+    patient.educationalLevel = req.body.educationalLevel || patient.educationalLevel;
+    patient.familyRepresentative = req.body.familyRepresentative || patient.familyRepresentative;
+    patient.address = req.body.address || patient.address;
+    patient.maritalStatus = req.body.maritalStatus || patient.maritalStatus;
+    patient.profession = req.body.profession || patient.profession;
+    patient.cognitiveStage = req.body.cognitiveStage || patient.cognitiveStage;
+    patient.referredTo = req.body.referredTo || patient.referredTo;
+    patient.doctor = req.body.doctor || patient.doctor;
+
+    const updatedPatient = await patient.save();
+    res.json(updatedPatient);
+  } else {
+    res.status(404);
+    throw new Error("Paciente no encontrado");
+  }
+});
+
+export { getPatients, getPatientById, updatePatient };
+
+

@@ -73,7 +73,7 @@ const HomeScreenMedico = () => {
                   <th>Email</th>
                   <th>Teléfono</th>
                   <th>Estado</th>
-                  <th>Reporte</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -85,8 +85,8 @@ const HomeScreenMedico = () => {
                     <td>{patient.user?.phoneNumber || "No disponible"}</td>
                     <td>{patient.user?.isActive ? "Activo" : "Inactivo"}</td>
                     <td>
-                      <Link to={`/patient/${patient._id}/report`} className="report-link">
-                        Ver reporte
+                      <Link to={`/patients/${patient._id}/historial-medico`} className="report-link">
+                        Historial Médico
                       </Link>
                     </td>
                   </tr>
