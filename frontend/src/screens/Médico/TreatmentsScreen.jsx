@@ -9,6 +9,8 @@ import Message from '../../components/Message';
 import ActivitySelector from '../../components/ActivitySelector';
 import '../../assets/styles/CreateTreatmentScreen.css'; // Asegúrate de importar el CSS
 import { toast } from 'react-toastify';
+import ActivitySelector2 from '../../components/ActivitySelector2.jsx';
+
 
 const CreateTreatmentScreen = () => {
   // Estados locales
@@ -55,6 +57,38 @@ const CreateTreatmentScreen = () => {
       toast.error('Debe seleccionar al menos un paciente');
       return;
     }
+
+    // validaciones para fecha de inicio y fin
+
+    // Validar si las fechas de inicio y fin están completas
+    if (!startDate) {
+      toast.error('Debe seleccionar una fecha de inicio para el tratamiento');
+      return;
+    }
+
+    if (!endDate) {
+      toast.error('Debe seleccionar una fecha de fin para el tratamiento');
+      return;
+    }
+
+    // Validar que la fecha de inicio sea anterior a la de fin
+    if (new Date(startDate) > new Date(endDate)) {
+      toast.error('La fecha de inicio no puede ser posterior a la fecha de fin');
+      return;
+    }
+
+    // Validar si se seleccionó la próxima fecha de revisión
+    if (!nextReviewDate) {
+      toast.error('Debe seleccionar una próxima fecha de revisión');
+      return;
+    }
+
+    // Validar que la próxima fecha de revisión sea posterior a la fecha de fin
+    if (new Date(nextReviewDate) <= new Date(endDate)) {
+      toast.error('La próxima fecha de revisión debe ser posterior a la fecha de fin');
+      return;
+    }
+
 
     const treatmentData = {
       patientIds,
@@ -131,10 +165,12 @@ const CreateTreatmentScreen = () => {
           {createError?.data?.message || createError?.error || error?.data?.message || error?.error}
         </Message>
       )}
+
       <Form onSubmit={submitHandler}>
         {/* Seleccionar pacientes */}
         <Form.Group controlId="patientIds" className="mb-3">
-          <Form.Label>Seleccionar Pacientes</Form.Label>
+          <Form.Label><b>Seleccionar Pacientes</b></Form.Label>
+          <span className="required-asterisk">*</span>
           {isFetchingData ? (
             <Loader />
           ) : (
@@ -157,7 +193,8 @@ const CreateTreatmentScreen = () => {
 
         {/* Nombre y descripción del tratamiento */}
         <Form.Group controlId="treatmentName" className="mb-3">
-          <Form.Label>Nombre del Tratamiento</Form.Label>
+          <Form.Label><b>Nombre del Tratamiento</b></Form.Label>
+          <span className="required-asterisk">*</span>
           <Form.Control
             type="text"
             placeholder="Ingrese el nombre del tratamiento"
@@ -168,7 +205,8 @@ const CreateTreatmentScreen = () => {
         </Form.Group>
 
         <Form.Group controlId="description" className="mb-3">
-          <Form.Label>Descripción</Form.Label>
+          <Form.Label><b>Descripción</b></Form.Label>
+          <span className="required-asterisk">*</span>
           <Form.Control
             as="textarea"
             rows={3}
@@ -181,18 +219,21 @@ const CreateTreatmentScreen = () => {
 
         {/* Seleccionar actividades asignadas */}
         <Form.Group controlId="activities" className="mb-3">
-          <Form.Label>Asignar Actividades</Form.Label>
-          <ActivitySelector
+          <Form.Label><b>Asignar Actividades</b></Form.Label>
+          <span className="required-asterisk">*</span>
+          <ActivitySelector2
             selectedActivities={selectedActivities}
             setSelectedActivities={setSelectedActivities}
           />
         </Form.Group>
+        <hr className="custom-separator" />
 
         {/* Agregar medicamentos */}
         <Form.Group controlId="medications" className="mb-3">
-          <Form.Label>Medicamentos</Form.Label>
-          <Button variant="secondary" onClick={addMedication} className="mb-2">
-            Agregar Medicamento
+          <Form.Label><b>Medicamentos</b></Form.Label>
+          <Button variant="secondary" onClick={addMedication} className="mb-2 custom-button">
+          
+            + Agregar Medicamento
           </Button>
           {medications.map((medication, index) => (
             <div key={index} className="mb-3">
@@ -266,7 +307,7 @@ const CreateTreatmentScreen = () => {
                 placeholder="Fecha de inicio"
                 value={medication.startDate}
                 onChange={(e) => handleMedicationChange(index, 'startDate', e.target.value)}
-                className="mb-2"
+                className="mb-2 small-date-input"
                 required
               />
               <Form.Control
@@ -274,17 +315,19 @@ const CreateTreatmentScreen = () => {
                 placeholder="Fecha de fin"
                 value={medication.endDate}
                 onChange={(e) => handleMedicationChange(index, 'endDate', e.target.value)}
-                className="mb-2"
+                className="mb-2 small-date-input"
               />
             </div>
           ))}
         </Form.Group>
 
+        <hr className="custom-separator" />
+
         {/* Agregar ejercicios en video */}
         <Form.Group controlId="exerciseVideos" className="mb-3">
-          <Form.Label>Ejercicios en Video</Form.Label>
-          <Button variant="secondary" onClick={addExerciseVideo} className="mb-2">
-            Agregar Video
+          <Form.Label><b>Ejercicios en Video</b></Form.Label>
+          <Button variant="secondary" onClick={addExerciseVideo} className="mb-2 custom-button">
+            + Agregar Video
           </Button>
           {exerciseVideos.map((video, index) => (
             <div key={index} className="mb-3">
@@ -321,28 +364,46 @@ const CreateTreatmentScreen = () => {
             </div>
           ))}
         </Form.Group>
+        <hr className="custom-separator" />
 
         {/* Fechas y observaciones */}
-        <Form.Group controlId="startDate" className="mb-3">
-          <Form.Label>Fecha de Inicio</Form.Label>
-          <Form.Control
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-        </Form.Group>
+        <div className="date-row">
+          <Form.Group controlId="startDate" className="mb-3">
+            <Form.Label><b>Fecha de inicio del tratamiento</b></Form.Label>
+            <span className="required-asterisk">*</span>
+            <Form.Control
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="small-date-input"
+            />
+          </Form.Group>
 
-        <Form.Group controlId="endDate" className="mb-3">
-          <Form.Label>Fecha de Fin</Form.Label>
+          <Form.Group controlId="endDate" className="mb-3">
+            <Form.Label><b>Fecha de fin del tratamiento</b></Form.Label>
+            <span className="required-asterisk">*</span>
+            <Form.Control
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="small-date-input"
+            />
+          </Form.Group>
+
+        </div>
+        <Form.Group controlId="nextReviewDate" className="mb-3">
+          <Form.Label><b>Próxima fecha de revisión</b></Form.Label>
+          <span className="required-asterisk">*</span>
           <Form.Control
             type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            value={nextReviewDate}
+            onChange={(e) => setNextReviewDate(e.target.value)}
+            className="small-date-input"
           />
         </Form.Group>
 
         <Form.Group controlId="observations" className="mb-3">
-          <Form.Label>Observaciones</Form.Label>
+          <Form.Label><b>Observaciones</b></Form.Label>
           <Form.Control
             as="textarea"
             rows={3}
@@ -352,18 +413,14 @@ const CreateTreatmentScreen = () => {
           />
         </Form.Group>
 
-        <Form.Group controlId="nextReviewDate" className="mb-3">
-          <Form.Label>Próxima Fecha de Revisión</Form.Label>
-          <Form.Control
-            type="date"
-            value={nextReviewDate}
-            onChange={(e) => setNextReviewDate(e.target.value)}
-          />
-        </Form.Group>
 
-        <Button type="submit" variant="primary">
-          Crear Tratamiento
-        </Button>
+
+
+        <div className='createbutton'>
+          <Button type="submit" variant="primary" className="mb-2 custom-button">
+            Crear Tratamiento
+          </Button>
+        </div>
       </Form>
     </>
   );
