@@ -11,8 +11,9 @@ import {
 import { useGetPatientsQuery } from "../slices/patientApiSlice";
 import { useGetDoctorsQuery } from "../slices/doctorApiSlice";
 import '../assets/styles/chatScreen.css'; 
+import { FaComments, FaUserFriends } from 'react-icons/fa'; // Importar iconos
 
-const ENDPOINT = "http://localhost:5000"; // Reemplaza con tu endpoint si es necesario
+const ENDPOINT = process.env.REACT_APP_SOCKET_ENDPOINT || "http://localhost:5000";
 
 const ChatScreen = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -30,48 +31,42 @@ const ChatScreen = () => {
   const [createChat] = useCreateChatMutation();
 
   const [selectedChat, setSelectedChat] = useState(null);
+  const [activeTab, setActiveTab] = useState('chats'); // Estado para las pestañas
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [socketConnected, setSocketConnected] = useState(false);
-  // Cambiamos newMessageNotifications a un objeto para almacenar contadores por chat
   const [newMessageNotifications, setNewMessageNotifications] = useState({});
 
   const socketRef = useRef();
   const selectedChatRef = useRef(selectedChat);
+  const messagesEndRef = useRef(null); // Referencia para el scroll automático
 
-  // Actualizamos la referencia de selectedChat cuando cambia
   useEffect(() => {
     selectedChatRef.current = selectedChat;
   }, [selectedChat]);
 
-  // Conectar a Socket.IO una sola vez
   useEffect(() => {
     if (userInfo) {
       socketRef.current = io(ENDPOINT);
       socketRef.current.emit("setup", userInfo);
       socketRef.current.on("connected", () => setSocketConnected(true));
 
-      // Escuchar mensajes nuevos
       socketRef.current.on("messageReceived", (newMessageReceived) => {
         const chatId = newMessageReceived.chat._id || newMessageReceived.chat;
         const senderId = newMessageReceived.sender._id || newMessageReceived.sender;
 
         if (senderId === userInfo._id) {
-          // Ignorar mensajes enviados por el usuario actual
           return;
         }
 
         if (selectedChatRef.current && selectedChatRef.current._id === chatId) {
-          // Si el mensaje es para el chat seleccionado, actualizar los mensajes automáticamente
           setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
         } else {
-          // Si el mensaje es para otro chat, incrementar el contador de mensajes no leídos
           setNewMessageNotifications((prev) => ({
             ...prev,
             [chatId]: (prev[chatId] || 0) + 1
           }));
-          // Puedes mostrar una notificación si lo deseas
-          // toast.info("Nuevo mensaje en otro chat");
+          toast.info("Nuevo mensaje en otro chat");
         }
       });
 
@@ -81,7 +76,6 @@ const ChatScreen = () => {
     }
   }, [userInfo]);
 
-  // Obtener mensajes del chat seleccionado
   const { data: chatMessages = [], refetch: refetchMessages } = useGetMessagesQuery(
     selectedChat?._id,
     { skip: !selectedChat }
@@ -91,19 +85,22 @@ const ChatScreen = () => {
     if (chatMessages) setMessages(chatMessages);
   }, [chatMessages]);
 
-  // Unirse al chat seleccionado
   useEffect(() => {
     if (socketConnected && selectedChat) {
       socketRef.current.emit("joinChat", selectedChat._id);
       refetchMessages();
 
-      // Eliminar el contador de mensajes no leídos para este chat
       setNewMessageNotifications((prev) => {
         const { [selectedChat._id]: _, ...rest } = prev;
         return rest;
       });
     }
   }, [selectedChat, socketConnected]);
+
+  useEffect(() => {
+    // Scroll automático al final de los mensajes
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) {
@@ -121,10 +118,8 @@ const ChatScreen = () => {
       const sentMessage = await sendMessage(messageData).unwrap();
       setNewMessage("");
 
-      // Emitir el mensaje a través de Socket.IO
       socketRef.current.emit("sendMessage", sentMessage);
 
-      // Actualizar mensajes en el chat actual
       setMessages((prevMessages) => [...prevMessages, sentMessage]);
     } catch (error) {
       toast.error("Error al enviar el mensaje");
@@ -147,9 +142,9 @@ const ChatScreen = () => {
     }
   };
 
-  const renderParticipantsDropdown = () => {
+  const renderContacts = () => {
     if (loadingPatients || loadingDoctors) {
-      return <p>Cargando participantes...</p>;
+      return <p>Cargando contactos...</p>;
     }
 
     if (patients.length === 0 && doctors.length === 0) {
@@ -157,65 +152,94 @@ const ChatScreen = () => {
     }
 
     return (
-      <select onChange={(e) => handleStartChat(e.target.value)}>
-        <option value="">Selecciona un participante</option>
-        {patients.length > 0 && (
-          <optgroup label="Pacientes">
-            {patients.map((patient) => (
-              <option key={patient._id} value={patient.user?._id}>
-                {patient.user?.name || "Paciente sin nombre"}
-              </option>
-            ))}
-          </optgroup>
-        )}
-        {doctors.length > 0 && (
-          <optgroup label="Médicos">
-            {doctors.map((doctor) => (
-              <option key={doctor._id} value={doctor.user?._id}>
-                {doctor.user?.name || "Médico sin nombre"}
-              </option>
-            ))}
-          </optgroup>
-        )}
-      </select>
+      <div className="contacts-list">
+        <h3>Pacientes</h3>
+        {patients.map((patient) => (
+          <div
+            key={patient._id}
+            onClick={() => handleStartChat(patient.user?._id)}
+            className="contact-item"
+          >
+            {patient.user?.name || "Paciente sin nombre"}
+          </div>
+        ))}
+        <h3>Médicos</h3>
+        {doctors.map((doctor) => (
+          <div
+            key={doctor._id}
+            onClick={() => handleStartChat(doctor.user?._id)}
+            className="contact-item"
+          >
+            {doctor.user?.name || "Médico sin nombre"}
+          </div>
+        ))}
+      </div>
     );
+  };
+
+  const renderChats = () => {
+    if (loadingChats) {
+      return <p>Cargando chats...</p>;
+    }
+
+    if (chats.length === 0) {
+      return <p>No hay chats disponibles</p>;
+    }
+
+    return (
+      <div className="chats-list">
+        {chats.map((chat) => {
+          const chatId = chat._id;
+          const isSelected = selectedChat?._id === chatId;
+          const newMessagesCount = newMessageNotifications[chatId] || 0;
+          return (
+            <div
+              key={chatId}
+              onClick={() => setSelectedChat(chat)}
+              className={`chat-item ${
+                isSelected ? "selected-chat" : newMessagesCount > 0 ? "new-message" : ""
+              }`}
+            >
+              {chat.participants
+                ?.filter((p) => p._id !== userInfo?._id)
+                .map((p) => p.name)
+                .join(", ") || "Sin participantes"}
+              {newMessagesCount > 0 && (
+                <span className="notification-badge">{newMessagesCount}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderActiveContent = () => {
+    return activeTab === 'chats' ? renderChats() : renderContacts();
   };
 
   return (
     <div className="chat-container">
       <div className="chat-sidebar">
-        <h2>Chats</h2>
-        {loadingChats ? (
-          <p>Cargando chats...</p>
-        ) : chats.length > 0 ? (
-          chats.map((chat) => {
-            const chatId = chat._id;
-            const isSelected = selectedChat?._id === chatId;
-            const newMessagesCount = newMessageNotifications[chatId] || 0;
-            return (
-              <div
-                key={chatId}
-                onClick={() => setSelectedChat(chat)}
-                className={`chat-item ${
-                  isSelected ? "selected-chat" : newMessagesCount > 0 ? "new-message" : ""
-                }`}
-              >
-                {chat.participants
-                  ?.filter((p) => p._id !== userInfo?._id)
-                  .map((p) => p.name)
-                  .join(", ") || "Sin participantes"}
-                {newMessagesCount > 0 && (
-                  <span className="notification-badge">{newMessagesCount}</span>
-                )}
-              </div>
-            );
-          })
-        ) : (
-          <p>No hay chats disponibles</p>
-        )}
-        {userInfo &&
-          (userInfo.isAdmin || userInfo.isDoctor) &&
-          renderParticipantsDropdown()}
+        <div className="tabs">
+          <button
+            className={`tab-button ${activeTab === 'chats' ? 'active' : ''}`}
+            onClick={() => setActiveTab('chats')}
+          >
+            <FaComments className="tab-icon" />
+            Chats
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'contacts' ? 'active' : ''}`}
+            onClick={() => setActiveTab('contacts')}
+          >
+            <FaUserFriends className="tab-icon" />
+            Contactos
+          </button>
+        </div>
+        <div className="tab-content">
+          {renderActiveContent()}
+        </div>
       </div>
 
       <div className="chat-box">
@@ -246,6 +270,7 @@ const ChatScreen = () => {
               ) : (
                 <p>No hay mensajes aún</p>
               )}
+              <div ref={messagesEndRef} />
             </div>
             <div className="message-input-container">
               <input
@@ -254,9 +279,14 @@ const ChatScreen = () => {
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Escribe un mensaje..."
                 className="message-input"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSendMessage();
+                  }
+                }}
               />
               <button onClick={handleSendMessage} className="send-button">
-                Enviar
+                &#10148;
               </button>
             </div>
           </>
