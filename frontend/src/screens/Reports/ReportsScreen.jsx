@@ -19,6 +19,7 @@ import resultadosMocaImg from '../../images/Reports/resultados-moca.webp';
 import progresoPacienteImg from '../../images/Reports/progreso-paciente.webp';
 import resultadosActividadesImg from '../../images/Reports/resultados-actviidades.webp';
 import estadoAnimoImg from '../../images/Reports/estado-ánimo.webp';
+import dashboardImg from '../../images/Reports/estado-ánimo.webp'; 
 
 const ReportsScreen = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const ReportsScreen = () => {
     { title: 'Progreso del Paciente', img: progresoPacienteImg, route: '/progreso-paciente' },
     { title: 'Resultados de Actividades', img: resultadosActividadesImg, route: '/reports/activities' },
     { title: 'Resultados de Estado de Ánimo', img: estadoAnimoImg, route: '/estado-animo' },
+    { title: 'Dashboard', img: dashboardImg, route: '/dashboard' },
   ];
 
   return (
@@ -44,13 +46,13 @@ const ReportsScreen = () => {
           <Grid item key={index} xs={12} sm={6} md={4}>
             <Card
               sx={{
-                maxWidth: 300, // Reducir el ancho máximo de la tarjeta
+                maxWidth: 300,
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 '&:hover': {
                   transform: 'scale(1.05)',
                   boxShadow: 6,
                 },
-                margin: '0 auto', // Centrar la tarjeta dentro del Grid item
+                margin: '0 auto',
               }}
             >
               <CardActionArea onClick={() => navigate(option.route)}>
@@ -59,7 +61,7 @@ const ReportsScreen = () => {
                   sx={{
                     position: 'relative',
                     width: '100%',
-                    paddingTop: '75%', // Ajustar la relación de aspecto a 4:3 (puedes modificar según tus imágenes)
+                    paddingTop: '75%',
                     overflow: 'hidden',
                   }}
                 >
@@ -73,7 +75,7 @@ const ReportsScreen = () => {
                       left: 0,
                       width: '100%',
                       height: '100%',
-                      objectFit: 'cover', // Cambiado a 'cover' para llenar el contenedor
+                      objectFit: 'cover',
                     }}
                   />
                 </Box>

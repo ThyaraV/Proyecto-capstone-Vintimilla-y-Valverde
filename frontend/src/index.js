@@ -62,6 +62,7 @@ import MoodScreen from "./screens/Reports/MoodScreen.jsx";
 
 import ActivitiesReportScreen from "./screens/Reports/activitiesReportScreen.jsx";
 import PatientsProgress from "./screens/Reports/PatientsProgress.jsx";
+import DashboardScreen from "./screens/DashboardScreen.jsx";
 
 import MocaScreen from "./screens/Reports/MocaScreen.jsx";
 import MocaPanel from "./screens/MocaScreen.jsx";
@@ -182,6 +183,7 @@ const router = createBrowserRouter(
           path="/admin/activities/:id/edit"
           element={<ActivityEditScreen />}
         />
+        <Route path="/dashboard" element={<DashboardScreen />} /> 
       </Route>
 
       {/* Rutas de evaluación MoCA (tanto para pacientes como médicos) */}

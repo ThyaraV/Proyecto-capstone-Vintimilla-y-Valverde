@@ -1,3 +1,5 @@
+/* src/assets/styles/Header.css */
+
 /* Estilos para el contenedor del menú */
 .menu-container {
   position: relative;
@@ -196,7 +198,8 @@
   left: -300px; /* Oculto por defecto */
   width: 300px;
   height: 100vh;
-  background-color: #1986f3 !important; /* Aseguramos el color de fondo con !important */
+  background: rgba(25, 134, 243, 0.7); /* Transparente borroso */
+  backdrop-filter: blur(10px); /* Borroso */
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -221,6 +224,13 @@
   margin-bottom: 20px;
 }
 
+.menu-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
 .sidebar-menu {
   display: flex;
   flex-direction: column;
@@ -237,28 +247,81 @@
   cursor: pointer;
   transition: all 0.3s ease;
   opacity: 0.8;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .sidebar-menu button:hover,
 .sidebar-menu button.active {
   opacity: 1;
   transform: translateX(10px);
-  color: #ffb703; /* Color al pasar el cursor */
+  color: #1986f3; /* Color al pasar el cursor */
   font-weight: bold;
 }
 
-.menu-toggle-btn {
-  background: none; /* Fondo transparente */
-  border: none; /* Sin borde */
-  color: #ffffff; /* Color de las líneas del ícono */
-  cursor: pointer;
-  margin-right: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
+.sidebar-menu button svg {
+  width: 20px;
 }
 
-.menu-toggle-btn svg {
-  fill: #ffffff; /* Aseguramos que las líneas sean blancas */
+/* Responsividad */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 250px;
+    left: -250px;
+  }
+
+  .sidebar.open {
+    transform: translateX(250px);
+  }
+
+  .menu-title {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .sidebar-menu button {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    width: 200px;
+    left: -200px;
+  }
+
+  .sidebar.open {
+    transform: translateX(200px);
+  }
+
+  .menu-title {
+    font-size: 18px;
+    margin-bottom: 15px;
+  }
+
+  .sidebar-menu button {
+    font-size: 14px;
+  }
+}
+
+/* Menú lateral con transparencia borrosa */
+.sidebar {
+  background: rgba(180, 180, 180, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+/* Título del menú */
+.menu-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+/* Botones del menú lateral con iconos */
+.sidebar-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }

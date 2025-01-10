@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
-import { FaUser, FaComments, FaBrain, FaBars, FaBell } from "react-icons/fa"; // Importar FaBell
+import { FaUser, FaComments, FaBrain, FaBars, FaBell, FaTachometerAlt, FaRegChartBar } from "react-icons/fa"; // Importar FaTachometerAlt, FaRegChartBar
 import logo from "../assets/logoHigeasinfondo.png";
 import { LinkContainer } from "react-router-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
@@ -12,16 +12,11 @@ import '../assets/styles/Header.css';
 
 const Header = () => {
   const { userInfo } = useSelector((state) => state.auth);
-  //const notifications = useSelector((state) => state.notifications.notifications);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [logoutApiCall] = useLogoutMutation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
- // const [showNotifications, setShowNotifications] = useState(false);
-
-  // Calcula el total de notificaciones
-  //const totalNotifications = Object.values(notifications).reduce((acc, count) => acc + count, 0);
 
   // Maneja el cierre de sesión
   const logoutHandler = async () => {
@@ -48,11 +43,6 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
-  // Manejar clic en la campanita de notificaciones
-  const handleNotificationsClick = () => {
-    navigateTo('/notifications');
-  };
-
   return (
     <header>
       {/* Navbar principal */}
@@ -66,7 +56,6 @@ const Header = () => {
           {/* Marca y logo */}
           <Navbar.Brand className="d-flex align-items-center" onClick={() => navigateTo('/')}>
             <img src={logo} alt="Seguimiento" height="70" />
-            
           </Navbar.Brand>
 
           {/* Menú de navegación principal */}
@@ -74,17 +63,17 @@ const Header = () => {
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto align-items-center">
               {/* Enlace a Actividades */}
-              <Nav.Link onClick={() => navigateTo('/api/treatments/activities')}>
+              <Nav.Link onClick={() => navigateTo('/api/treatments/activities', 'actividades')}>
                 <FaBrain /> Actividades
               </Nav.Link>
 
               {/* Enlace a MoCA */}
-              <Nav.Link onClick={() => navigateTo('/mocaPanel')}>
+              <Nav.Link onClick={() => navigateTo('/mocaPanel', 'moca')}>
                 <FaBrain /> MoCA
               </Nav.Link>
 
               {/* Enlace al chat */}
-              <Nav.Link onClick={() => navigateTo('/chat')}>
+              <Nav.Link onClick={() => navigateTo('/chat', 'chat')}>
                 <FaComments /> Chat
               </Nav.Link>
 
@@ -104,10 +93,10 @@ const Header = () => {
               {/* Opciones del administrador */}
               {userInfo && userInfo.isAdmin && (
                 <NavDropdown title="Admin" id="adminmenu">
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist')}>Ayuda</NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/productlist')}>Configuración</NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/userlist')}>Usuarios</NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/activities')}>Actividades (Admin)</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist', 'orderlist')}>Ayuda</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/productlist', 'productlist')}>Configuración</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/userlist', 'userlist')}>Usuarios</NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/activities', 'adminActivities')}>Actividades (Admin)</NavDropdown.Item>
                 </NavDropdown>
               )}
             </Nav>
@@ -118,21 +107,25 @@ const Header = () => {
       {/* Menú lateral */}
       <div className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
         <button className="close-btn" onClick={handleMenuToggle}>×</button>
+        <div className="menu-title">Menu</div>
         <nav className="sidebar-menu">
           <button className={selectedOption === 'profile' ? 'active' : ''} onClick={() => navigateTo('/profile', 'profile')}>
-            Perfil Público
+            <FaUser /> Perfil Público
           </button>
           <button className={selectedOption === 'config' ? 'active' : ''} onClick={() => navigateTo('/admin/configuration', 'config')}>
-            Configuración
+            <FaRegChartBar /> Configuración
           </button>
-          <button className={selectedOption === 'appearance' ? 'active' : ''} onClick={() => navigateTo('/reports', 'appearance')}>
-            Reportes
+          <button className={selectedOption === 'reports' ? 'active' : ''} onClick={() => navigateTo('/reports', 'reports')}>
+            <FaRegChartBar /> Reportes
           </button>
-          <button className={selectedOption === 'accessibility' ? 'active' : ''} onClick={() => navigateTo('/activities', 'accessibility')}>
-            Actividades
+          <button className={selectedOption === 'activities' ? 'active' : ''} onClick={() => navigateTo('/activities', 'activities')}>
+            <FaBrain /> Actividades
+          </button>
+          <button className={selectedOption === 'dashboard' ? 'active' : ''} onClick={() => navigateTo('/dashboard', 'dashboard')}>
+            <FaTachometerAlt /> Dashboard
           </button>
           <button className={selectedOption === 'notifications' ? 'active' : ''} onClick={() => navigateTo('/notifications', 'notifications')}>
-            Notificaciones
+            <FaBell /> Notificaciones
           </button>
         </nav>
       </div>
