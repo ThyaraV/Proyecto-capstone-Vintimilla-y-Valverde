@@ -1,4 +1,4 @@
-// src/routes/userRoutes.js
+// backend/routes/userRoutes.js
 import express from 'express';
 const router = express.Router();
 import {
@@ -17,11 +17,14 @@ import {
   enableUser
 } from '../controllers/userController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
-import { saveUserMood, getPatientMoods } from '../controllers/moodController.js';
+import { saveUserMood, getPatientMoods, getMoodsByDate } from '../controllers/moodController.js'; // Importar getMoodsByDate
 
+// Rutas para manejar estados de ánimo
 router.post('/mood', protect, saveUserMood);
 router.route('/:patientId/moods').get(protect, admin, getPatientMoods);
+router.route('/moods').get(protect, admin, getMoodsByDate); // Nueva ruta para obtener moods por fecha
 
+// Otras rutas de usuarios
 router.route('/')
   .post(registerUser)
   .get(protect, admin, getUsers);
