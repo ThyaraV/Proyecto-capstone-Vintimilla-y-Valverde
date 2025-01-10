@@ -256,21 +256,25 @@ a {
     text-align: center;
     margin-top: 1.5rem;
     font-size: 1rem;
+    z-index: 10;
     /* Tamaño de fuente ajustado */
 }
 
 .alert-info {
     color: #3b82f6;
+    z-index: 10;
     /* Azul */
 }
 
 .alert-error {
     color: #ef4444;
+    z-index: 10;
     /* Rojo */
 }
 
 .alert-success {
     color: #10b981;
+    z-index: 10;
     /* Verde */
 }
 
@@ -612,8 +616,6 @@ a {
       max-width: 200px; /* reduce el ancho */
     }
   }
-  
-
 
 
   /* Media Queries para pantallas pequeñas */
