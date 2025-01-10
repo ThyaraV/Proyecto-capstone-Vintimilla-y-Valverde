@@ -20,6 +20,7 @@ export const patientApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'Patient', id }],
     }),
+    
   }),
 });
 

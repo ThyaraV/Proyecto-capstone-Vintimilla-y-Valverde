@@ -147,7 +147,7 @@ const RegisterScreen = () => {
   return (
     <div className="register-container">
       <div className="fullscreen-background2">
-      <img src={cerebro} alt="Fondo cerebro" className="background-image2" />
+        <img src={cerebro} alt="Fondo cerebro" className="background-image2" />
       </div>
 
       <div
@@ -289,7 +289,12 @@ const RegisterScreen = () => {
                   </p>
                 </Modal.Body>
                 <Modal.Footer>
-                  <Button variant="secondary" onClick={handleCloseTerms} centered>
+                  <Button variant="secondary" onClick={handleCloseTerms} centered className="mb-2 custom-button"
+                    style={{
+
+                      margin: "0 auto", // Centrado horizontal
+
+                    }}>
                     Cerrar
                   </Button>
                 </Modal.Footer>

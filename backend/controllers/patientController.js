@@ -71,6 +71,23 @@ const updatePatient = asyncHandler(async (req, res) => {
   }
 });
 
-export { getPatients, getPatientById, updatePatient };
+// @desc    Obtener historial médico por ID de paciente
+// @route   GET /api/patients/:id/medical-history
+// @access  Private (Doctor)
+const getMedicalHistoryByPatientId = asyncHandler(async (req, res) => {
+  const patientId = req.params.id;
+
+  // Verificar si el paciente existe y está asignado al doctor que hace la solicitud
+  const patient = await Patient.findById(patientId).populate('user', 'name lastName email phoneNumber cardId');
+
+  if (patient) {
+    res.json(patient);
+  } else {
+    res.status(404);
+    throw new Error('Paciente no encontrado');
+  }
+});
+
+export { getPatients, getPatientById, updatePatient, getMedicalHistoryByPatientId };
 
 

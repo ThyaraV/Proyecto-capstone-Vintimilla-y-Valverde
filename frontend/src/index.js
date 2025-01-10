@@ -118,7 +118,7 @@ const router = createBrowserRouter(
         <Route path="/reports/activities" element={<ActivitiesReportScreen />} />
         <Route path="/progreso-paciente" element={<PatientsProgress />} />
         <Route path="/patients/:id/historial-medico" element={<MedicalHistory/>} />
-        <Route path="/patients/:id/historial-medico" element={<MedicalHistory/>} />
+        <Route path="/historial-medico" element={<MedicalHistoryReport/>} />
 
 
  
