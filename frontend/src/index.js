@@ -92,6 +92,7 @@ import EditTreatmentScreen from "./screens/Médico/treatmentsEditScreen.jsx";
 import ActivityPlay from "./components/ActivityPlay.jsx";
 import MedicalHistory from "./screens/Médico/medicalHistory.jsx"
 import MedicalHistoryReport from "./screens/Reports/MedicalHistoryReport.jsx";
+import Assignedactivities from "./screens/Médico/Assignedactivities.jsx";
 
 const HomeScreenSelector = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -174,6 +175,7 @@ const router = createBrowserRouter(
         />
         <Route path="/admin/activities" element={<ActivitiesListScreen />} />
         <Route path="/admin/UsersActivities" element={<UsersActivities />} />
+        <Route path="/admin/actividades-asignadas" element={<Assignedactivities />} />
         <Route
           path="/admin/:patientId/UserActivity"
           element={<UserActivity />}

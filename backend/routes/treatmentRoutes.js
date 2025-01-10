@@ -18,7 +18,9 @@ import {
   //takeMedication,
   getTreatmentsByPatient2,
   getTreatmentsByMultiplePatients,
-  updateMedicationTakenToday
+  updateMedicationTakenToday,
+  getAssignedActivities2,
+  getActiveTreatment2
 } from '../controllers/treatmentController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -54,6 +56,15 @@ router.get('/patient/:patientId/treatments2', protect, getTreatmentsByPatient2);
 router.post('/patients/treatments', protect, getTreatmentsByMultiplePatients);
 
 router.route('/:treatmentId/assignedActivities').get(protect, getAssignedActivities);
+router.route('/:treatmentId/assignedActivities2').get(protect, getAssignedActivities2);
+
+router.route('/:patientId/active-treatment2').get(protect, getActiveTreatment2);
+
+// Ruta para obtener actividades asignadas a un tratamiento específico y paciente
+router.get('/:treatmentId/assignedActivities/:patientId', protect, getAssignedActivities2);
+
+// Actualizar la ruta 'assignedActivities2' para que acepte ambos parámetros
+router.route('/:treatmentId/assignedActivities2/:patientId').get(protect, getAssignedActivities2);
 
 
 router.route('/activities').get(protect, getActivitiesByUser);

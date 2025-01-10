@@ -27,7 +27,7 @@ const Configuration = () => {
     if (tab === 'tratamientos') {
       setShowTreatmentOptions(true);
     } else if (tab === 'actividades') {
-      navigate('/admin/UsersActivities');
+      navigate('/admin/actividades-asignadas');
     } else if (tab === 'informacion_paciente') {
       navigate('/admin/userlist');
     }
@@ -77,7 +77,7 @@ const Configuration = () => {
           <span className="config-card-overlay"></span>
           <div className="config-card-content">
             <img src={Image2a} alt="Actividades" className="config-card-image" />
-            <div>Actividades</div>
+            <div>Actividades Asignadas</div>
           </div>
         </div>
 

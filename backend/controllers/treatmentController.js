@@ -641,6 +641,7 @@ const getAssignedActivities = asyncHandler(async (req, res) => {
   res.status(200).json(treatment.assignedActivities);
 });
 
+
 // @desc    Registrar una actividad realizada por el paciente en su tratamiento
 // @route   POST /api/treatments/:treatmentId/activities
 // @access  Privado/Paciente o Doctor
@@ -773,6 +774,142 @@ const getActiveTreatment = asyncHandler(async (req, res) => {
   res.status(200).json(activeTreatment);
 });
 
+// @desc    Obtener el tratamiento activo de un paciente específico
+// @route   GET /api/treatments/:patientId/active-treatment2
+// @access  Privado/Paciente o Doctor
+export const getActiveTreatment2 = asyncHandler(async (req, res) => {
+  const { patientId } = req.params; // Extraer 'patientId' correctamente
+
+  console.log("getActiveTreatment2 - patientId:", patientId);
+
+  // Validar que 'patientId' es un ObjectId válido
+  if (!mongoose.Types.ObjectId.isValid(patientId)) {
+    console.log("getActiveTreatment2 - Invalid patient ID:", patientId);
+    res.status(400);
+    throw new Error('ID de paciente inválido');
+  }
+
+  // Buscar el paciente para asegurar que existe
+  const patientObj = await Patient.findById(patientId).populate('doctor');
+  if (!patientObj) {
+    console.log("getActiveTreatment2 - Paciente no encontrado:", patientId);
+    res.status(404);
+    throw new Error('Paciente no encontrado');
+  }
+
+  console.log("getActiveTreatment2 - Paciente encontrado:", patientObj._id);
+
+  // Verificar autorización
+  if (req.user.role === 'doctor') {
+    const doctor = await Doctor.findOne({ user: req.user._id });
+    if (!doctor) {
+      console.log("getActiveTreatment2 - Doctor no encontrado para el userId:", req.user._id);
+      res.status(403);
+      throw new Error('No autorizado: No eres un doctor');
+    }
+
+    if (!patientObj.doctor.equals(doctor._id)) {
+      console.log("getActiveTreatment2 - Doctor no asignado al paciente");
+      res.status(403);
+      throw new Error('No autorizado: Doctor no está asignado a este paciente');
+    }
+  }
+
+  if (req.user.role === 'patient') {
+    if (!patientObj.user.equals(req.user._id)) {
+      console.log("getActiveTreatment2 - Paciente intentando acceder a otro paciente");
+      res.status(403);
+      throw new Error('No autorizado: No puedes acceder al tratamiento de otro paciente');
+    }
+  }
+
+  // Buscar el tratamiento activo para este paciente
+  const activeTreatment = await Treatment.findOne({
+    patients: patientId, // Usar 'patientId' directamente
+    active: true,
+  }).populate('assignedActivities');
+
+  if (!activeTreatment) {
+    console.log("getActiveTreatment2 - No active treatment found for patient:", patientId);
+    res.status(404);
+    throw new Error('No hay tratamiento activo para este paciente');
+  }
+
+  console.log("getActiveTreatment2 - Active treatment found:", activeTreatment._id);
+
+  res.status(200).json(activeTreatment);
+});
+
+
+// backend/controllers/treatmentController.js
+
+export const getAssignedActivities2 = asyncHandler(async (req, res) => {
+  const { treatmentId, patientId } = req.params; // Extraer ambos parámetros
+  const userId = req.user._id;
+  const userRole = req.user.role;
+
+  console.log("getAssignedActivities2 - treatmentId:", treatmentId);
+  console.log("getAssignedActivities2 - patientId:", patientId);
+  console.log("getAssignedActivities2 - userId:", userId);
+  console.log("getAssignedActivities2 - userRole:", userRole);
+
+  // Validar que 'treatmentId' y 'patientId' son ObjectIds válidos
+  if (!mongoose.Types.ObjectId.isValid(treatmentId) || !mongoose.Types.ObjectId.isValid(patientId)) {
+    console.log("getAssignedActivities2 - Invalid treatmentId or patientId:", treatmentId, patientId);
+    res.status(400);
+    throw new Error('ID de tratamiento o paciente inválido');
+  }
+
+  // Buscar el paciente para asegurar que existe
+  const patientObj = await Patient.findById(patientId).populate('doctor');
+  if (!patientObj) {
+    console.log("getAssignedActivities2 - Paciente no encontrado:", patientId);
+    res.status(404);
+    throw new Error('Paciente no encontrado');
+  }
+
+  console.log("getAssignedActivities2 - Paciente encontrado:", patientObj._id);
+
+  // Verificar autorización
+  if (userRole === 'doctor') {
+    const doctor = await Doctor.findOne({ user: userId });
+    if (!doctor) {
+      console.log("getAssignedActivities2 - Doctor no encontrado para el userId:", userId);
+      res.status(403);
+      throw new Error('No autorizado: No eres un doctor');
+    }
+
+    if (!patientObj.doctor.equals(doctor._id)) {
+      console.log("getAssignedActivities2 - Doctor no asignado al paciente");
+      res.status(403);
+      throw new Error('No autorizado: Doctor no está asignado a este paciente');
+    }
+  }
+
+  if (userRole === 'patient') {
+    if (!patientObj.user.equals(userId)) {
+      console.log("getAssignedActivities2 - Paciente intentando acceder a otro paciente");
+      res.status(403);
+      throw new Error('No autorizado: No puedes acceder a las actividades de otro paciente');
+    }
+  }
+
+  // Buscar el tratamiento y verificar que incluye al paciente
+  const treatment = await Treatment.findOne({ _id: treatmentId, patients: patientId })
+    .populate('assignedActivities');
+
+  if (!treatment) {
+    console.log("getAssignedActivities2 - Treatment not found for patient:", treatmentId, patientId);
+    res.status(404);
+    throw new Error('Tratamiento no encontrado para este paciente');
+  }
+
+  console.log("getAssignedActivities2 - Assigned activities found:", treatment.assignedActivities.length);
+
+  res.status(200).json(treatment.assignedActivities);
+});
+
+
 
 // @desc    Activar o desactivar un tratamiento
 // @route   PATCH /api/treatments/:treatmentId/activate
@@ -862,46 +999,7 @@ const getCompletedActivitiesByTreatment = asyncHandler(async (req, res) => {
 
 // controllers/treatmentController.js
 
-// @desc    Marcar un medicamento como tomado
-// @route   PATCH /api/treatments/:treatmentId/medications/:medicationId/take
-// @access  Privado/Paciente
-/*const takeMedication = asyncHandler(async (req, res) => {
-  const { treatmentId, medicationId } = req.params;
 
-  // Validar treatmentId y medicationId
-  if (!mongoose.Types.ObjectId.isValid(treatmentId) || !mongoose.Types.ObjectId.isValid(medicationId)) {
-    res.status(400);
-    throw new Error("ID de tratamiento o medicamento inválido");
-  }
-
-  // Obtener el tratamiento activo del paciente
-  const treatment = await Treatment.findOne({ _id: treatmentId, active: true });
-
-  if (!treatment) {
-    res.status(404);
-    throw new Error("Tratamiento activo no encontrado");
-  }
-
-  // Verificar que el medicamento exista en el tratamiento
-  const medication = treatment.medications.id(medicationId);
-
-  if (!medication) {
-    res.status(404);
-    throw new Error("Medicamento no encontrado en este tratamiento");
-  }
-
-  // Actualizar el campo takenToday
-  medication.takenToday = true;
-
-  await treatment.save();
-
-  res.status(200).json({
-    message: "Medicamento marcado como tomado",
-    medication,
-  });
-});*/
-
-// controllers/treatmentController.js
 
 // @desc    Obtener tratamientos para uno o varios pacientes específicos
 // @route   POST /api/treatments/patients/treatments

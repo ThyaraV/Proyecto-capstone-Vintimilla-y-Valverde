@@ -12,6 +12,13 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
         { type: 'AssignedActivities', id: treatmentId },
       ],
     }),
+    getAssignedActivities2: builder.query({
+      query: ({ treatmentId, patientId }) => `/api/treatments/${treatmentId}/assignedActivities2/${patientId}`,
+      providesTags: (result, error, { treatmentId, patientId }) => [
+        { type: 'AssignedActivities', id: treatmentId },
+        { type: 'PatientActivities', id: patientId },
+      ],
+    }),
     assignActivityToPatient: builder.mutation({
       query: ({ patientId, doctorId, activityId }) => ({
         url: '/api/assignments',
@@ -110,6 +117,12 @@ export const treatmentApiSlice = apiSlice.injectEndpoints({
       query: (userId) => `/api/treatments/${userId}/active-treatment`,
       providesTags: (result, error, userId) => [{ type: 'Treatments', id: userId }],
     }),
+    getActiveTreatment2: builder.query({
+      query: (patientId) => `/api/treatments/${patientId}/active-treatment2`,
+      providesTags: (result, error, patientId) => [
+        { type: 'ActiveTreatment', id: patientId },
+      ],
+    }),
     toggleActivateTreatment: builder.mutation({
       query: ({ treatmentId, active }) => ({
         url: `/api/treatments/${treatmentId}/activate`,
@@ -175,6 +188,7 @@ export const {
   // **Asignaciones Hooks**
   useGetActivitiesQuery,
   useGetAssignedActivitiesQuery,
+  useGetAssignedActivities2Query,
   useAssignActivityToPatientMutation,
   useDeleteAssignedActivityMutation,
   useGetMyAssignedActivitiesQuery,
@@ -188,6 +202,7 @@ export const {
   useGetActivitiesByUserQuery,
   useGetTreatmentsByPatient2Query,
   useGetTreatmentsByMultiplePatientsMutation,
+  useGetActiveTreatment2Query,
 
   // **Medicamentos Hooks**
   useGetMyMedicationsQuery,
