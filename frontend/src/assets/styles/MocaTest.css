@@ -78,6 +78,7 @@
   cursor: pointer;
   transition: background-color 0.3s ease;
   min-width: 180px;
+  text-decoration: none;
 }
 
 .instructions-container .instruction-button:hover {
@@ -89,7 +90,7 @@
   cursor: not-allowed;
 }
 
-/* Botón grande y verde para iniciar la prueba */
+/* Botón grande y verde suave para iniciar la prueba */
 .instructions-container .start-button {
   display: block;
   margin: 20px auto 0 auto;
@@ -97,13 +98,13 @@
   max-width: 300px;
   padding: 15px;
   font-size: 1.2rem;
-  background-color: #28a745;
+  background-color: #6cbf6c; /* Verde más suave */
   border: none;
   text-align: center;
 }
 
 .instructions-container .start-button:hover {
-  background-color: #218838;
+  background-color: #5aa75a;
 }
 
 /* Estilos para las alertas */

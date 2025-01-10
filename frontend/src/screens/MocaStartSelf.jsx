@@ -52,6 +52,7 @@ const MocaStartSelf = () => {
   const [moduleScores, setModuleScores] = useState({});
   const [selectedModuleIndex, setSelectedModuleIndex] = useState(null);
   const [testCompleted, setTestCompleted] = useState(false); // Nuevo estado para detectar la finalización del test
+  const [hasLessThan12YearsOfEducation, setHasLessThan12YearsOfEducation] = useState(false); // Nuevo estado para checkbox
 
   // Hook para la mutación de crear MoCA Self
   const [
@@ -137,11 +138,18 @@ const MocaStartSelf = () => {
       return;
     }
 
+    // Añadir un punto si tiene 12 años o menos de estudios y MoCA < 30
+    let finalScore = currentScore;
+    if (hasLessThan12YearsOfEducation && currentScore < 30) {
+      finalScore += 1;
+    }
+
     const mocaData = {
       patientId: selectedPatient._id,
       patientName: selectedPatient.user?.name || "Paciente Desconocido",
       modulesData: individualScores,
-      totalScore: currentScore,
+      totalScore: finalScore,
+      hasLessThan12YearsOfEducation,
     };
 
     try {
@@ -209,13 +217,20 @@ const MocaStartSelf = () => {
       0
     );
 
+    // Añadir un punto si tiene 12 años o menos de estudios y MoCA < 30
+    let finalScore = totalScore;
+    if (hasLessThan12YearsOfEducation && totalScore < 30) {
+      finalScore += 1;
+    }
+
     // Enviar datos simulados al backend
     try {
       const savedRecord = await createMocaSelf({
         patientId: selectedPatient._id,
         patientName: selectedPatient.user?.name || "Paciente Desconocido",
         modulesData: simulatedScores,
-        totalScore,
+        totalScore: finalScore,
+        hasLessThan12YearsOfEducation,
       }).unwrap();
 
       alert("Resultados simulados guardados exitosamente.");
@@ -337,6 +352,15 @@ const MocaStartSelf = () => {
                 que dar respuestas habladas o escritas. Asegúrate de tener tu micrófono funcionando
                 correctamente antes de iniciar la prueba.
               </p>
+              {/* Checkbox para años de educación */}
+              <Form.Group controlId="educationCheckbox" className="mb-3">
+                <Form.Check
+                  type="checkbox"
+                  label="¿Tiene 12 años o menos de estudios? (Por ejemplo, educación primaria, secundaria, etc.)"
+                  checked={hasLessThan12YearsOfEducation}
+                  onChange={(e) => setHasLessThan12YearsOfEducation(e.target.checked)}
+                />
+              </Form.Group>
               {selectedPatient && (
                 <>
                   <p>
@@ -369,7 +393,6 @@ const MocaStartSelf = () => {
                   <div className="d-flex flex-column align-items-center mb-3">
                     <Spinner animation="grow" variant="primary" className="mb-2" />
                     <p>Escuchando...</p>
-                    {/* No se incluye botón de detener */}
                   </div>
                 ) : (
                   <Button
@@ -414,7 +437,7 @@ const MocaStartSelf = () => {
             </Col>
           </Row>
 
-          {/* Botón "Iniciar Prueba" centrado y verde */}
+          {/* Botón "Iniciar Prueba" centrado y verde suave */}
           <div className="text-center mt-4">
             <Button
               variant="success"
