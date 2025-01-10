@@ -1,5 +1,6 @@
 // src/screens/Reports/activitiesReportScreen.jsx
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useRef } from "react";
 import {
   BarChart,
   Bar,
@@ -20,6 +21,11 @@ import {
   useGetCompletedActivitiesByTreatmentQuery,
 } from "../../slices/treatmentSlice";
 import "../../assets/styles/ActivityReport.css";
+import { FaDownload, FaPrint, FaChartBar, FaChartPie, FaUser, FaBriefcase, } from 'react-icons/fa';
+import Loader from "../../components/Loader";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
 
 const ActivityReportScreen = () => {
   const {
@@ -65,6 +71,13 @@ const ActivityReportScreen = () => {
     "#bcbd22",
     "#17becf",
   ];
+
+  // Referencia para el contenido a imprimir/descargar
+  const reportRef = useRef();
+
+  // Estados para feedback al usuario
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [downloadError, setDownloadError] = useState(false);
 
   useEffect(() => {
     if (completedActivities && selectedTreatment) {
@@ -130,23 +143,53 @@ const ActivityReportScreen = () => {
     }
   }, [completedActivities, selectedTreatment]);
 
+  // Función para imprimir el reporte
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Función para descargar el reporte como PDF
+  const handleDownload = () => {
+    const input = reportRef.current;
+    html2canvas(input, { scale: 2 })
+      .then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgProps= pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save("reporte_actividades.pdf");
+        setDownloadSuccess(true);
+        setTimeout(() => setDownloadSuccess(false), 3000); // Ocultar mensaje después de 3 segundos
+      })
+      .catch((err) => {
+        console.error("Error al generar el PDF:", err);
+        setDownloadError(true);
+        setTimeout(() => setDownloadError(false), 3000);
+      });
+  };
+
   return (
-    <div className="activity-report-screen" style={{ padding: "1rem" }}>
-      <h1>Reporte de Actividades de Pacientes</h1>
+    <div className="activity-report-screen">
+      <header className="report-header">
+        <h1>Reporte de Actividades de Pacientes</h1>
+      </header>
       <div className="content">
         {/* Selección de Paciente */}
-        <div className="selection-section">
-          <h3>Seleccionar Paciente</h3>
+        <section className="selection-section card">
+          <h3><FaUser /> Seleccionar Paciente</h3>
           {isLoadingPatients ? (
-            <p>Cargando pacientes...</p>
+            <Loader />
           ) : errorPatients ? (
-            <p>Error al cargar pacientes: {errorPatients.message}</p>
+            <p className="error-message">Error al cargar pacientes: {errorPatients.message}</p>
           ) : (
             <select
+              className="patient-select"
               value={selectedPatient ? selectedPatient._id : ""}
               onChange={(e) =>
                 setSelectedPatient(
-                  patients.find((p) => p._id === e.target.value)
+                  patients.find((p) => p._id === e.target.value) || null
                 )
               }
             >
@@ -158,22 +201,23 @@ const ActivityReportScreen = () => {
               ))}
             </select>
           )}
-        </div>
+        </section>
 
         {/* Selección de Tratamiento */}
         {selectedPatient && (
-          <div className="selection-section">
-            <h3>Seleccionar Tratamiento</h3>
+          <section className="selection-section card">
+            <h3><FaBriefcase /> Seleccionar Tratamiento</h3>
             {isLoadingTreatments ? (
               <p>Cargando tratamientos...</p>
             ) : errorTreatments ? (
-              <p>Error al cargar tratamientos: {errorTreatments.message}</p>
+              <p className="error-message">Error al cargar tratamientos: {errorTreatments.message}</p>
             ) : (
               <select
+                className="patient-select"
                 value={selectedTreatment ? selectedTreatment._id : ""}
                 onChange={(e) =>
                   setSelectedTreatment(
-                    treatments.find((t) => t._id === e.target.value)
+                    treatments.find((t) => t._id === e.target.value) || null
                   )
                 }
               >
@@ -185,45 +229,38 @@ const ActivityReportScreen = () => {
                 ))}
               </select>
             )}
+          </section>
+        )}
+
+        {/* Botones de Acción */}
+        {selectedTreatment && (
+          <div className="action-buttons">
+            <button className="btn btn-download" onClick={handleDownload}>
+              <FaDownload className="btn-icon" /> Descargar Reporte
+            </button>
+            <button className="btn btn-print" onClick={handlePrint}>
+              <FaPrint className="btn-icon" /> Imprimir Reporte
+            </button>
           </div>
         )}
 
+        {/* Feedback al Usuario */}
+        {downloadSuccess && <p className="success-message">Reporte descargado exitosamente.</p>}
+        {downloadError && <p className="error-message">Error al descargar el reporte.</p>}
+
         {/* Sección de Gráficos */}
         {selectedTreatment && (
-          <div className="charts-section" style={{ marginTop: "2rem" }}>
-            <h2>Reporte de Actividades - {selectedTreatment.treatmentName}</h2>
+          <section className="report-section card" ref={reportRef}>
+            <h2><FaChartBar /> Reporte de Actividades - {selectedTreatment.treatmentName}</h2>
             {isLoadingActivities ? (
-              <p>Cargando actividades completadas...</p>
+              <Loader />
             ) : errorActivities ? (
-              <p>Error al cargar actividades: {errorActivities.message}</p>
+              <p className="error-message">Error al cargar actividades: {errorActivities.message}</p>
             ) : completedActivities && completedActivities.length > 0 ? (
-              <div
-                className="charts-container"
-                style={{
-                  display: "flex",
-                  flexDirection: "column", // Cambiar a columna
-                  gap: "2rem",
-                  justifyContent: "center",
-                  alignItems: "center", // Centrar horizontalmente
-                  marginTop: "1rem",
-                }}
-              >
-              <h4>Gráfico por Fechas</h4>
+              <div className="charts-container">
                 {/* Gráfico de Barras */}
-                <div
-                  className="bar-chart-container"
-                  style={{
-                    border: "1px solid #ccc",
-                    borderRadius: "8px",
-                    padding: "1rem",
-                    width: "100%", // Ancho completo
-                    maxWidth: "800px", // Ancho máximo para pantallas grandes
-                    height: "500px", // Altura aumentada para gráficos más grandes
-                  }}
-                >
-                  <h2 style={{ textAlign: "center", color: "#007bff" }}>
-                    Barras
-                  </h2>
+                <div className="bar-chart-container">
+                  <h3><FaChartBar /> Actividades por Fecha</h3>
                   <ResponsiveContainer width="100%" height="90%">
                     <BarChart
                       data={barChartData}
@@ -234,7 +271,7 @@ const ActivityReportScreen = () => {
                         dataKey="date"
                         tick={{ angle: -45, textAnchor: "end" }}
                         interval={0}
-                        height={60} // Espacio para etiquetas inclinadas
+                        height={60} /* Espacio para etiquetas inclinadas */
                       />
                       <YAxis
                         label={{
@@ -256,23 +293,10 @@ const ActivityReportScreen = () => {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                
-                <h4>Gráfico por Actividades</h4>
+
                 {/* Gráfico de Pastel */}
-                <div
-                  className="pie-chart-container"
-                  style={{
-                    border: "1px solid #ccc",
-                    borderRadius: "8px",
-                    padding: "1rem",
-                    width: "100%", // Ancho completo
-                    maxWidth: "600px", // Ancho máximo para pantallas grandes
-                    height: "500px", // Altura aumentada para gráficos más grandes
-                  }}
-                >
-                  <h2 style={{ textAlign: "center", color: "#007bff" }}>
-                    Pastel
-                  </h2>
+                <div className="pie-chart-container">
+                  <h3><FaChartPie /> Distribución de Actividades</h3>
                   <ResponsiveContainer width="100%" height="90%">
                     <PieChart>
                       <Pie
@@ -281,7 +305,7 @@ const ActivityReportScreen = () => {
                         nameKey="name"
                         cx="50%"
                         cy="50%"
-                        outerRadius={150} // Ajusta el radio para hacer el pastel más grande
+                        outerRadius={150}
                         label
                       >
                         {pieData.map((entry, index) => (
@@ -301,7 +325,7 @@ const ActivityReportScreen = () => {
             ) : (
               <p>No hay actividades completadas para este tratamiento.</p>
             )}
-          </div>
+          </section>
         )}
       </div>
     </div>

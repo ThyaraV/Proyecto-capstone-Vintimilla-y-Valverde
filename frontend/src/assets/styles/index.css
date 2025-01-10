@@ -229,7 +229,7 @@ header {
   height: 90px;
   background: linear-gradient(to right, #fcb64c, #1986f3);
   backdrop-filter: blur(10px); /* Efecto de desenfoque */
-  padding: 0.5px 0; /* Espaciado arriba y abajo */
+  padding: 0px 0; /* Espaciado arriba y abajo */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra sutil debajo del header */
   position: sticky; /* Se mantiene visible en la parte superior */ 
   z-index: 1000; /* Asegura que quede sobre otros elementos */

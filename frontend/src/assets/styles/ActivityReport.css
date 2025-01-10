@@ -3,59 +3,219 @@
 .activity-report-screen {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 2rem 1rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f6f8;
+  min-height: 100vh;
 }
 
-.selection-section {
-  margin-bottom: 1.5rem;
+.report-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  /* Removido cualquier fondo si existía */
+  background: none;
 }
 
-.selection-section select {
-  padding: 0.5rem;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+.report-header h1 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  /* Asegurarse de que no haya fondo */
+  background: none;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.card {
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.selection-section h3 {
+  display: flex;
+  align-items: center;
+  font-size: 1.4rem;
+  color: #34495e;
+  margin-bottom: 0.5rem;
+}
+
+.selection-section h3 svg {
+  margin-right: 0.5rem;
+}
+
+.patient-select {
   width: 100%;
-  max-width: 400px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #bdc3c7;
+  border-radius: 5px;
+  transition: border-color 0.3s;
+}
+
+.patient-select:focus {
+  border-color: #2980b9;
+  outline: none;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-weight: bold;
+  text-align: center;
+}
+
+.success-message {
+  color: #27ae60;
+  font-weight: bold;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.report-section h2 {
+  display: flex;
+  align-items: center;
+  font-size: 1.8rem;
+  color: #34495e;
+  margin-bottom: 1rem;
+}
+
+.report-section h2 svg {
+  margin-right: 0.5rem;
 }
 
 .charts-container {
   display: flex;
-  flex-direction: column; /* Cambiar a columna */
+  flex-direction: column;
   gap: 2rem;
   justify-content: center;
-  align-items: center; /* Centrar horizontalmente */
+  align-items: center;
   margin-top: 1rem;
 }
 
 .bar-chart-container,
 .pie-chart-container {
-  width: 100%; /* Ancho completo */
-  max-width: 800px; /* Ancho máximo para pantallas grandes */
-  height: 500px; /* Altura aumentada para gráficos más grandes */
+  width: 100%;
+  max-width: 800px;
+  height: 500px;
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 1rem;
 }
 
-@media (max-width: 1200px) {
-  .bar-chart-container,
-  .pie-chart-container {
-    max-width: 100%; /* Adaptar al ancho del contenedor padre */
-  }
-}
-
-@media (max-width: 768px) {
-  .bar-chart-container,
-  .pie-chart-container {
-    height: 400px; /* Reducir la altura para pantallas pequeñas */
-  }
-}
-
-.charts-section h3 {
-  text-align: center;
+.bar-chart-container h3,
+.pie-chart-container h3 {
+  display: flex;
+  align-items: center;
+  font-size: 1.4rem;
+  color: #34495e;
   margin-bottom: 1rem;
 }
 
-.bar-chart-container h2,
-.pie-chart-container h2 {
+.bar-chart-container h3 svg,
+.pie-chart-container h3 svg {
+  margin-right: 0.5rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end; /* Alinea los botones a la derecha */
   margin-bottom: 1rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem; /* Espacio entre el icono y el texto */
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 50px; /* Bordes muy redondeados para un estilo moderno */
+  cursor: pointer;
+  transition: 
+    background-color 0.3s ease, 
+    box-shadow 0.3s ease, 
+    transform 0.2s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-download {
+  background: linear-gradient(135deg, #28a745, #218838);
+  color: #ffffff;
+}
+
+.btn-download:hover {
+  background: linear-gradient(135deg, #218838, #28a745);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.btn-download:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-print {
+  background: linear-gradient(135deg, #007bff, #0069d9);
+  color: #ffffff;
+}
+
+.btn-print:hover {
+  background: linear-gradient(135deg, #0069d9, #007bff);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.btn-print:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Iconos en los botones */
+.btn-icon {
+  font-size: 1.2rem;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .patient-details {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .details-card {
+    flex: 1 1 calc(33.333% - 1rem);
+  }
+
+  .action-buttons {
+    justify-content: flex-end;
+  }
+}
+
+/* Ocultar botones de acción al imprimir */
+@media print {
+  .action-buttons {
+    display: none;
+  }
+
+  /* Ajustes adicionales para impresión */
+  .report-header,
+  .selection-section,
+  .success-message,
+  .error-message {
+    display: none;
+  }
+
+  .report-section {
+    box-shadow: none;
+    border: none;
+  }
+
+  body {
+    margin: 0;
+  }
 }
