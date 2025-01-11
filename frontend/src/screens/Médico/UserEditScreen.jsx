@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import {
   useUpdateUserMutation,
   useGetUserDetailsQuery,
-} from "../../slices/usersApiSlice"; // Asegúrate de que estos hooks están correctamente importados
+} from "../../slices/usersApiSlice"; 
 import { useGetDoctorsQuery, useAddPatientToDoctorMutation } from "../../slices/doctorApiSlice"; // Importa los hooks necesarios del doctorApiSlice
 
 const UserEditScreen = () => {

@@ -1,15 +1,14 @@
-// src/screens/Reports/MocaScreen.jsx
-
+// src/screens/MocaScreen.jsx
 import React, { useState, useEffect } from 'react';
 import { Container, ListGroup, Row, Col, Form } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useGetPatientsQuery } from '../slices/patientApiSlice';
 import '../assets/styles/MocaScreenPanel.css';
-import Image1a from '../images/infopaciente.png';
 import Image2a from '../images/infopaciente.png';
 import Image3a from '../images/infopaciente.png';
-import Image4a from '../images/infopaciente.png'; // Nueva imagen para la prueba sin médico
+import Image4a from '../images/infopaciente.png';
+import ImageAssign from '../images/infopaciente.png'; // Usa la imagen que desees para la opción "Asignar"
 
 const MocaScreen = () => {
   const { userInfo } = useSelector((state) => state.auth);
@@ -18,6 +17,7 @@ const MocaScreen = () => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Solo el admin/doctor puede acceder
   useEffect(() => {
     if (!userInfo?.isAdmin) {
       navigate('/');
@@ -28,19 +28,21 @@ const MocaScreen = () => {
     setSelectedPatient(patient);
   };
 
+  // Nuevo manejador para las opciones
   const handleOptionChange = (option) => {
-    if (option === 'registrar') {
-      navigate(`/moca/register/${selectedPatient?._id}`);
+    // Opción para asignar la prueba
+    if (option === 'asignar') {
+      navigate('/moca/assign');
     } else if (option === 'historico') {
       navigate(`/moca/history/${selectedPatient?._id}`);
     } else if (option === 'iniciar') {
       navigate(`/moca/start/${selectedPatient?._id}`);
     } else if (option === 'iniciarPaciente') {
-      navigate(`/moca/patient/${selectedPatient?._id}`); // Nueva ruta para la prueba sin médico
+      navigate(`/moca/patient/${selectedPatient?._id}`);
     }
   };
 
-  const filteredPatients = patients.filter(patient =>
+  const filteredPatients = patients.filter((patient) =>
     patient.user?.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -81,25 +83,29 @@ const MocaScreen = () => {
 
         {/* Columna derecha: Botones de Opciones */}
         <Col md={8} className="moca-options-container">
-          {/* Opción para Registrar Resultados */}
+          {/* Nueva Opción para Asignar la Prueba MoCA */}
           <div
             className="report-card"
-            onClick={() => selectedPatient && handleOptionChange('registrar')}
-            style={{ pointerEvents: selectedPatient ? 'auto' : 'none', opacity: selectedPatient ? 1 : 0.6 }}
+            onClick={() => handleOptionChange('asignar')}
           >
             <div className="report-card-image">
-              <img src={Image1a} alt="Registrar" />
+              <img src={ImageAssign} alt="Asignar" />
             </div>
             <div className="report-card-title">
-              <p>Registrar Resultados</p>
+              <p>Asignar Prueba MoCA</p>
             </div>
           </div>
 
           {/* Opción para Consultar Histórico */}
           <div
             className="report-card"
-            onClick={() => selectedPatient && handleOptionChange('historico')}
-            style={{ pointerEvents: selectedPatient ? 'auto' : 'none', opacity: selectedPatient ? 1 : 0.6 }}
+            onClick={() =>
+              selectedPatient && handleOptionChange('historico')
+            }
+            style={{
+              pointerEvents: selectedPatient ? 'auto' : 'none',
+              opacity: selectedPatient ? 1 : 0.6,
+            }}
           >
             <div className="report-card-image">
               <img src={Image2a} alt="Histórico" />
@@ -112,8 +118,13 @@ const MocaScreen = () => {
           {/* Opción para Iniciar Prueba MoCA con Médico */}
           <div
             className="report-card"
-            onClick={() => selectedPatient && handleOptionChange('iniciar')}
-            style={{ pointerEvents: selectedPatient ? 'auto' : 'none', opacity: selectedPatient ? 1 : 0.6 }}
+            onClick={() =>
+              selectedPatient && handleOptionChange('iniciar')
+            }
+            style={{
+              pointerEvents: selectedPatient ? 'auto' : 'none',
+              opacity: selectedPatient ? 1 : 0.6,
+            }}
           >
             <div className="report-card-image">
               <img src={Image3a} alt="Iniciar" />
@@ -123,11 +134,16 @@ const MocaScreen = () => {
             </div>
           </div>
 
-          {/* Nueva Opción para Iniciar Prueba MoCA sin Médico */}
+          {/* Opción para Iniciar Prueba MoCA sin Médico */}
           <div
             className="report-card"
-            onClick={() => selectedPatient && handleOptionChange('iniciarPaciente')}
-            style={{ pointerEvents: selectedPatient ? 'auto' : 'none', opacity: selectedPatient ? 1 : 0.6 }}
+            onClick={() =>
+              selectedPatient && handleOptionChange('iniciarPaciente')
+            }
+            style={{
+              pointerEvents: selectedPatient ? 'auto' : 'none',
+              opacity: selectedPatient ? 1 : 0.6,
+            }}
           >
             <div className="report-card-image">
               <img src={Image4a} alt="Paciente" />

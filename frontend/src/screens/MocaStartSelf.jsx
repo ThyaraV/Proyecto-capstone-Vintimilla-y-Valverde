@@ -25,6 +25,7 @@ import RecuerdoDiferido from "./MOCAmodules/RecuerdoDiferido";
 import Orientacion from "./MOCAmodules/Orientacion";
 import { FaPlay, FaStop, FaMicrophone } from "react-icons/fa"; // Importar iconos
 import "../assets/styles/MocaTest.css";
+import { useUpdatePatientMutation } from '../slices/patientApiSlice.js'; // Importar hook para actualizar paciente
 
 const MODULES = [
   { id: 0, name: "Visuoespacial", icon: "🧩", component: Visuoespacial },
@@ -54,11 +55,16 @@ const MocaStartSelf = () => {
   const [testCompleted, setTestCompleted] = useState(false); // Nuevo estado para detectar la finalización del test
   const [hasLessThan12YearsOfEducation, setHasLessThan12YearsOfEducation] = useState(false); // Nuevo estado para checkbox
 
-  // Hook para la mutación de crear MoCA Self
+  // Hooks para las mutaciones
   const [
     createMocaSelf,
     { isLoading: isSaving, isSuccess, isError, error: saveError },
   ] = useCreateMocaSelfMutation();
+
+  const [
+    updatePatient,
+    { isLoading: isUpdatingPatient, isSuccess: isUpdateSuccess, isError: isUpdateError, error: updateError },
+  ] = useUpdatePatientMutation();
 
   useEffect(() => {
     let interval;
@@ -153,8 +159,15 @@ const MocaStartSelf = () => {
     };
 
     try {
+      // Guardar los resultados de MoCA
       const savedRecord = await createMocaSelf(mocaData).unwrap();
       alert("Resultados guardados exitosamente.");
+
+      // Actualizar el campo mocaAssigned a false
+      await updatePatient({ id: selectedPatient._id, mocaAssigned: false }).unwrap();
+      alert("Estado de MOCA actualizado correctamente.");
+
+      // Redirigir a la pantalla final de MoCA
       navigate(`/moca-final/${savedRecord._id}`);
     } catch (err) {
       console.error("Error al guardar resultados:", err);
@@ -225,6 +238,7 @@ const MocaStartSelf = () => {
 
     // Enviar datos simulados al backend
     try {
+      // Guardar los resultados simulados de MoCA
       const savedRecord = await createMocaSelf({
         patientId: selectedPatient._id,
         patientName: selectedPatient.user?.name || "Paciente Desconocido",
@@ -234,6 +248,12 @@ const MocaStartSelf = () => {
       }).unwrap();
 
       alert("Resultados simulados guardados exitosamente.");
+
+      // Actualizar el campo mocaAssigned a false
+      await updatePatient({ id: selectedPatient._id, mocaAssigned: false }).unwrap();
+      alert("Estado de MOCA actualizado correctamente.");
+
+      // Redirigir a la pantalla final de MoCA
       navigate(`/moca-final/${savedRecord._id}`);
     } catch (err) {
       console.error("Error al guardar resultados simulados:", err);
@@ -562,10 +582,10 @@ const MocaStartSelf = () => {
                 <Button
                   variant="success"
                   onClick={handleSaveResults}
-                  disabled={isSaving}
+                  disabled={isSaving || isUpdatingPatient}
                   size="lg"
                 >
-                  {isSaving ? (
+                  {isSaving || isUpdatingPatient ? (
                     <>
                       <Spinner
                         as="span"
@@ -591,10 +611,10 @@ const MocaStartSelf = () => {
               <Button
                 variant="secondary"
                 onClick={handleSimulateAndSaveResults}
-                disabled={isSaving || testCompleted}
+                disabled={isSaving || testCompleted || isUpdatingPatient}
                 size="lg"
               >
-                {isSaving ? (
+                {isSaving || isUpdatingPatient ? (
                   <>
                     <Spinner
                       as="span"
@@ -622,6 +642,16 @@ const MocaStartSelf = () => {
           {isError && (
             <Alert variant="danger" className="mt-3 text-center">
               {saveError?.data?.error || "Hubo un error al guardar los resultados."}
+            </Alert>
+          )}
+          {isUpdateSuccess && (
+            <Alert variant="success" className="mt-3 text-center">
+              Estado de MOCA actualizado correctamente.
+            </Alert>
+          )}
+          {isUpdateError && (
+            <Alert variant="danger" className="mt-3 text-center">
+              {updateError?.data?.error || "Hubo un error al actualizar el estado de MOCA."}
             </Alert>
           )}
         </>

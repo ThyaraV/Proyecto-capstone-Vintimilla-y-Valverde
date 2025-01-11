@@ -1,7 +1,12 @@
-import mongoose from "mongoose";
+// backend/models/patientModel.js
+import mongoose from 'mongoose';
 
 const patientSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   school: { type: String, required: true },
   birthdate: { type: Date, required: true },
   gender: { type: String, required: true },
@@ -14,10 +19,15 @@ const patientSchema = new mongoose.Schema({
   referredTo: { type: String, required: true },
   doctor: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Doctor",
+    ref: 'Doctor',
     required: true,
-  }, // Relación con Doctor
+  },
+  // Campo para asignar la prueba MOCA al paciente
+  mocaAssigned: {
+    type: Boolean,
+    default: true,
+  },
 });
 
-const Patient = mongoose.model("Patient", patientSchema);
+const Patient = mongoose.model('Patient', patientSchema);
 export default Patient;
