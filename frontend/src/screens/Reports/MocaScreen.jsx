@@ -1,5 +1,3 @@
-// src/screens/Reports/MocaScreen.jsx
-
 import React, { useState, useEffect } from 'react';
 import { useGetAllMocaSelfsQuery } from '../../slices/mocaSelfApiSlice';
 import '../../assets/styles/MocaScreen.css'; // Archivo de estilos
@@ -37,7 +35,7 @@ const MocaScreen = () => {
   // Filtrar registros MoCA para el paciente seleccionado
   useEffect(() => {
     if (selectedPatient) {
-      const records = mocaRecords.filter(record => record.patient._id === selectedPatient.id);
+      const records = mocaRecords.filter(record => record.patient && record.patient._id === selectedPatient.id);
       setFilteredRecords(records);
     } else {
       setFilteredRecords([]);
@@ -134,7 +132,7 @@ const MocaScreen = () => {
               <h3>Resultados de MoCA para: {selectedPatient.name}</h3>
               {filteredRecords.length === 0 ? (
                 <Alert variant="info">
-                  No hay registros de MoCA para este paciente.
+                  No se han encontrado registros de MoCA para este paciente.
                 </Alert>
               ) : (
                 <>
