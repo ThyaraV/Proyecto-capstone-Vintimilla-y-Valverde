@@ -1,12 +1,24 @@
 // backend/controllers/patientController.js
+
 import asyncHandler from 'express-async-handler';
 import Patient from '../models/patientModel.js';
 
-// Obtener todos los pacientes
+/// Obtener todos los pacientes
 const getPatients = asyncHandler(async (req, res) => {
-  const patients = await Patient.find({})
-    .populate('user', 'name')
-    .populate('doctor', 'user');
+  let patients;
+
+  if (req.user.isAdmin) {
+    // Si el usuario es administrador, devuelve todos los pacientes con información completa
+    patients = await Patient.find({})
+      .populate('user', 'name lastName cardId email phoneNumber')
+      .populate('doctor', 'user');
+  } else {
+    // Si el usuario no es administrador, devuelve solo su propio registro
+    patients = await Patient.find({ user: req.user._id })
+      .populate('user', 'name lastName cardId email phoneNumber')
+      .populate('doctor', 'user');
+  }
+
   res.json(patients);
 });
 
@@ -22,6 +34,21 @@ const getPatientById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Paciente no encontrado');
   }
+});
+
+// Obtener el paciente asociado al usuario autenticado (sin requerir rol admin)
+const getMyPatient = asyncHandler(async (req, res) => {
+  // Asumiendo que el modelo de Patient tiene un campo "user" que referencia al ID de User
+  const patient = await Patient.findOne({ user: req.user._id })
+    .populate('user', 'name lastName cardId email phoneNumber')
+    .populate('doctor', 'user');
+
+  if (!patient) {
+    res.status(404);
+    throw new Error('No se encontró un paciente asociado a este usuario');
+  }
+
+  res.json(patient);
 });
 
 // Actualizar un paciente
@@ -40,6 +67,7 @@ const updatePatient = asyncHandler(async (req, res) => {
     patient.cognitiveStage = req.body.cognitiveStage || patient.cognitiveStage;
     patient.referredTo = req.body.referredTo || patient.referredTo;
     patient.doctor = req.body.doctor || patient.doctor;
+
     // Actualizar la asignación de la prueba MOCA
     if (req.body.mocaAssigned !== undefined) {
       patient.mocaAssigned = req.body.mocaAssigned;
@@ -81,4 +109,10 @@ const getMedicalHistoryByPatientId = asyncHandler(async (req, res) => {
   }
 });
 
-export { getPatients, getPatientById, updatePatient, getMedicalHistoryByPatientId };
+export {
+  getPatients,
+  getPatientById,
+  getMyPatient,
+  updatePatient,
+  getMedicalHistoryByPatientId,
+};
