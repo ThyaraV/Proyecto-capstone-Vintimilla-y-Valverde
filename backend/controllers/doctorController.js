@@ -47,21 +47,43 @@ const addPatientToDoctor = asyncHandler(async (req, res) => {
   const { doctorId } = req.params;
   const { patientId } = req.body;
 
-  const doctor = await Doctor.findById(doctorId);
+  // Obtener el paciente
+  const patient = await Patient.findById(patientId);
+  if (!patient) {
+    res.status(404);
+    throw new Error("Paciente no encontrado");
+  }
 
-  if (doctor) {
-    // Evitar duplicados en el arreglo de pacientes
-    if (!doctor.patients.includes(patientId)) {
-      doctor.patients.push(patientId);
-      await doctor.save();
-      res.status(200).json({ message: "Paciente añadido al doctor correctamente" });
-    } else {
-      res.status(400).json({ message: "El paciente ya está asignado a este doctor" });
+  // Verificar si el paciente ya tiene un doctor asignado
+  if (patient.doctor && patient.doctor.toString() !== doctorId) {
+    // Encontrar al doctor anterior y remover al paciente de su lista
+    const previousDoctor = await Doctor.findById(patient.doctor);
+    if (previousDoctor) {
+      previousDoctor.patients = previousDoctor.patients.filter(
+        (p) => p.toString() !== patientId
+      );
+      await previousDoctor.save();
     }
-  } else {
+  }
+
+  // Asignar el nuevo doctor al paciente
+  patient.doctor = doctorId;
+  await patient.save();
+
+  // Añadir el paciente al nuevo doctor
+  const newDoctor = await Doctor.findById(doctorId);
+  if (!newDoctor) {
     res.status(404);
     throw new Error("Doctor no encontrado");
   }
+
+  if (!newDoctor.patients.includes(patientId)) {
+    newDoctor.patients.push(patientId);
+    await newDoctor.save();
+  }
+
+  res.status(200).json({ message: "Paciente reasignado al doctor correctamente" });
 });
+
 
 export { getDoctors, getDoctorWithPatients, addPatientToDoctor };

@@ -46,29 +46,31 @@ const UserEditScreen = () => {
     }
   }, [user]);
 
-  const submitHandler = async (e) => {
-    e.preventDefault();
-    try {
-      await updateUser({
-        userId,
-        name,
-        email,
-        role,
-        isAdmin: role === "doctor",
-        doctorId: role === "patient" ? doctorId : null,
-      }).unwrap();
+const submitHandler = async (e) => {
+  e.preventDefault();
+  try {
+    await updateUser({
+      userId,
+      name,
+      email,
+      role,
+      isAdmin: role === "doctor",
+      // este doctorId se usa en el backend para crear un patient con .doctor = doctorId
+      doctorId: role === "patient" ? doctorId : null,
+    }).unwrap();
 
-      if (role === "patient" && doctorId) {
-        await addPatientToDoctor({ doctorId, patientId: userId });
-      }
-
-      toast.success("Usuario actualizado correctamente");
-      refetch();
-      navigate("/admin/userlist");
-    } catch (err) {
-      toast.error(err?.data?.message || err.error);
+    if (role === "patient" && doctorId) {
+      await addPatientToDoctor({ doctorId, userId });
     }
-  };
+
+    toast.success("Usuario actualizado correctamente");
+    refetch();
+    navigate("/admin/userlist");
+  } catch (err) {
+    toast.error(err?.data?.message || err.error);
+  }
+};
+
 
   return (
     <>
