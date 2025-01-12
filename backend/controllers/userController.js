@@ -1,24 +1,25 @@
+// backend/controllers/userController.js
+
 import asyncHandler from "../middleware/asyncHandler.js";
 import User from "../models/userModel.js";
 import generateToken from "../utils/generateToken.js";
-import * as faceapi from "face-api.js";
 import Doctor from "../models/doctorModel.js";
 import Patient from "../models/patientModel.js";
+import * as faceapi from "face-api.js";
 
-//@desc Auth user and get token
-//@route POST /api/users/login
-//@access Public
-//@desc Auth user and get token
-//@route POST /api/users/auth
-//@access Public
+// @desc    Auth user and get token
+// @route   POST /api/users/login o /api/users/auth
+// @access  Public
 const authUser = asyncHandler(async (req, res) => {
   const { email, password, faceData } = req.body;
 
+  // Validación de email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     res.status(400);
     throw new Error("Correo electrónico no válido");
   }
+
   const user = await User.findOne({ email });
 
   if (!user) {
@@ -27,7 +28,6 @@ const authUser = asyncHandler(async (req, res) => {
   }
 
   if (!user.isActive) {
-    // Verificar si el usuario está inhabilitado
     res.status(403); // Forbidden
     throw new Error("Usuario inhabilitado. No se puede iniciar sesión.");
   }
@@ -36,7 +36,7 @@ const authUser = asyncHandler(async (req, res) => {
     // Autenticación con reconocimiento facial
     if (!user.faceData || user.faceData.length === 0) {
       res.status(401);
-      throw new Error("El usuario no tiene datos faciales registrados ");
+      throw new Error("El usuario no tiene datos faciales registrados");
     }
 
     const storedFaceDescriptor = new Float32Array(user.faceData);
@@ -87,10 +87,9 @@ const authUser = asyncHandler(async (req, res) => {
   }
 });
 
-//@desc Get face data for a user
-//@route POST /api/users/facedata
-//@access Public
-// Agrega logs en el controlador
+// @desc    Get face data for a user
+// @route   POST /api/users/facedata
+// @access  Public
 const getFaceData = asyncHandler(async (req, res) => {
   const { email } = req.body;
   console.log("Email recibido en getFaceData:", email);
@@ -112,9 +111,9 @@ const getFaceData = asyncHandler(async (req, res) => {
   res.status(200).json({ faceData: user.faceData });
 });
 
-//@desc Register user
-//@route POST /api/users
-//@access Public
+// @desc    Register user
+// @route   POST /api/users
+// @access  Public
 const registerUser = asyncHandler(async (req, res) => {
   const {
     name,
@@ -129,7 +128,7 @@ const registerUser = asyncHandler(async (req, res) => {
   const userExists = await User.findOne({ email });
   if (userExists) {
     res.status(400);
-    throw new Error("User already exists");
+    throw new Error("Usuario ya existe");
   }
 
   let parsedFaceDescriptor;
@@ -148,7 +147,7 @@ const registerUser = asyncHandler(async (req, res) => {
       }
     } catch {
       res.status(400);
-      throw new Error("Invalid faceDescriptor format");
+      throw new Error("Formato inválido de faceDescriptor");
     }
   }
 
@@ -180,25 +179,25 @@ const registerUser = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(400);
-    throw new Error("Invalid user data");
+    throw new Error("Datos de usuario inválidos");
   }
 });
 
-//@desc Logout user - clear cookie
-//@route GET /api/users/logout
-//@access Private
+// @desc    Logout user - clear cookie
+// @route   GET /api/users/logout
+// @access  Private
 const logoutUser = asyncHandler(async (req, res) => {
   res.cookie("jwt", "", {
     httpOnly: true,
     expires: new Date(0),
   });
 
-  res.status(200).json({ message: "Logged out successfully" });
+  res.status(200).json({ message: "Sesión cerrada correctamente" });
 });
 
-//@desc Get user profile
-//@route GET /api/users/profile
-//@access Private
+// @desc    Get user profile
+// @route   GET /api/users/profile
+// @access  Private
 const getUserProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   if (user) {
@@ -213,13 +212,10 @@ const getUserProfile = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(404);
-    throw new Error("User not found");
+    throw new Error("Usuario no encontrado");
   }
 });
 
-//@desc Update user profile
-//@route PUT /api/users/profile
-//@access Private
 // Función para validar la cédula
 const validateCedula = (cedula) => {
   if (!/^\d{10}$/.test(cedula)) {
@@ -256,6 +252,9 @@ const validateEmail = (email) => {
   return regex.test(email);
 };
 
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
 const updateUserProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
 
@@ -306,7 +305,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
           parsedDescriptor = JSON.parse(parsedDescriptor);
         } catch (error) {
           res.status(400);
-          throw new Error("Invalid faceDescriptor format");
+          throw new Error("Formato inválido de faceDescriptor");
         }
       }
 
@@ -317,7 +316,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
         user.faceData = parsedDescriptor;
       } else {
         res.status(400);
-        throw new Error("Invalid faceDescriptor format");
+        throw new Error("Formato inválido de faceDescriptor");
       }
     }
 
@@ -334,100 +333,202 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(404);
-    throw new Error("User not found");
+    throw new Error("Usuario no encontrado");
   }
 });
 
-//@desc Get all users
-//@route GET /api/users
-//@access Private/Admin
+// @desc    Get all users
+// @route   GET /api/users
+// @access  Private/Admin
 const getUsers = asyncHandler(async (req, res) => {
   const users = await User.find({});
   res.status(200).json(users);
 });
 
-//@desc Get user by ID
-//@route GET /api/users/:id
-//@access Private/Admin
+// @desc    Get user by ID
+// @route   GET /api/users/:id
+// @access  Private/Admin
 const getUserByID = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id).select("-password");
   if (user) {
-    res.status(200).json(user);
+    // Verificar si el usuario es un paciente y obtener su patientId
+    let patientId = null;
+    if (!user.isAdmin) {
+      const patient = await Patient.findOne({ user: user._id });
+      if (patient) {
+        patientId = patient._id;
+      }
+    }
+
+    res.status(200).json({
+      ...user.toObject(),
+      patientId,
+    });
   } else {
     res.status(404);
-    throw new Error("User not found");
+    throw new Error("Usuario no encontrado");
   }
 });
 
-//@desc Delete user
-//@route DELETE /api/users/:id
-//@access Private/Admin
+// @desc    Delete user
+// @route   DELETE /api/users/:id
+// @access  Private/Admin
 const deleteUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
   if (user) {
     if (user.isAdmin) {
       res.status(400);
-      throw new Error("Cannot delete admin user");
+      throw new Error("No se puede eliminar un usuario administrador");
     }
+
+    // Si el usuario es un paciente, eliminarlo de la lista de pacientes del doctor correspondiente y borrar el documento de Patient
+    const patient = await Patient.findOne({ user: user._id });
+    if (patient) {
+      const doctor = await Doctor.findById(patient.doctor);
+      if (doctor) {
+        doctor.patients = doctor.patients.filter(
+          (p) => p.toString() !== patient._id.toString()
+        );
+        await doctor.save();
+      }
+      await Patient.deleteOne({ _id: patient._id });
+    }
+
+    // Si el usuario es un doctor, eliminar el documento de Doctor y actualizar pacientes
+    const doctor = await Doctor.findOne({ user: user._id });
+    if (doctor) {
+      // Actualizar pacientes para que no tengan doctor asignado
+      await Patient.updateMany({ doctor: doctor._id }, { $unset: { doctor: "" } });
+      await Doctor.deleteOne({ _id: doctor._id });
+    }
+
+    // Finalmente, eliminar el documento del usuario
     await User.deleteOne({ _id: user._id });
-    res.status(200).json({ message: "User deleted successfully" });
+    res.status(200).json({ message: "Usuario eliminado correctamente" });
   } else {
     res.status(404);
-    throw new Error("User not found");
+    throw new Error("Usuario no encontrado");
   }
 });
 
+// @desc    Disable user
+// @route   PUT /api/users/:id/disable
+// @access  Private/Admin
 const disableUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
   if (user) {
     user.isActive = false; // Cambiar el estado a inhabilitado
     await user.save(); // Guardar los cambios en la base de datos
-    res.status(200).json({ message: "User disabled successfully" });
+
+    // Si el usuario es un paciente, eliminarlo de la lista de pacientes del doctor correspondiente
+    const patient = await Patient.findOne({ user: user._id });
+    if (patient) {
+      const doctor = await Doctor.findById(patient.doctor);
+      if (doctor) {
+        doctor.patients = doctor.patients.filter(
+          (p) => p.toString() !== patient._id.toString()
+        );
+        await doctor.save();
+      }
+    }
+
+    res.status(200).json({ message: "Usuario deshabilitado correctamente" });
   } else {
     res.status(404);
-    throw new Error("User not found");
+    throw new Error("Usuario no encontrado");
   }
 });
 
+// @desc    Enable user
+// @route   PUT /api/users/:id/enable
+// @access  Private/Admin
 const enableUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
   if (user) {
     user.isActive = true; // Cambiar el estado a habilitado
     await user.save(); // Guardar los cambios en la base de datos
-    res.status(200).json({ message: "User enabled successfully" });
+
+    // Si el usuario es un paciente, añadirlo a la lista de pacientes del doctor correspondiente
+    const patient = await Patient.findOne({ user: user._id });
+    if (patient) {
+      const doctor = await Doctor.findById(patient.doctor);
+      if (doctor && !doctor.patients.includes(patient._id)) {
+        doctor.patients.push(patient._id);
+        await doctor.save();
+      }
+    }
+
+    res.status(200).json({ message: "Usuario habilitado correctamente" });
   } else {
     res.status(404);
-    throw new Error("User not found");
+    throw new Error("Usuario no encontrado");
   }
 });
 
-//@desc Update user
-//@route PUT /api/users/:id
-//@access Private/Admin
+// @desc    Update user (admin endpoint to change user role and doctor assignment)
+// @route   PUT /api/users/:id
+// @access  Private/Admin
 const updateUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
 
-  if (user) {
-    user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
-    user.isAdmin = req.body.role === "doctor"; // isAdmin es true si el rol es doctor
+  if (!user) {
+    res.status(404);
+    throw new Error("Usuario no encontrado");
+  }
 
-    // Si el rol cambia a doctor, agregarlo a la colección de doctores
-    if (req.body.role === "doctor") {
+  const { name, email, role, doctorId } = req.body;
+
+  // Guardar el rol anterior
+  const previousIsAdmin = user.isAdmin;
+
+  // Actualizar los campos básicos
+  user.name = name || user.name;
+  user.email = email || user.email;
+  user.isAdmin = role === "doctor";
+
+  // Determinar si hay un cambio de rol
+  const isRoleChanged = previousIsAdmin !== user.isAdmin;
+
+  if (isRoleChanged) {
+    if (user.isAdmin) {
+      // Cambiar de Paciente a Doctor
+
+      // Buscar el paciente
+      const patient = await Patient.findOne({ user: user._id });
+      if (patient) {
+        const previousDoctorId = patient.doctor;
+
+        // Remover al paciente del array de pacientes del doctor anterior
+        const previousDoctor = await Doctor.findById(previousDoctorId);
+        if (previousDoctor) {
+          previousDoctor.patients = previousDoctor.patients.filter(
+            (p) => p.toString() !== patient._id.toString()
+          );
+          await previousDoctor.save();
+        }
+
+        // Eliminar el documento de Patient
+        await Patient.deleteOne({ _id: patient._id });
+      }
+
+      // Crear documento de Doctor si no existe
       const doctorExists = await Doctor.findOne({ user: user._id });
       if (!doctorExists) {
         await Doctor.create({ user: user._id, especialidad: "General" });
       }
+    } else {
+      // Cambiar de Doctor a Paciente
 
-      // Si era paciente, eliminarlo de la colección de pacientes
-      await Patient.deleteOne({ user: user._id });
-    }
+      // Eliminar documento de Doctor
+      const doctor = await Doctor.findOne({ user: user._id });
+      if (doctor) {
+        await Doctor.deleteOne({ _id: doctor._id });
+      }
 
-    // Si el rol cambia a paciente, agregarlo a la colección de pacientes
-    if (req.body.role === "patient") {
-      const patientExists = await Patient.findOne({ user: user._id });
-      if (!patientExists) {
-        await Patient.create({
+      // Crear documento de Patient si no existe
+      let patient = await Patient.findOne({ user: user._id });
+      if (!patient) {
+        patient = await Patient.create({
           user: user._id,
           school: "N/A", // Datos de ejemplo
           birthdate: new Date(),
@@ -439,32 +540,70 @@ const updateUser = asyncHandler(async (req, res) => {
           profession: "N/A",
           cognitiveStage: "N/A",
           referredTo: "N/A",
-          doctor: req.body.doctorId,
+          doctor: doctorId || undefined,
         });
+
+        // Asignar al doctor correspondiente si se proporciona doctorId
+        if (doctorId) {
+          const newDoctor = await Doctor.findById(doctorId);
+          if (newDoctor && !newDoctor.patients.includes(patient._id)) {
+            newDoctor.patients.push(patient._id);
+            await newDoctor.save();
+          }
+        }
       }
-
-      // Si era doctor, eliminarlo de la colección de doctores
-      await Doctor.deleteOne({ user: user._id });
     }
-
-    const updatedUser = await user.save();
-    res.status(200).json({
-      _id: updatedUser._id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      isAdmin: updatedUser.isAdmin,
-    });
   } else {
-    res.status(404);
-    throw new Error("User not found");
+    // Si el rol no ha cambiado, pero puede haber una reasignación de doctor
+    if (user.isAdmin) {
+      // Usuario es Doctor, podrías actualizar su especialidad u otros campos aquí si es necesario
+      // Actualmente, no hay campos adicionales en el modelo Doctor para actualizar
+    } else {
+      // Usuario es Paciente, manejar la reasignación de doctor
+      if (doctorId) {
+        const patient = await Patient.findOne({ user: user._id });
+        if (patient) {
+          if (patient.doctor.toString() !== doctorId) {
+            // Remover al paciente del array de pacientes del doctor anterior
+            const previousDoctor = await Doctor.findById(patient.doctor);
+            if (previousDoctor) {
+              previousDoctor.patients = previousDoctor.patients.filter(
+                (p) => p.toString() !== patient._id.toString()
+              );
+              await previousDoctor.save();
+            }
+
+            // Asignar el nuevo doctor al paciente
+            patient.doctor = doctorId;
+            await patient.save();
+
+            // Añadir al nuevo doctor al array de pacientes
+            const newDoctor = await Doctor.findById(doctorId);
+            if (newDoctor && !newDoctor.patients.includes(patient._id)) {
+              newDoctor.patients.push(patient._id);
+              await newDoctor.save();
+            }
+          }
+        }
+      }
+    }
   }
+
+  const updatedUser = await user.save();
+
+  res.status(200).json({
+    _id: updatedUser._id,
+    name: updatedUser.name,
+    email: updatedUser.email,
+    isAdmin: updatedUser.isAdmin,
+  });
 });
 
-//@desc Search users
-//@route GET /api/users/search
-//@access Private/Admin
+// @desc    Search users
+// @route   GET /api/users/search
+// @access  Private/Admin
 const searchUsers = asyncHandler(async (req, res) => {
-  const { query } = req.query; // obtenemos la consulta de búsqueda de los parámetros de la URL
+  const { query } = req.query; // Obtenemos la consulta de búsqueda de los parámetros de la URL
 
   // Buscamos usuarios que coincidan con la consulta
   const users = await User.find({

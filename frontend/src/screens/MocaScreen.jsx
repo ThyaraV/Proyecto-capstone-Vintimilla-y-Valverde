@@ -1,9 +1,10 @@
 // src/screens/MocaScreen.jsx
+
 import React, { useState, useEffect } from 'react';
 import { Container, ListGroup, Row, Col, Form } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useGetPatientsQuery } from '../slices/patientApiSlice';
+import { useGetDoctorWithPatientsQuery } from '../slices/doctorApiSlice';
 import '../assets/styles/MocaScreenPanel.css';
 import Image2a from '../images/infopaciente.png';
 import Image3a from '../images/infopaciente.png';
@@ -13,7 +14,10 @@ import ImageAssign from '../images/infopaciente.png'; // Usa la imagen que desee
 const MocaScreen = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const navigate = useNavigate();
-  const { data: patients = [], isLoading, error } = useGetPatientsQuery();
+  
+  // Utilizar la consulta específica para obtener solo los pacientes asignados al doctor-admin loggeado
+  const { data: patients = [], isLoading, error } = useGetDoctorWithPatientsQuery();
+  
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -28,9 +32,8 @@ const MocaScreen = () => {
     setSelectedPatient(patient);
   };
 
-  // Nuevo manejador para las opciones
+  // Manejador para las opciones
   const handleOptionChange = (option) => {
-    // Opción para asignar la prueba
     if (option === 'asignar') {
       navigate('/moca/assign');
     } else if (option === 'historico') {
@@ -42,6 +45,7 @@ const MocaScreen = () => {
     }
   };
 
+  // Filtrar pacientes según el término de búsqueda
   const filteredPatients = patients.filter((patient) =>
     patient.user?.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -83,7 +87,7 @@ const MocaScreen = () => {
 
         {/* Columna derecha: Botones de Opciones */}
         <Col md={8} className="moca-options-container">
-          {/* Nueva Opción para Asignar la Prueba MoCA */}
+          {/* Opción para Asignar la Prueba MoCA */}
           <div
             className="report-card"
             onClick={() => handleOptionChange('asignar')}

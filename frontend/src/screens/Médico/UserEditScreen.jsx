@@ -1,3 +1,5 @@
+// frontend/src/screens/Médico/UserEditScreen.jsx
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Form, Button } from "react-bootstrap";
@@ -8,8 +10,8 @@ import { toast } from "react-toastify";
 import {
   useUpdateUserMutation,
   useGetUserDetailsQuery,
-} from "../../slices/usersApiSlice"; 
-import { useGetDoctorsQuery, useAddPatientToDoctorMutation } from "../../slices/doctorApiSlice"; // Importa los hooks necesarios del doctorApiSlice
+} from "../../slices/usersApiSlice";
+import { useGetDoctorsQuery } from "../../slices/doctorApiSlice"; // Solo se necesita obtener doctores
 
 const UserEditScreen = () => {
   const { id: userId } = useParams();
@@ -33,7 +35,6 @@ const UserEditScreen = () => {
   } = useGetDoctorsQuery();
 
   const [updateUser, { isLoading: loadingUpdate }] = useUpdateUserMutation();
-  const [addPatientToDoctor] = useAddPatientToDoctorMutation();
 
   const navigate = useNavigate();
 
@@ -42,35 +43,31 @@ const UserEditScreen = () => {
       setName(user.name);
       setEmail(user.email);
       setRole(user.isAdmin ? "doctor" : "patient");
-      setDoctorId(user.doctor || "");
+      // Si el usuario es paciente, obtener el doctor asignado
+      if (!user.isAdmin && user.doctor) {
+        setDoctorId(user.doctor.toString());
+      }
     }
   }, [user]);
 
-const submitHandler = async (e) => {
-  e.preventDefault();
-  try {
-    await updateUser({
-      userId,
-      name,
-      email,
-      role,
-      isAdmin: role === "doctor",
-      // este doctorId se usa en el backend para crear un patient con .doctor = doctorId
-      doctorId: role === "patient" ? doctorId : null,
-    }).unwrap();
+  const submitHandler = async (e) => {
+    e.preventDefault();
+    try {
+      await updateUser({
+        userId,
+        name,
+        email,
+        role,
+        doctorId: role === "patient" ? doctorId : null,
+      }).unwrap();
 
-    if (role === "patient" && doctorId) {
-      await addPatientToDoctor({ doctorId, userId });
+      toast.success("Usuario actualizado correctamente");
+      refetch();
+      navigate("/admin/userlist");
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
     }
-
-    toast.success("Usuario actualizado correctamente");
-    refetch();
-    navigate("/admin/userlist");
-  } catch (err) {
-    toast.error(err?.data?.message || err.error);
-  }
-};
-
+  };
 
   return (
     <>
