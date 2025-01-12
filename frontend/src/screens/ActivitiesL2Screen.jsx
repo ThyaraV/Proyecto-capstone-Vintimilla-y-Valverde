@@ -1,5 +1,3 @@
-// src/components/UserActivity.jsx
-
 import React, { useEffect, useState } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import {
@@ -58,6 +56,24 @@ const UserActivity = () => {
 
   const [uniqueActivities, setUniqueActivities] = useState([]);
   const [completedActivityIds, setCompletedActivityIds] = useState(new Set());
+  const [groupedActivities, setGroupedActivities] = useState({});
+
+  //useeffect para agrupar las actividades por dificulta 
+  useEffect(() => {
+    if (uniqueActivities) {
+      // Agrupa actividades por nivel de dificultad
+      const grouped = uniqueActivities.reduce((acc, activity) => {
+        if (!acc[activity.difficultyLevel]) {
+          acc[activity.difficultyLevel] = [];
+        }
+        acc[activity.difficultyLevel].push(activity);
+        return acc;
+      }, {});
+      setGroupedActivities(grouped); // Actualiza el estado con las actividades agrupadas
+    }
+  }, [uniqueActivities]);
+  
+
 
   // Filtrar y eliminar duplicados al cargar las actividades
   useEffect(() => {
@@ -162,31 +178,22 @@ const UserActivity = () => {
   return (
     <div className="user-activity-container">
       <h1 className="text-center mb-5">Mis Actividades Asignadas</h1>
-
-      {uniqueActivities && uniqueActivities.length > 0 ? (
-        <>
-          <h3>Actividades Asignadas</h3>
-          <Row className="activity-levels">
-            {uniqueActivities.map((activity) => {
-              console.log('Activity ID:', activity._id);
-
-              const isCompleted = completedActivityIds.has(activity._id);
-
-              // Determinar el estilo según si la actividad está completada
-              const activityStyle = isCompleted
-                ? { pointerEvents: 'none', opacity: 0.5 }
-                : {};
-
-              return (
-                <Col
-                  key={activity._id}
-                  xs={12}
-                  md={6}
-                  lg={4}
-                  className="mb-4"
-                >
-                  {/* Verificar que activeTreatment está definido antes de construir el Link */}
-                  {activeTreatment ? (
+  
+      {Object.keys(groupedActivities).length > 0 ? (
+        Object.keys(groupedActivities).map((level) => (
+          <div key={level} className="activity-group">
+            <h2 className="level-title text-left mb-4">Nivel {level}</h2>
+            <Row className="activity-levels">
+              {groupedActivities[level].map((activity) => {
+                const isCompleted = completedActivityIds.has(activity._id);
+  
+                // Determinar el estilo según si la actividad está completada
+                const activityStyle = isCompleted
+                  ? { pointerEvents: 'none', opacity: 0.5 }
+                  : {};
+  
+                return (
+                  <Col key={activity._id} xs={12} md={6} lg={4} className="mb-4">
                     <div style={{ position: 'relative', ...activityStyle }}>
                       <Link
                         to={
@@ -233,22 +240,19 @@ const UserActivity = () => {
                         </div>
                       )}
                     </div>
-                  ) : (
-                    <Message variant="warning">
-                      No se encontró un tratamiento activo para esta actividad.
-                    </Message>
-                  )}
-                </Col>
-              );
-            })}
-          </Row>
-        </>
+                  </Col>
+                );
+              })}
+            </Row>
+          </div>
+        ))
       ) : (
         <p>No tienes actividades asignadas.</p>
       )}
       <ToastContainer />
     </div>
   );
+  
 };
 
 export default UserActivity;
