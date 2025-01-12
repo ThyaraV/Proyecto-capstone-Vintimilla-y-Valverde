@@ -10,16 +10,17 @@ import {
   useGetActiveTreatmentQuery,
   useGetCompletedActivitiesQuery,
 } from '../slices/treatmentSlice.js';
+import { useGetPatientsQuery } from '../slices/patientApiSlice.js'; // Importar el hook para obtener pacientes
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import { format, addDays, differenceInDays, startOfDay, isSameDay, isSameWeek, isSameMonth } from 'date-fns';
+import { format, addDays, differenceInDays, startOfDay } from 'date-fns';
 import { useSaveMoodMutation } from '../slices/usersApiSlice';
 import Popup from '../components/Popup.jsx';
 import MedicationReminder from '../components/FloatingMessage.jsx';
 import MedicationPopup from '../components/MedicationPopup.jsx';
 import { useSelector } from 'react-redux';
 import io from 'socket.io-client';
-/*IMPORTACIONES PARA CALENDARIO GRANDE*/
+/* IMPORTACIONES PARA CALENDARIO GRANDE */
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -53,12 +54,17 @@ const HomeScreenPaciente = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const userId = userInfo?._id;
 
+  console.log('userInfo:', userInfo);
+  console.log('userId:', userId);
+
   const [saveMood, { isLoading: isSavingMood, error: saveMoodError }] = useSaveMoodMutation();
 
-  // Obtener el tratamiento activo
+  // ** Funcionalidad de Tratamiento Activo **
+  // Obtener el tratamiento activo utilizando el userId
   const {
     data: activeTreatment,
     isLoading: isActiveTreatmentLoading,
+    isError: isActiveTreatmentError,
     error: activeTreatmentError,
   } = useGetActiveTreatmentQuery(userId, {
     skip: !userId,
@@ -68,6 +74,7 @@ const HomeScreenPaciente = () => {
   const {
     data: assignedActivities,
     isLoading: isAssignedActivitiesLoading,
+    isError: isAssignedActivitiesError,
     error: assignedActivitiesError,
   } = useGetActivitiesByUserQuery(undefined, {
     skip: !userId || !activeTreatment,
@@ -77,6 +84,7 @@ const HomeScreenPaciente = () => {
   const {
     data: allMedications,
     isLoading: isMedLoading,
+    isError: isMedError,
     error: medError,
   } = useGetMyMedicationsQuery(undefined, {
     skip: !userId || !activeTreatment,
@@ -87,6 +95,7 @@ const HomeScreenPaciente = () => {
     data: dueMedications,
     isSuccess: isMedDueSuccess,
     isLoading: isMedDueLoading,
+    isError: isMedDueError,
     error: medDueError,
     refetch: refetchDueMedications, // Añade refetch para actualizar los datos
   } = useGetDueMedicationsQuery(activeTreatment?._id, { // Pasa treatmentId aquí
@@ -100,11 +109,38 @@ const HomeScreenPaciente = () => {
   const {
     data: completedActivities,
     isLoading: isCompletedActivitiesLoading,
+    isError: isCompletedActivitiesError,
     error: completedActivitiesError,
     refetch: refetchCompletedActivities,
   } = useGetCompletedActivitiesQuery(undefined, {
     skip: !userId || !activeTreatment,
   });
+
+  // ** Funcionalidad de MoCA **
+  // Obtener todos los pacientes (incluidos los no admin)
+  const {
+    data: patients,
+    isLoading: isPatientsLoading,
+    isError: isPatientsError,
+    error: patientsError,
+  } = useGetPatientsQuery();
+
+  // Buscar el paciente que coincide con el usuario actual
+  const [currentPatient, setCurrentPatient] = useState(null);
+
+  useEffect(() => {
+    if (patients && userId) {
+      console.log('Buscando paciente que coincide con userId:', userId);
+      const matchedPatient = patients.find(patient => patient.user && patient.user._id === userId);
+      if (matchedPatient) {
+        console.log('Paciente encontrado:', matchedPatient);
+        setCurrentPatient(matchedPatient);
+      } else {
+        console.log('No se encontró un paciente que coincida con el userId.');
+        setCurrentPatient(null);
+      }
+    }
+  }, [patients, userId]);
 
   // ** Estados de Popup **
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -144,7 +180,19 @@ const HomeScreenPaciente = () => {
     }
   }, [activeTreatment]);
 
-  // Actualizar la agenda cuando se cambia la fecha seleccionada
+  // ** Redirección a MoCA **
+  // Redirigir al paciente a la prueba MoCA si mocaAssigned es true y no hay tratamiento activo
+  useEffect(() => {
+    if (currentPatient) {
+      console.log('Valor actual de mocaAssigned:', currentPatient.mocaAssigned);
+      if (currentPatient.mocaAssigned && !activeTreatment) {
+        console.log('Redirigiendo a la prueba MoCA...');
+        navigate(`/moca/patient/${currentPatient._id}`);
+      }
+    }
+  }, [currentPatient, activeTreatment, navigate]);
+
+  // ** Cambiar la fecha seleccionada del calendario **
   useEffect(() => {
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
     setMedsForSelectedDate(calendarEvents[dateKey]?.medications || []);
@@ -165,47 +213,44 @@ const HomeScreenPaciente = () => {
     }
   }, [selectedDate, calendarEvents, completedActivities, activeTreatment]);
 
-  const isLoading =
+  // ** Cálculo de estados de carga **
+  const isLoadingAll =
     isActiveTreatmentLoading ||
     isAssignedActivitiesLoading ||
     isMedLoading ||
-    isCompletedActivitiesLoading;
+    isCompletedActivitiesLoading ||
+    isPatientsLoading;
 
-  // Procesar medicamentos y actividades para el calendario
+  // ** Procesar medicamentos y actividades para el calendario **
   useEffect(() => {
     if (
-      !isLoading && activeTreatment &&
-      (allMedications || isMedLoading === false) &&
-      (assignedActivities || isAssignedActivitiesLoading === false) &&
-      (completedActivities || isCompletedActivitiesLoading === false)
+      !isLoadingAll &&
+      activeTreatment &&
+      (allMedications || !isMedLoading) &&
+      (assignedActivities || !isAssignedActivitiesLoading) &&
+      (completedActivities || !isCompletedActivitiesLoading)
     ) {
       const tempEvents = [];
-
-      // Crear un set de IDs de actividades completadas
-      const completedActivityIds = new Set(
-        completedActivities?.map((completedActivity) => completedActivity.activity._id.toString())
+      const completedIds = new Set(
+        completedActivities?.map((c) => c.activity._id.toString())
       );
 
-      // Generar fechas desde startDate hasta endDate del tratamiento
       const startDate = new Date(activeTreatment.startDate);
       const endDate = new Date(activeTreatment.endDate);
       const totalDays = differenceInDays(endDate, startDate) + 1;
 
       for (let i = 0; i < totalDays; i++) {
         const currentDate = addDays(startDate, i);
-        const dateKey = format(currentDate, 'yyyy-MM-dd');
-
-        // Procesar medicamentos
+        // Medicamentos
         allMedications?.forEach((med) => {
           const medStart = new Date(med.startDate);
-          const medEnd = med.endDate ? new Date(med.endDate) : addDays(new Date(), 365);
-
+          const medEnd = med.endDate
+            ? new Date(med.endDate)
+            : addDays(new Date(), 365);
           if (!isNaN(medStart) && !isNaN(medEnd)) {
             if (currentDate >= medStart && currentDate <= medEnd) {
-              const frequency = med.frequency;
               let isDue = false;
-
-              switch (frequency) {
+              switch (med.frequency) {
                 case 'Diaria':
                   isDue = true;
                   break;
@@ -222,7 +267,6 @@ const HomeScreenPaciente = () => {
                 default:
                   break;
               }
-
               if (isDue) {
                 tempEvents.push({
                   title: `Medicamento: ${med.name}`,
@@ -235,15 +279,12 @@ const HomeScreenPaciente = () => {
             }
           }
         });
-
-        // Procesar actividades pendientes
-        assignedActivities?.forEach((activity) => {
-          const activityIdStr = activity._id.toString();
-          const isCompleted = completedActivityIds.has(activityIdStr);
-
-          if (!isCompleted) {
+        // Actividades pendientes
+        assignedActivities?.forEach((act) => {
+          const actId = act._id.toString();
+          if (!completedIds.has(actId)) {
             tempEvents.push({
-              title: `Pendiente: ${activity.name}`,
+              title: `Pendiente: ${act.name}`,
               start: startOfDay(currentDate),
               end: startOfDay(currentDate),
               allDay: true,
@@ -252,15 +293,14 @@ const HomeScreenPaciente = () => {
           }
         });
       }
-
-      // Agregar actividades completadas
-      completedActivities?.forEach((completedActivity) => {
-        if (completedActivity?.activity?.name && completedActivity.dateCompleted) {
-          const completedDate = startOfDay(new Date(completedActivity.dateCompleted));
+      // Actividades completadas
+      completedActivities?.forEach((item) => {
+        if (item?.activity?.name && item.dateCompleted) {
+          const doneDate = startOfDay(new Date(item.dateCompleted));
           tempEvents.push({
-            title: `Completada: ${completedActivity.activity.name}`,
-            start: completedDate,
-            end: completedDate,
+            title: `Completada: ${item.activity.name}`,
+            start: doneDate,
+            end: doneDate,
             allDay: true,
             type: 'completed',
           });
@@ -268,121 +308,47 @@ const HomeScreenPaciente = () => {
       });
 
       setEvents(tempEvents);
-      console.log('Eventos procesados para BigCalendar:', tempEvents);
+      console.log('-> Eventos para BigCalendar:', tempEvents);
     }
   }, [
-    isLoading,
+    isLoadingAll,
     activeTreatment,
     allMedications,
-    isMedLoading,
     assignedActivities,
-    isAssignedActivitiesLoading,
     completedActivities,
+    isMedLoading,
+    isAssignedActivitiesLoading,
     isCompletedActivitiesLoading,
   ]);
 
+  // ** Socket.io para actualizaciones en tiempo real **
   useEffect(() => {
-    if (calendarEvents) {
-      const eventArray = [];
-      Object.entries(calendarEvents).forEach(([date, data]) => {
-        if (data) {
-          data.medications?.forEach((med) => {
-            if (med?.name) {
-              console.log(`Procesando medicamento para BigCalendar:`, med, `Fecha:`, date);
-              const parsedDate = new Date(date);
-              if (!isNaN(parsedDate)) {
-                eventArray.push({
-                  title: `Medicamento: ${med.name}`,
-                  start: parsedDate,
-                  end: parsedDate,
-                  allDay: true,
-                  type: 'medication',
-                });
-              }
-            }
-          });
-
-          data.activities?.forEach((activity) => {
-            if (activity?.name) {
-              eventArray.push({
-                title: `Pendiente: ${activity.name}`,
-                start: new Date(date),
-                end: new Date(date),
-                allDay: true,
-                type: 'pending',
-              });
-            }
-          });
-
-          data.completedActivities?.forEach((completedActivity) => {
-            if (completedActivity?.activity?.name && completedActivity.dateCompleted) {
-              const completedDate = new Date(completedActivity.dateCompleted);
-              const normalizedDateKey = format(startOfDay(completedDate), 'yyyy-MM-dd'); // Normalizar fecha
-
-              if (!events[normalizedDateKey]) {
-                events[normalizedDateKey] = { medications: [], activities: [], completedActivities: [] };
-              }
-
-              events[normalizedDateKey].completedActivities.push(completedActivity);
-
-              console.log(
-                `Procesando actividad completada:`,
-                completedActivity.activity.name,
-                `Fecha completada:`,
-                completedActivity.dateCompleted,
-                `Fecha normalizada:`,
-                normalizedDateKey
-              );
-            }
-          });
-        }
-      });
-      setEvents(eventArray);
-    }
-  }, [calendarEvents]);
-
-  // Configurar Socket.io para actualizaciones en tiempo real
-  useEffect(() => {
-    if (!activeTreatment || !activeTreatment._id) {
-      // No hay tratamiento activo, no configurar Socket.io
-      return;
-    }
-
-    // Inicializar el socket
+    if (!activeTreatment || !activeTreatment._id) return;
     const socket = io('http://localhost:5000');
-
     socket.on('connect', () => {
-      console.log('Conectado al servidor de Socket.io con ID:', socket.id);
+      console.log('-> Socket conectado:', socket.id);
     });
-
-    // Escuchar el evento de actividades completadas
     socket.on(`treatmentActivitiesUpdated:${activeTreatment._id}`, (data) => {
-      console.log(
-        `Evento treatmentActivitiesUpdated recibido para el tratamiento ${activeTreatment._id}`,
-        data
-      );
-      // Refetch de actividades completadas
+      console.log('-> Evento treatmentActivitiesUpdated:', data);
       refetchCompletedActivities();
-      // También refetch de medicamentos debidos para reflejar cualquier cambio
       refetchDueMedications();
     });
-
     socket.on('disconnect', () => {
-      console.log('Desconectado del servidor de Socket.io');
+      console.log('-> Socket desconectado');
     });
-
-    // Limpiar el socket al desmontar el componente o cuando activeTreatment cambie
     return () => {
       socket.disconnect();
-      console.log('Socket desconectado en cleanup');
     };
-  }, [activeTreatment, refetchCompletedActivities, refetchDueMedications]);
+  }, [
+    activeTreatment,
+    refetchCompletedActivities,
+    refetchDueMedications
+  ]);
 
   const handleDateClick = (date) => {
     setSelectedDate(date);
   };
 
-  // Manejar el clic en el mensaje de recordatorio
   const handleMedicationReminderClick = () => {
     console.log('Se hizo clic en el mensaje flotante de medicamentos.');
     if (pendingMedications.length > 0) {
@@ -396,20 +362,32 @@ const HomeScreenPaciente = () => {
 
   // ** Retornos condicionales después de los Hooks **
 
-  // Manejar el caso cuando no hay tratamiento activo
+  // Manejar el caso cuando hay error al cargar pacientes
+  if (isPatientsError) {
+    console.log('-> Error al cargar pacientes:', patientsError);
+    return (
+      <div className="home-screen-container">
+        <p>Error al cargar la lista de pacientes: {patientsError.data?.message || patientsError.error}</p>
+      </div>
+    );
+  }
+
+  // Manejar el caso cuando hay error al cargar el tratamiento activo
+  if (isActiveTreatmentError) {
+    console.log('-> Error al cargar tratamiento:', activeTreatmentError);
+    return (
+      <div className="home-screen-container">
+        <p>Error al cargar el tratamiento activo: {activeTreatmentError.data?.message || activeTreatmentError.error}</p>
+      </div>
+    );
+  }
+
+  // Manejar el caso cuando el tratamiento activo está cargando
   if (isActiveTreatmentLoading) {
     return <p>Cargando tratamiento activo...</p>;
   }
 
-  if (activeTreatmentError) {
-    return (
-      <p>
-        Error al cargar el tratamiento activo:{' '}
-        {activeTreatmentError.data?.message || activeTreatmentError.error}
-      </p>
-    );
-  }
-
+  // Manejar el caso cuando no se encuentra un tratamiento activo
   if (!activeTreatment) {
     return (
       <div className="home-screen-container">
@@ -418,16 +396,16 @@ const HomeScreenPaciente = () => {
     );
   }
 
-  console.log('Validando cada evento:');
+  // ** Validar eventos en consola **
   events.forEach((event, index) => {
     if (!event.title) {
-      console.error(`Evento en índice ${index} no tiene título:`, event);
+      console.error(`-> Evento sin título en índice ${index}:`, event);
     }
     if (!(event.start instanceof Date) || isNaN(event.start)) {
-      console.error(`La propiedad 'start' no es válida en el evento ${index}:`, event.start);
+      console.error(`-> Propiedad 'start' inválida en evento ${index}:`, event.start);
     }
     if (!(event.end instanceof Date) || isNaN(event.end)) {
-      console.error(`La propiedad 'end' no es válida en el evento ${index}:`, event.end);
+      console.error(`-> Propiedad 'end' inválida en evento ${index}:`, event.end);
     }
   });
 
@@ -469,6 +447,22 @@ const HomeScreenPaciente = () => {
         </div>
       )}
 
+      {/* Mostrar información del paciente para MoCA (Depuración) */}
+      {currentPatient && (
+        <div style={{ backgroundColor: '#f8d7da', padding: '10px', marginBottom: '10px' }}>
+          <strong>Depuración Paciente:</strong>
+          <p>ID Paciente: {currentPatient._id}</p>
+          <p>mocaAssigned: {currentPatient.mocaAssigned.toString()}</p>
+        </div>
+      )}
+
+      {/* Redirigir a MoCA si mocaAssigned es true y no hay tratamiento activo */}
+      {currentPatient && currentPatient.mocaAssigned && !activeTreatment && (
+        <div className="home-screen-container">
+          <p>Redirigiendo a la prueba MoCA...</p>
+        </div>
+      )}
+
       <h2>Calendario de Actividades</h2>
       <BigCalendar
         localizer={localizer}
@@ -478,31 +472,28 @@ const HomeScreenPaciente = () => {
         style={{ height: 500 }}
         messages={messages}
         eventPropGetter={(event) => {
-          const backgroundColor =
+          const bg =
             event.type === 'medication'
               ? '#FFD700'
               : event.type === 'completed'
               ? '#32CD32'
               : '#FF6347';
-          return { style: { backgroundColor, color: '#ffffff', borderRadius: '5px', padding: '5px' } };
+          return {
+            style: {
+              backgroundColor: bg,
+              color: '#ffffff',
+              borderRadius: '5px',
+              padding: '5px',
+            },
+          };
         }}
         onSelectEvent={(event) => {
-          console.log('Evento seleccionado:', event);
+          console.log('-> Evento seleccionado:', event);
           setSelectedEvent(event);
           setIsEventPopupOpen(true);
         }}
         popup
-        showAllEvents={false} // Permite forzar la opción de ver más
-        components={{
-          event: ({ event }) => <span>{event.title}</span>,
-          agenda: {
-            event: ({ event }) => (
-              <div className="custom-popup-scroll">
-                <span>{event.title}</span>
-              </div>
-            ),
-          },
-        }}
+        showAllEvents={false}
       />
 
       {/* Mostrar el mensaje de recordatorio si el popup de estado de ánimo está cerrado y hay medicamentos pendientes */}

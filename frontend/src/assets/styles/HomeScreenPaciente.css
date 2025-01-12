@@ -251,3 +251,38 @@ ul.message-icon-container li:hover .title {
   border-radius: 5px; /* Opcional: esquinas redondeadas */
   z-index: 1000; /* Asegúrate de que el popup esté por encima */
 }
+
+.moca-assigned-floating-message {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  background-color: #ff9800;
+  color: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  animation: floatIn 0.3s ease-out;
+}
+
+@keyframes floatIn {
+  0% {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Para el ícono */
+.moca-assigned-floating-message .icon {
+  font-size: 20px;
+  margin-right: 8px;
+}
+
+/* Cambia si deseas */
+.moca-assigned-floating-message:hover {
+  background-color: #e68a00;
+}

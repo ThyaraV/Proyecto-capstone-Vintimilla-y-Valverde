@@ -13,7 +13,7 @@ import {
   Spinner,
   Form,
 } from "react-bootstrap";
-import { useGetPatientsQuery } from "../slices/patientApiSlice";
+import { useGetPatientsQuery, useUpdateMyPatientMutation } from "../slices/patientApiSlice";
 import { useCreateMocaSelfMutation } from "../slices/mocaSelfApiSlice"; // Importar hook para enviar datos
 import Visuoespacial from "./MOCAmodules/Visuoespacial";
 import Identificacion from "./MOCAmodules/Identificacion";
@@ -54,7 +54,13 @@ const MocaStartSelf = () => {
   const [testCompleted, setTestCompleted] = useState(false); // Nuevo estado para detectar la finalización del test
   const [hasLessThan12YearsOfEducation, setHasLessThan12YearsOfEducation] = useState(false); // Nuevo estado para checkbox
 
-  // Hook para la mutación de crear MoCA Self
+  // Inicializar el hook para actualizar el propio paciente
+  const [
+    updateMyPatient,
+    { isLoading: isUpdatingPatient, isSuccess: isUpdateSuccess, isError: isUpdateError, error: updateError },
+  ] = useUpdateMyPatientMutation();
+
+  // Hooks para las mutaciones
   const [
     createMocaSelf,
     { isLoading: isSaving, isSuccess, isError, error: saveError },
@@ -153,8 +159,20 @@ const MocaStartSelf = () => {
     };
 
     try {
+      // Guardar los resultados de MoCA
       const savedRecord = await createMocaSelf(mocaData).unwrap();
       alert("Resultados guardados exitosamente.");
+
+      try {
+        // Actualizar el campo mocaAssigned a false usando la nueva mutación
+        await updateMyPatient({ mocaAssigned: false }).unwrap();
+        alert("Estado de MOCA actualizado correctamente.");
+      } catch (err) {
+        console.error(err);
+        alert("Error al actualizar el estado de MOCA.");
+      }
+
+      // Redirigir a la pantalla final de MoCA
       navigate(`/moca-final/${savedRecord._id}`);
     } catch (err) {
       console.error("Error al guardar resultados:", err);
@@ -171,7 +189,7 @@ const MocaStartSelf = () => {
 
     // Datos simulados de prueba
     const simulatedScores = {
-      Visuoespacial: { alternancia: 0, cube: 0, clock: 1, total: 1 },
+      Visuoespacial: { alternancia: 0, cube: 2, clock: 1, total: 1 },
       Identificación: { "1": "Un camello.", "2": "León.", "3": "Reina serán.", total: 0 },
       Memoria: { responses: ["ROSA", "CLAVEL"], total: 1 },
       Atención: { activity1: 0, activity2: 0, activity3: null, total: 0 },
@@ -225,6 +243,7 @@ const MocaStartSelf = () => {
 
     // Enviar datos simulados al backend
     try {
+      // Guardar los resultados simulados de MoCA
       const savedRecord = await createMocaSelf({
         patientId: selectedPatient._id,
         patientName: selectedPatient.user?.name || "Paciente Desconocido",
@@ -234,6 +253,17 @@ const MocaStartSelf = () => {
       }).unwrap();
 
       alert("Resultados simulados guardados exitosamente.");
+
+      try {
+        // Actualizar el campo mocaAssigned a false usando la nueva mutación
+        await updateMyPatient({ mocaAssigned: false }).unwrap();
+        alert("Estado de MOCA actualizado correctamente.");
+      } catch (err) {
+        console.error(err);
+        alert("Error al actualizar el estado de MOCA.");
+      }
+
+      // Redirigir a la pantalla final de MoCA
       navigate(`/moca-final/${savedRecord._id}`);
     } catch (err) {
       console.error("Error al guardar resultados simulados:", err);
@@ -562,10 +592,10 @@ const MocaStartSelf = () => {
                 <Button
                   variant="success"
                   onClick={handleSaveResults}
-                  disabled={isSaving}
+                  disabled={isSaving || isUpdatingPatient}
                   size="lg"
                 >
-                  {isSaving ? (
+                  {isSaving || isUpdatingPatient ? (
                     <>
                       <Spinner
                         as="span"
@@ -591,10 +621,10 @@ const MocaStartSelf = () => {
               <Button
                 variant="secondary"
                 onClick={handleSimulateAndSaveResults}
-                disabled={isSaving || testCompleted}
+                disabled={isSaving || testCompleted || isUpdatingPatient}
                 size="lg"
               >
-                {isSaving ? (
+                {isSaving || isUpdatingPatient ? (
                   <>
                     <Spinner
                       as="span"
@@ -622,6 +652,16 @@ const MocaStartSelf = () => {
           {isError && (
             <Alert variant="danger" className="mt-3 text-center">
               {saveError?.data?.error || "Hubo un error al guardar los resultados."}
+            </Alert>
+          )}
+          {isUpdateSuccess && (
+            <Alert variant="success" className="mt-3 text-center">
+              Estado de MOCA actualizado correctamente.
+            </Alert>
+          )}
+          {isUpdateError && (
+            <Alert variant="danger" className="mt-3 text-center">
+              {updateError?.data?.error || "Hubo un error al actualizar el estado de MOCA."}
             </Alert>
           )}
         </>

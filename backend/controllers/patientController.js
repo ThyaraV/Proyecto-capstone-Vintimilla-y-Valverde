@@ -1,42 +1,61 @@
-import asyncHandler from "express-async-handler";
-import Patient from "../models/patientModel.js";
+// backend/controllers/patientController.js
 
-// @desc Obtener todos los pacientes
-// @route GET /api/patients
-// @access Private/Admin
+import asyncHandler from 'express-async-handler';
+import Patient from '../models/patientModel.js';
+
+/// Obtener todos los pacientes
 const getPatients = asyncHandler(async (req, res) => {
-  const patients = await Patient.find({})
-    .populate("user", "name") // Asegúrate de que estás populando el campo 'user' y específicamente el 'name'
-    .populate("doctor", "user"); // Popula el doctor relacionado con el paciente
+  let patients;
+
+  if (req.user.isAdmin) {
+    // Si el usuario es administrador, devuelve todos los pacientes con información completa
+    patients = await Patient.find({})
+      .populate('user', 'name lastName cardId email phoneNumber')
+      .populate('doctor', 'user');
+  } else {
+    // Si el usuario no es administrador, devuelve solo su propio registro
+    patients = await Patient.find({ user: req.user._id })
+      .populate('user', 'name lastName cardId email phoneNumber')
+      .populate('doctor', 'user');
+  }
+
   res.json(patients);
 });
 
-// @desc Obtener un paciente por ID
-// @route GET /api/patients/:id
-// @access Private/Admin
+// Obtener un paciente por ID
 const getPatientById = asyncHandler(async (req, res) => {
   const patient = await Patient.findById(req.params.id)
-    .populate("user", "name lastName cardId email phoneNumber") // Popula el campo 'user' y específicamente el 'name'
-    .populate("doctor", "user");
+    .populate('user', 'name lastName cardId email phoneNumber')
+    .populate('doctor', 'user');
 
   if (patient) {
     res.json(patient);
   } else {
     res.status(404);
-    throw new Error("Paciente no encontrado");
+    throw new Error('Paciente no encontrado');
   }
 });
 
-// controllers/patientController.js
+// Obtener el paciente asociado al usuario autenticado (sin requerir rol admin)
+const getMyPatient = asyncHandler(async (req, res) => {
+  // Asumiendo que el modelo de Patient tiene un campo "user" que referencia al ID de User
+  const patient = await Patient.findOne({ user: req.user._id })
+    .populate('user', 'name lastName cardId email phoneNumber')
+    .populate('doctor', 'user');
 
-// @desc    Actualizar un paciente
-// @route   PUT /api/patients/:id
-// @access  Private/Admin
+  if (!patient) {
+    res.status(404);
+    throw new Error('No se encontró un paciente asociado a este usuario');
+  }
+
+  res.json(patient);
+});
+
+// Actualizar un paciente
 const updatePatient = asyncHandler(async (req, res) => {
   const patient = await Patient.findById(req.params.id);
 
   if (patient) {
-    // Actualizar los campos editables
     patient.school = req.body.school || patient.school;
     patient.birthdate = req.body.birthdate || patient.birthdate;
     patient.gender = req.body.gender || patient.gender;
@@ -48,6 +67,11 @@ const updatePatient = asyncHandler(async (req, res) => {
     patient.cognitiveStage = req.body.cognitiveStage || patient.cognitiveStage;
     patient.referredTo = req.body.referredTo || patient.referredTo;
     patient.doctor = req.body.doctor || patient.doctor;
+
+    // Actualizar la asignación de la prueba MOCA
+    if (req.body.mocaAssigned !== undefined) {
+      patient.mocaAssigned = req.body.mocaAssigned;
+    }
 
     const updatedPatient = await patient.save();
 
@@ -64,20 +88,17 @@ const updatePatient = asyncHandler(async (req, res) => {
       cognitiveStage: updatedPatient.cognitiveStage,
       referredTo: updatedPatient.referredTo,
       doctor: updatedPatient.doctor,
+      mocaAssigned: updatedPatient.mocaAssigned,
     });
   } else {
     res.status(404);
-    throw new Error("Paciente no encontrado");
+    throw new Error('Paciente no encontrado');
   }
 });
 
-// @desc    Obtener historial médico por ID de paciente
-// @route   GET /api/patients/:id/medical-history
-// @access  Private (Doctor)
+// Obtener historial médico por ID de paciente
 const getMedicalHistoryByPatientId = asyncHandler(async (req, res) => {
   const patientId = req.params.id;
-
-  // Verificar si el paciente existe y está asignado al doctor que hace la solicitud
   const patient = await Patient.findById(patientId).populate('user', 'name lastName email phoneNumber cardId');
 
   if (patient) {
@@ -88,6 +109,32 @@ const getMedicalHistoryByPatientId = asyncHandler(async (req, res) => {
   }
 });
 
-export { getPatients, getPatientById, updatePatient, getMedicalHistoryByPatientId };
+const updateMyPatient = asyncHandler(async (req, res) => {
+  const patient = await Patient.findOne({ user: req.user._id });
 
+  if (!patient) {
+    res.status(404);
+    throw new Error('Paciente no encontrado para este usuario');
+  }
 
+  const { mocaAssigned } = req.body;
+
+  if (typeof mocaAssigned !== 'boolean') {
+    res.status(400);
+    throw new Error('Campo mocaAssigned inválido');
+  }
+
+  patient.mocaAssigned = mocaAssigned;
+
+  const updatedPatient = await patient.save();
+  res.json(updatedPatient);
+});
+
+export {
+  getPatients,
+  getPatientById,
+  getMyPatient,
+  updatePatient,
+  getMedicalHistoryByPatientId,
+  updateMyPatient,
+};

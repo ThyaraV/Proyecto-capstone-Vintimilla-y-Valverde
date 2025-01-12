@@ -1,76 +1,110 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Button,
+  Container,
+  Form,
+  ListGroup,
+  Row,
+  Col,
+  Alert,
+  Spinner,
+  Card,
+} from "react-bootstrap";
 import { useGetPatientsQuery } from "../slices/patientApiSlice";
-import { Button, Container, Form, ListGroup, Row, Col } from "react-bootstrap";
-import "../assets/styles/MocaTest.css";
+import { useCreateMocaSelfMutation } from "../slices/mocaSelfApiSlice";
+
+import "../assets/styles/MocaStart.css"; // Asegúrate de tener este archivo en tu proyecto
 
 const MocaStart = () => {
   const { id } = useParams();
-  const { data: patients = [] } = useGetPatientsQuery();
-  const selectedPatient = patients.find((patient) => patient._id === id);
+  const navigate = useNavigate();
 
+  // == Obtener Paciente ==
+  const {
+    data: patients = [],
+    isLoading: isPatientsLoading,
+    error: patientsError,
+  } = useGetPatientsQuery();
+  const selectedPatient = patients.find((p) => p._id === id);
+
+  // == Estados Principales ==
   const [testStarted, setTestStarted] = useState(false);
+  const [extraPoint, setExtraPoint] = useState(0); // +1 si <=12 años de educación
   const [totalScore, setTotalScore] = useState(0);
-  const [extraPoint, setExtraPoint] = useState(0);
 
-  // Puntajes independientes para cada ítem de "Visuoespacial/Ejecutivo"
+  // == Visuoespacial/Ejecutivo ==
   const [diagramScore, setDiagramScore] = useState(null);
   const [cubeScore, setCubeScore] = useState(null);
   const [clockScore, setClockScore] = useState(null);
 
+  // == Denominación ==
   const [lionScore, setLionScore] = useState(null);
   const [rhinoScore, setRhinoScore] = useState(null);
   const [camelScore, setCamelScore] = useState(null);
 
+  // == Memoria y Atención ==
   const [memoryScore, setMemoryScore] = useState(null);
   const [digitsForwardScore, setDigitsForwardScore] = useState(null);
   const [digitsBackwardScore, setDigitsBackwardScore] = useState(null);
   const [letterTapScore, setLetterTapScore] = useState(null);
   const [serialSubtractionScore, setSerialSubtractionScore] = useState(null);
 
+  // == Lenguaje ==
   const [sentence1Score, setSentence1Score] = useState(null);
   const [sentence2Score, setSentence2Score] = useState(null);
   const [wordsFScore, setWordsFScore] = useState(null);
+
+  // == Abstracción ==
   const [abstraction1Score, setAbstraction1Score] = useState(null);
   const [abstraction2Score, setAbstraction2Score] = useState(null);
 
+  // == Recuerdo Diferido ==
   const [delayedRecallScore, setDelayedRecallScore] = useState(null);
+
+  // == Orientación ==
   const [orientationScore, setOrientationScore] = useState(null);
 
-  const handleStartTest = () => {
-    setTestStarted(true);
-  };
+  // == Mutación para Crear un MocaSelf ==
+  const [
+    createMocaSelf,
+    { isLoading: isSaving, isSuccess: isSaveSuccess, isError: isSaveError, error: saveError },
+  ] = useCreateMocaSelfMutation();
 
-  const handleEducationChange = (years) => {
-    setExtraPoint(years === "less" ? 1 : 0);
-  };
+  // == Funciones de Cálculo por Módulo ==
+  const getVisuoespacialScore = () =>
+    (diagramScore || 0) + (cubeScore || 0) + (clockScore || 0);
 
-  const handleScoreChange = (score, setScore) => {
-    setScore(score);
-  };
+  const getDenominacionScore = () =>
+    (lionScore || 0) + (rhinoScore || 0) + (camelScore || 0);
 
-  // Actualizar el puntaje total cada vez que cambian los puntajes individuales
+  const getMemoriaAtencionScore = () =>
+    (memoryScore || 0) +
+    (digitsForwardScore || 0) +
+    (digitsBackwardScore || 0) +
+    (letterTapScore || 0) +
+    (serialSubtractionScore || 0);
+
+  const getLenguajeScore = () =>
+    (sentence1Score || 0) + (sentence2Score || 0) + (wordsFScore || 0);
+
+  const getAbstraccionScore = () =>
+    (abstraction1Score || 0) + (abstraction2Score || 0);
+
+  const getRecuerdoDiferidoScore = () => delayedRecallScore || 0;
+  const getOrientacionScore = () => orientationScore || 0;
+
+  // == Calcular Puntaje Total en cada render ==
   useEffect(() => {
     const currentScore =
       extraPoint +
-      (diagramScore || 0) +
-      (cubeScore || 0) +
-      (clockScore || 0) +
-      (lionScore || 0) +
-      (rhinoScore || 0) +
-      (camelScore || 0) +
-      (memoryScore || 0) +
-      (digitsForwardScore || 0) +
-      (digitsBackwardScore || 0) +
-      (letterTapScore || 0) +
-      (serialSubtractionScore || 0) +
-      (sentence1Score || 0) +
-      (sentence2Score || 0) +
-      (wordsFScore || 0) +
-      (abstraction1Score || 0) +
-      (abstraction2Score || 0) +
-      (delayedRecallScore || 0) +
-      (orientationScore || 0);
+      getVisuoespacialScore() +
+      getDenominacionScore() +
+      getMemoriaAtencionScore() +
+      getLenguajeScore() +
+      getAbstraccionScore() +
+      getRecuerdoDiferidoScore() +
+      getOrientacionScore();
 
     setTotalScore(currentScore);
   }, [
@@ -95,45 +129,241 @@ const MocaStart = () => {
     orientationScore,
   ]);
 
-  return (
-    <Container className="my-5">
-      <h1>Evaluación Cognitiva Montreal (MoCA)</h1>
-      <p>
-        Pantalla de detección para deterioro cognitivo leve y enfermedad de
-        Alzheimer.
-      </p>
+  // == Manejo de Inicio de Test ==
+  const handleStartTest = () => setTestStarted(true);
 
-      {selectedPatient ? (
+  // == Manejo de Educación ==
+  const handleEducationChange = (years) => {
+    setExtraPoint(years === "less" ? 1 : 0);
+  };
+
+  // == Manejo de Puntajes (seleccionar y deseleccionar) ==
+  const handleScoreChange = (val, currentScore, setFunc) => {
+    if (currentScore === val) {
+      // Si se hace click en el mismo botón, deseleccionar
+      setFunc(null);
+    } else {
+      setFunc(val);
+    }
+  };
+
+  // == Guardar Resultados (Sin actualizar Moca en Paciente) ==
+  const handleSaveResults = async () => {
+    if (!selectedPatient) {
+      alert("Paciente no seleccionado.");
+      return;
+    }
+
+    let finalScore = totalScore;
+    if (extraPoint === 1 && totalScore < 30) {
+      finalScore += 1;
+    }
+
+    // Módulos con su "total"
+    const modulesData = {
+      "Visuoespacial/Ejecutivo": {
+        diagram: diagramScore,
+        cube: cubeScore,
+        clock: clockScore,
+        total: getVisuoespacialScore(),
+      },
+      Denominacion: {
+        leon: lionScore,
+        rinoceronte: rhinoScore,
+        camello: camelScore,
+        total: getDenominacionScore(),
+      },
+      "Memoria/Atencion": {
+        memory: memoryScore,
+        digitsForward: digitsForwardScore,
+        digitsBackward: digitsBackwardScore,
+        letterTap: letterTapScore,
+        serialSubtraction: serialSubtractionScore,
+        total: getMemoriaAtencionScore(),
+      },
+      Lenguaje: {
+        sentence1: sentence1Score,
+        sentence2: sentence2Score,
+        wordsF: wordsFScore,
+        total: getLenguajeScore(),
+      },
+      Abstraccion: {
+        similarity1: abstraction1Score,
+        similarity2: abstraction2Score,
+        total: getAbstraccionScore(),
+      },
+      RecuerdoDiferido: {
+        delayedRecall: delayedRecallScore,
+        total: getRecuerdoDiferidoScore(),
+      },
+      Orientacion: {
+        orientation: orientationScore,
+        total: getOrientacionScore(),
+      },
+    };
+
+    const mocaData = {
+      patientId: selectedPatient._id,
+      patientName: selectedPatient.user?.name || "Paciente Desconocido",
+      modulesData,
+      totalScore: finalScore,
+      hasLessThan12YearsOfEducation: extraPoint === 1,
+    };
+
+    try {
+      const savedRecord = await createMocaSelf(mocaData).unwrap();
+      alert("Resultados guardados exitosamente.");
+      navigate(`/moca-final/${savedRecord._id}`);
+    } catch (err) {
+      console.error("Error al guardar resultados:", err);
+      alert("Hubo un error al guardar los resultados. Intenta nuevamente.");
+    }
+  };
+
+  // == Simular y Guardar ==
+  const handleSimulateAndSaveResults = async () => {
+    if (!selectedPatient) {
+      alert("Paciente no seleccionado.");
+      return;
+    }
+
+    const simulatedScores = {
+      "Visuoespacial/Ejecutivo": {
+        diagram: 1,
+        cube: 1,
+        clock: 3,
+      },
+      Denominacion: {
+        leon: 1,
+        rinoceronte: 1,
+        camello: 1,
+      },
+      "Memoria/Atencion": {
+        memory: 1,
+        digitsForward: 1,
+        digitsBackward: 1,
+        letterTap: 1,
+        serialSubtraction: 3,
+      },
+      Lenguaje: {
+        sentence1: 1,
+        sentence2: 1,
+        wordsF: 1,
+      },
+      Abstraccion: {
+        similarity1: 1,
+        similarity2: 1,
+      },
+      RecuerdoDiferido: {
+        delayedRecall: 5,
+      },
+      Orientacion: {
+        orientation: 6,
+      },
+    };
+
+    // Calcular total de cada módulo y sumarlos
+    let sum = 0;
+    Object.keys(simulatedScores).forEach((mod) => {
+      const partial = Object.values(simulatedScores[mod]).reduce(
+        (acc, val) => acc + val,
+        0
+      );
+      simulatedScores[mod].total = partial;
+      sum += partial;
+    });
+
+    let finalScore = sum;
+    if (extraPoint === 1 && sum < 30) {
+      finalScore += 1;
+    }
+
+    const mocaData = {
+      patientId: selectedPatient._id,
+      patientName: selectedPatient.user?.name || "Paciente Desconocido",
+      modulesData: simulatedScores,
+      totalScore: finalScore,
+      hasLessThan12YearsOfEducation: extraPoint === 1,
+    };
+
+    try {
+      const savedRecord = await createMocaSelf(mocaData).unwrap();
+      alert("Resultados simulados guardados exitosamente.");
+      navigate(`/moca-final/${savedRecord._id}`);
+    } catch (err) {
+      console.error("Error al guardar resultados simulados:", err);
+      alert("Hubo un error al guardar los resultados simulados. Intenta nuevamente.");
+    }
+  };
+
+  // == Verificar si todos los campos están respondidos (no null) ==
+  const allScores = [
+    diagramScore,
+    cubeScore,
+    clockScore,
+    lionScore,
+    rhinoScore,
+    camelScore,
+    memoryScore,
+    digitsForwardScore,
+    digitsBackwardScore,
+    letterTapScore,
+    serialSubtractionScore,
+    sentence1Score,
+    sentence2Score,
+    wordsFScore,
+    abstraction1Score,
+    abstraction2Score,
+    delayedRecallScore,
+    orientationScore,
+  ];
+  const isAllAnswered = allScores.every((score) => score !== null);
+
+  return (
+    <Container className="moca-start-container">
+      <h1 className="moca-title">Evaluación Cognitiva Montreal (MoCA)</h1>
+      <p>Pantalla para que el doctor registre los resultados de la prueba MoCA para cada paciente.</p>
+
+      {isPatientsLoading ? (
+        <div className="text-center my-5">
+          <Spinner animation="border" variant="primary" />
+        </div>
+      ) : patientsError ? (
+        <Alert variant="danger">
+          Error al cargar datos del paciente: {patientsError?.data?.message || patientsError.error}
+        </Alert>
+      ) : !selectedPatient ? (
+        <Alert variant="warning">Paciente no encontrado. Revisa el ID.</Alert>
+      ) : (
         <>
           <p>
-            <strong>Paciente:</strong>{" "}
-            {selectedPatient.user?.name || "Paciente sin nombre"}
+            <strong>Paciente:</strong> {selectedPatient.user?.name || "Paciente sin nombre"}
           </p>
 
           <div className="instructions my-4">
             <h4>Instrucciones</h4>
             <p>
-              El test MoCA está diseñado para evaluar las disfunciones
-              cognitivas leves. Siga las instrucciones cuidadosamente.
+              El test MoCA está diseñado para evaluar disfunciones cognitivas leves.
+              Selecciona el puntaje en cada ítem. 
+              Los demás botones del ítem quedarán deshabilitados al elegir uno.
+              Puedes deseleccionar un puntaje haciendo clic nuevamente sobre él.
             </p>
           </div>
 
           {!testStarted ? (
-            <Button variant="primary" onClick={handleStartTest}>
-              Iniciar Test MoCA
-            </Button>
+            <div className="text-center">
+              <Button variant="primary" onClick={handleStartTest}>
+                Iniciar Test MoCA
+              </Button>
+            </div>
           ) : (
-            <div className="test-section mt-4">
-              {/* Pregunta sobre educación */}
-              <ListGroup.Item>
+            <>
+              {/* EDUCACIÓN */}
+              <ListGroup.Item className="education-block">
                 <Row>
                   <Col md={8}>
-                    <strong>
-                      ¿El paciente tiene más de 12 años de educación?
-                    </strong>
-                    <p className="text-muted">
-                      No incluya los años de jardín de infantes
-                    </p>
+                    <strong>¿El paciente tiene más de 12 años de educación?</strong>
+                    <p className="text-muted">No incluyas los años de jardín</p>
                   </Col>
                   <Col md={4} className="d-flex align-items-center">
                     <Form.Check
@@ -142,6 +372,7 @@ const MocaStart = () => {
                       label="No +1"
                       name="education"
                       onChange={() => handleEducationChange("less")}
+                      checked={extraPoint === 1}
                     />
                     <Form.Check
                       inline
@@ -149,742 +380,782 @@ const MocaStart = () => {
                       label="Sí 0"
                       name="education"
                       onChange={() => handleEducationChange("more")}
+                      checked={extraPoint === 0}
                     />
                   </Col>
                 </Row>
               </ListGroup.Item>
 
-              {/* Sección Visuoespacial/Ejecutivo */}
-              <div className="section-title">Visuoespacial/Ejecutivo</div>
+              {/* Fila con 2 Columnas */}
+              <Row className="mt-4">
+                {/* Col 1: Visuoespacial/Ejecutivo */}
+                <Col xs={12} sm={6} className="mb-4">
+                  <Card className="module-card">
+                    <Card.Body>
+                      <Card.Title>Visuoespacial/Ejecutivo</Card.Title>
+                      <div className="module-score">
+                        {getVisuoespacialScore()}/5
+                      </div>
 
-              {/* Diagrama */}
-              <Row className="justify-content-center mt-3">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Pida al paciente que trace el diagrama en orden |
-                    Seguimiento visual | Precisión
-                  </p>
-                  <Button
-                    variant={diagramScore === 1 ? "success" : "outline-success"}
-                    className={`toggle-button ${
-                      diagramScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setDiagramScore)}
-                  >
-                    Completado correctamente +1
-                  </Button>
-                  <Button
-                    variant={diagramScore === 0 ? "danger" : "outline-danger"}
-                    className={`toggle-button ${
-                      diagramScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setDiagramScore)}
-                  >
-                    No completado correctamente 0
-                  </Button>
+                      <ListGroup className="mt-3">
+                        {/* Diagrama */}
+                        <ListGroup.Item>
+                          <p>Diagrama (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                diagramScore === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                diagramScore === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, diagramScore, setDiagramScore)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                diagramScore === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                diagramScore === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, diagramScore, setDiagramScore)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+
+                        {/* Cubo */}
+                        <ListGroup.Item>
+                          <p>Cubo (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                cubeScore === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                cubeScore === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, cubeScore, setCubeScore)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                cubeScore === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                cubeScore === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, cubeScore, setCubeScore)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+
+                        {/* Reloj */}
+                        <ListGroup.Item>
+                          <p>Reloj (0-3 pts)</p>
+                          <div className="score-buttons">
+                            {[3, 2, 1, 0].map((val) => (
+                              <Button
+                                key={val}
+                                size="sm"
+                                className={`toggle-button ${
+                                  clockScore === val ? "active" : ""
+                                }`}
+                                variant={
+                                  clockScore === val
+                                    ? "success"
+                                    : "outline-success"
+                                }
+                                onClick={() => handleScoreChange(val, clockScore, setClockScore)}
+                              >
+                                {val}
+                              </Button>
+                            ))}
+                          </div>
+                        </ListGroup.Item>
+                      </ListGroup>
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                {/* Col 2: Denominación */}
+                <Col xs={12} sm={6} className="mb-4">
+                  <Card className="module-card">
+                    <Card.Body>
+                      <Card.Title>Denominación</Card.Title>
+                      <div className="module-score">
+                        {getDenominacionScore()}/3
+                      </div>
+
+                      <ListGroup className="mt-3">
+                        {/* León */}
+                        <ListGroup.Item>
+                          <p>León (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                lionScore === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                lionScore === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, lionScore, setLionScore)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                lionScore === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                lionScore === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, lionScore, setLionScore)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+
+                        {/* Rinoceronte */}
+                        <ListGroup.Item>
+                          <p>Rinoceronte (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                rhinoScore === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                rhinoScore === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, rhinoScore, setRhinoScore)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                rhinoScore === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                rhinoScore === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, rhinoScore, setRhinoScore)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+
+                        {/* Camello */}
+                        <ListGroup.Item>
+                          <p>Camello (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                camelScore === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                camelScore === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, camelScore, setCamelScore)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                camelScore === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                camelScore === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, camelScore, setCamelScore)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+                      </ListGroup>
+                    </Card.Body>
+                  </Card>
                 </Col>
               </Row>
 
-              {/* Copiar el cubo */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Pida al paciente que copie el cubo
-                  </p>
-                  <Button
-                    variant={cubeScore === 1 ? "success" : "outline-success"}
-                    className={`toggle-button ${
-                      cubeScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setCubeScore)}
-                  >
-                    Completado correctamente +1
-                  </Button>
-                  <Button
-                    variant={cubeScore === 0 ? "danger" : "outline-danger"}
-                    className={`toggle-button ${
-                      cubeScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setCubeScore)}
-                  >
-                    No completado correctamente 0
-                  </Button>
+              {/* Fila 2: Memoria y Atención */}
+              <Row className="mt-4">
+                {/* Memoria y Atención */}
+                <Col xs={12} className="mb-4">
+                  <Card className="module-card">
+                    <Card.Body>
+                      <Card.Title>Memoria y Atención</Card.Title>
+                      <div className="module-score">
+                        {getMemoriaAtencionScore()}/5
+                      </div>
+
+                      <ListGroup className="mt-3">
+                        {/* Memoria */}
+                        <ListGroup.Item>
+                          <p>Memoria (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                memoryScore === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                memoryScore === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, memoryScore, setMemoryScore)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                memoryScore === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                memoryScore === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, memoryScore, setMemoryScore)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+
+                        {/* Dígitos Directo */}
+                        <ListGroup.Item>
+                          <p>Dígitos directo (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                digitsForwardScore === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                digitsForwardScore === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, digitsForwardScore, setDigitsForwardScore)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                digitsForwardScore === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                digitsForwardScore === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, digitsForwardScore, setDigitsForwardScore)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+
+                        {/* Dígitos Inverso */}
+                        <ListGroup.Item>
+                          <p>Dígitos inverso (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                digitsBackwardScore === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                digitsBackwardScore === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, digitsBackwardScore, setDigitsBackwardScore)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                digitsBackwardScore === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                digitsBackwardScore === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, digitsBackwardScore, setDigitsBackwardScore)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+
+                        {/* Letra A */}
+                        <ListGroup.Item>
+                          <p>Letra A (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                letterTapScore === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                letterTapScore === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, letterTapScore, setLetterTapScore)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                letterTapScore === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                letterTapScore === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, letterTapScore, setLetterTapScore)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+
+                        {/* Sustracción 7s */}
+                        <ListGroup.Item>
+                          <p>Sustracción 7s (0-3 pts)</p>
+                          <div className="score-buttons">
+                            {[3, 2, 1, 0].map((val) => (
+                              <Button
+                                key={val}
+                                size="sm"
+                                className={`toggle-button ${
+                                  serialSubtractionScore === val ? "active" : ""
+                                }`}
+                                variant={
+                                  serialSubtractionScore === val
+                                    ? "success"
+                                    : "outline-success"
+                                }
+                                onClick={() => handleScoreChange(val, serialSubtractionScore, setSerialSubtractionScore)}
+                              >
+                                {val}
+                              </Button>
+                            ))}
+                          </div>
+                        </ListGroup.Item>
+                      </ListGroup>
+                    </Card.Body>
+                  </Card>
                 </Col>
               </Row>
 
-              {/* Dibujo del reloj */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Pida al paciente que dibuje un reloj (diez y diez)
-                  </p>
-                  <Button
-                    variant={clockScore === 3 ? "success" : "outline-success"}
-                    className={`toggle-button ${
-                      clockScore === 3 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(3, setClockScore)}
-                  >
-                    Dibujo correctamente todas las características +3
-                  </Button>
-                  <Button
-                    variant={clockScore === 2 ? "primary" : "outline-primary"}
-                    className={`toggle-button ${
-                      clockScore === 2 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(2, setClockScore)}
-                  >
-                    Dibujo correctamente dos de tres características +2
-                  </Button>
-                  <Button
-                    variant={clockScore === 1 ? "warning" : "outline-warning"}
-                    className={`toggle-button ${
-                      clockScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setClockScore)}
-                  >
-                    Dibujo correctamente solo una característica +1
-                  </Button>
-                  <Button
-                    variant={clockScore === 0 ? "danger" : "outline-danger"}
-                    className={`toggle-button ${
-                      clockScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setClockScore)}
-                  >
-                    Ninguna de las anteriores 0
-                  </Button>
+              {/* Fila 3: Lenguaje, Abstracción, Recuerdo Diferido, Orientación */}
+              <Row className="mt-4">
+                {/* Lenguaje */}
+                <Col xs={12} sm={6} className="mb-4">
+                  <Card className="module-card">
+                    <Card.Body>
+                      <Card.Title>Lenguaje</Card.Title>
+                      <div className="module-score">
+                        {getLenguajeScore()}/3
+                      </div>
+
+                      <ListGroup className="mt-3">
+                        {/* Frase 1 */}
+                        <ListGroup.Item>
+                          <p>Frase 1 (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                sentence1Score === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                sentence1Score === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, sentence1Score, setSentence1Score)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                sentence1Score === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                sentence1Score === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, sentence1Score, setSentence1Score)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+
+                        {/* Frase 2 */}
+                        <ListGroup.Item>
+                          <p>Frase 2 (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                sentence2Score === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                sentence2Score === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, sentence2Score, setSentence2Score)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                sentence2Score === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                sentence2Score === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, sentence2Score, setSentence2Score)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+
+                        {/* Palabras con F */}
+                        <ListGroup.Item>
+                          <p>Palabras con F (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                wordsFScore === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                wordsFScore === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, wordsFScore, setWordsFScore)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                wordsFScore === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                wordsFScore === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, wordsFScore, setWordsFScore)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+                      </ListGroup>
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                {/* Abstracción */}
+                <Col xs={12} sm={6} className="mb-4">
+                  <Card className="module-card">
+                    <Card.Body>
+                      <Card.Title>Abstracción</Card.Title>
+                      <div className="module-score">
+                        {getAbstraccionScore()}/2
+                      </div>
+
+                      <ListGroup className="mt-3">
+                        {/* Similaridad 1 */}
+                        <ListGroup.Item>
+                          <p>Tren - Bicicleta (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                abstraction1Score === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                abstraction1Score === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, abstraction1Score, setAbstraction1Score)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                abstraction1Score === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                abstraction1Score === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, abstraction1Score, setAbstraction1Score)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+
+                        {/* Similaridad 2 */}
+                        <ListGroup.Item>
+                          <p>Reloj - Regla (1 pto)</p>
+                          <div className="score-buttons">
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                abstraction2Score === 1 ? "active" : ""
+                              }`}
+                              variant={
+                                abstraction2Score === 1
+                                  ? "success"
+                                  : "outline-success"
+                              }
+                              onClick={() => handleScoreChange(1, abstraction2Score, setAbstraction2Score)}
+                            >
+                              +1
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`toggle-button ${
+                                abstraction2Score === 0 ? "active" : ""
+                              }`}
+                              variant={
+                                abstraction2Score === 0
+                                  ? "danger"
+                                  : "outline-danger"
+                              }
+                              onClick={() => handleScoreChange(0, abstraction2Score, setAbstraction2Score)}
+                            >
+                              0
+                            </Button>
+                          </div>
+                        </ListGroup.Item>
+                      </ListGroup>
+                    </Card.Body>
+                  </Card>
                 </Col>
               </Row>
 
-              {/* Sección Naming */}
-              <div className="section-title">Denominación</div>
+              {/* Fila 3: Recuerdo Diferido y Orientación */}
+              <Row className="mt-4">
+                {/* Recuerdo Diferido */}
+                <Col xs={12} sm={6} className="mb-4">
+                  <Card className="module-card">
+                    <Card.Body>
+                      <Card.Title>Recuerdo Diferido</Card.Title>
+                      <div className="module-score">
+                        {getRecuerdoDiferidoScore()}/5
+                      </div>
 
-              {/* Primera Imagen - León */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column align-items-center">
-                  <img
-                    src="https://via.placeholder.com/200"
-                    alt="León"
-                    className="mb-3"
-                  />
-                  <p className="instructions-text">
-                    Pida al paciente que nombre el primer animal
-                  </p>
-                  <Button
-                    variant={lionScore === 1 ? "success" : "outline-success"}
-                    className={`toggle-button ${
-                      lionScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setLionScore)}
-                  >
-                    Nombró "león" correctamente +1
-                  </Button>
-                  <Button
-                    variant={lionScore === 0 ? "danger" : "outline-danger"}
-                    className={`toggle-button ${
-                      lionScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setLionScore)}
-                  >
-                    No nombró "león" correctamente 0
-                  </Button>
+                      <ListGroup className="mt-3">
+                        {/* Puntajes 0-5 */}
+                        <ListGroup.Item>
+                          <p>(0-5 pts)</p>
+                          <div className="score-buttons">
+                            {[5, 4, 3, 2, 1, 0].map((val) => (
+                              <Button
+                                key={val}
+                                size="sm"
+                                className={`toggle-button ${
+                                  delayedRecallScore === val ? "active" : ""
+                                }`}
+                                variant={
+                                  delayedRecallScore === val
+                                    ? "success"
+                                    : "outline-success"
+                                }
+                                onClick={() => handleScoreChange(val, delayedRecallScore, setDelayedRecallScore)}
+                              >
+                                {val}
+                              </Button>
+                            ))}
+                          </div>
+                        </ListGroup.Item>
+                      </ListGroup>
+                    </Card.Body>
+                  </Card>
+                </Col>
+
+                {/* Orientación */}
+                <Col xs={12} sm={6} className="mb-4">
+                  <Card className="module-card">
+                    <Card.Body>
+                      <Card.Title>Orientación</Card.Title>
+                      <div className="module-score">
+                        {getOrientacionScore()}/6
+                      </div>
+
+                      <ListGroup className="mt-3">
+                        {/* Puntajes 0-6 */}
+                        <ListGroup.Item>
+                          <p>(0-6 pts)</p>
+                          <div className="score-buttons">
+                            {[6, 5, 4, 3, 2, 1, 0].map((val) => (
+                              <Button
+                                key={val}
+                                size="sm"
+                                className={`toggle-button ${
+                                  orientationScore === val ? "active" : ""
+                                }`}
+                                variant={
+                                  orientationScore === val
+                                    ? "success"
+                                    : "outline-success"
+                                }
+                                onClick={() => handleScoreChange(val, orientationScore, setOrientationScore)}
+                              >
+                                {val}
+                              </Button>
+                            ))}
+                          </div>
+                        </ListGroup.Item>
+                      </ListGroup>
+                    </Card.Body>
+                  </Card>
                 </Col>
               </Row>
 
-              {/* Segunda Imagen - Rinoceronte */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column align-items-center">
-                  <img
-                    src="https://via.placeholder.com/200"
-                    alt="Rinoceronte"
-                    className="mb-3"
-                  />
-                  <p className="instructions-text">
-                    Pida al paciente que nombre el segundo animal
-                  </p>
-                  <Button
-                    variant={rhinoScore === 1 ? "success" : "outline-success"}
-                    className={`toggle-button ${
-                      rhinoScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setRhinoScore)}
-                  >
-                    Nombró "rinoceronte" correctamente +1
-                  </Button>
-                  <Button
-                    variant={rhinoScore === 0 ? "danger" : "outline-danger"}
-                    className={`toggle-button ${
-                      rhinoScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setRhinoScore)}
-                  >
-                    No nombró "rinoceronte" correctamente 0
-                  </Button>
+              {/* Fila Final: Puntaje Total y Botones de Guardar */}
+              <Row className="mt-4">
+                <Col xs={12}>
+                  <div className="final-results-container text-center">
+                    <h4>
+                      Puntaje Total (+{extraPoint} pto educación):{" "}
+                      <strong>{totalScore}</strong>
+                    </h4>
+
+                    <div className="d-flex flex-column align-items-center mt-4 gap-3">
+                      <Button
+                        variant="success"
+                        onClick={handleSaveResults}
+                        size="lg"
+                        disabled={isSaving || !isAllAnswered}
+                      >
+                        {isSaving ? (
+                          <>
+                            <Spinner
+                              as="span"
+                              animation="border"
+                              size="sm"
+                              role="status"
+                              aria-hidden="true"
+                              className="me-2"
+                            />
+                            Guardando...
+                          </>
+                        ) : (
+                          "Guardar Resultados"
+                        )}
+                      </Button>
+
+                      <Button
+                        variant="secondary"
+                        onClick={handleSimulateAndSaveResults}
+                        size="lg"
+                        disabled={isSaving}
+                      >
+                        {isSaving ? (
+                          <>
+                            <Spinner
+                              as="span"
+                              animation="border"
+                              size="sm"
+                              role="status"
+                              aria-hidden="true"
+                              className="me-2"
+                            />
+                            Simulando...
+                          </>
+                        ) : (
+                          "Simular y Guardar Resultados"
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Mensajes de éxito/error al guardar */}
+                    {isSaveSuccess && (
+                      <Alert variant="success" className="mt-3 text-center">
+                        Resultados guardados exitosamente.
+                      </Alert>
+                    )}
+                    {isSaveError && (
+                      <Alert variant="danger" className="mt-3 text-center">
+                        {saveError?.data?.message || "Error al guardar resultados."}
+                      </Alert>
+                    )}
+                  </div>
                 </Col>
               </Row>
-
-              {/* Tercera Imagen - Camello */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column align-items-center">
-                  <img
-                    src="https://via.placeholder.com/200"
-                    alt="Camello"
-                    className="mb-3"
-                  />
-                  <p className="instructions-text">
-                    Pida al paciente que nombre el tercer animal
-                  </p>
-                  <Button
-                    variant={camelScore === 1 ? "success" : "outline-success"}
-                    className={`toggle-button ${
-                      camelScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setCamelScore)}
-                  >
-                    Nombró "camello" correctamente +1
-                  </Button>
-                  <Button
-                    variant={camelScore === 0 ? "danger" : "outline-danger"}
-                    className={`toggle-button ${
-                      camelScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setCamelScore)}
-                  >
-                    No nombró "camello" correctamente 0
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Sección Memory */}
-              <div className="section-title">Memoria</div>
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Lea las palabras "Cara", "Terciopelo", "Iglesia",
-                    "Margarita", "Rojo" y pida al paciente que las repita (haga
-                    dos intentos y una recuperación más tarde en el examen).
-                  </p>
-                  <Button
-                    variant={memoryScore === 0 ? "success" : "outline-success"}
-                    className={`toggle-button ${
-                      memoryScore === 0 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(0, setMemoryScore)}
-                  >
-                    Completó ambos intentos correctamente
-                  </Button>
-                  <Button
-                    variant={memoryScore === 0 ? "danger" : "outline-danger"}
-                    className={`toggle-button ${
-                      memoryScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setMemoryScore)}
-                  >
-                    No completó ambos intentos correctamente
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Sección Attention */}
-              <div className="section-title">Atención</div>
-
-              {/* Repetir dígitos en orden hacia adelante */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Lea la lista de dígitos (2, 1, 8, 5, 4) a un ritmo de 1
-                    dígito/seg y pida al paciente que los repita en el mismo
-                    orden
-                  </p>
-                  <Button
-                    variant={
-                      digitsForwardScore === 1 ? "success" : "outline-success"
-                    }
-                    className={`toggle-button ${
-                      digitsForwardScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setDigitsForwardScore)}
-                  >
-                    Repitió correctamente +1
-                  </Button>
-                  <Button
-                    variant={
-                      digitsForwardScore === 0 ? "danger" : "outline-danger"
-                    }
-                    className={`toggle-button ${
-                      digitsForwardScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setDigitsForwardScore)}
-                  >
-                    No repitió correctamente 0
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Repetir dígitos en orden inverso */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Lea la lista de dígitos (7, 4, 2) a un ritmo de 1 dígito/seg
-                    y pida al paciente que los repita en orden inverso
-                  </p>
-                  <Button
-                    variant={
-                      digitsBackwardScore === 1 ? "success" : "outline-success"
-                    }
-                    className={`toggle-button ${
-                      digitsBackwardScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setDigitsBackwardScore)}
-                  >
-                    Repitió correctamente +1
-                  </Button>
-                  <Button
-                    variant={
-                      digitsBackwardScore === 0 ? "danger" : "outline-danger"
-                    }
-                    className={`toggle-button ${
-                      digitsBackwardScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setDigitsBackwardScore)}
-                  >
-                    No repitió correctamente 0
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Tap con la letra A */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Lea la lista de letras y pida al paciente que golpee con su
-                    mano cada vez que escuche la letra "A": FBAC MNAA JKLB AFAK
-                    DEAA AJAM OFAAB
-                  </p>
-                  <Button
-                    variant={
-                      letterTapScore === 1 ? "success" : "outline-success"
-                    }
-                    className={`toggle-button ${
-                      letterTapScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setLetterTapScore)}
-                  >
-                    Menos de 2 errores +1
-                  </Button>
-                  <Button
-                    variant={letterTapScore === 0 ? "danger" : "outline-danger"}
-                    className={`toggle-button ${
-                      letterTapScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setLetterTapScore)}
-                  >
-                    2 o más errores 0
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Sustracción serial de 7s */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Pida al paciente que reste 7 en serie comenzando desde 100;
-                    el paciente debería decir: 93, 86, 79, 72, 65
-                  </p>
-                  <Button
-                    variant={
-                      serialSubtractionScore === 3
-                        ? "success"
-                        : "outline-success"
-                    }
-                    className={`toggle-button ${
-                      serialSubtractionScore === 3 ? "active" : ""
-                    } mb-2`}
-                    onClick={() =>
-                      handleScoreChange(3, setSerialSubtractionScore)
-                    }
-                  >
-                    4 o 5 correctas +3
-                  </Button>
-                  <Button
-                    variant={
-                      serialSubtractionScore === 2
-                        ? "primary"
-                        : "outline-primary"
-                    }
-                    className={`toggle-button ${
-                      serialSubtractionScore === 2 ? "active" : ""
-                    } mb-2`}
-                    onClick={() =>
-                      handleScoreChange(2, setSerialSubtractionScore)
-                    }
-                  >
-                    2 o 3 correctas +2
-                  </Button>
-                  <Button
-                    variant={
-                      serialSubtractionScore === 1
-                        ? "warning"
-                        : "outline-warning"
-                    }
-                    className={`toggle-button ${
-                      serialSubtractionScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() =>
-                      handleScoreChange(1, setSerialSubtractionScore)
-                    }
-                  >
-                    1 correcta +1
-                  </Button>
-                  <Button
-                    variant={
-                      serialSubtractionScore === 0 ? "danger" : "outline-danger"
-                    }
-                    className={`toggle-button ${
-                      serialSubtractionScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() =>
-                      handleScoreChange(0, setSerialSubtractionScore)
-                    }
-                  >
-                    Ninguna correcta 0
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Sección Language */}
-              <div className="section-title">Lenguaje</div>
-
-              {/* Repetir frase 1 */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Lea y pida al paciente que repita: "Solo sé que John es el
-                    que ayudará hoy"
-                  </p>
-                  <Button
-                    variant={
-                      sentence1Score === 1 ? "success" : "outline-success"
-                    }
-                    className={`toggle-button ${
-                      sentence1Score === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setSentence1Score)}
-                  >
-                    Repitió correctamente +1
-                  </Button>
-                  <Button
-                    variant={sentence1Score === 0 ? "danger" : "outline-danger"}
-                    className={`toggle-button ${
-                      sentence1Score === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setSentence1Score)}
-                  >
-                    No repitió correctamente 0
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Repetir frase 2 */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Lea y pida al paciente que repita: "El gato siempre se
-                    escondía debajo del sofá cuando había perros en la
-                    habitación"
-                  </p>
-                  <Button
-                    variant={
-                      sentence2Score === 1 ? "success" : "outline-success"
-                    }
-                    className={`toggle-button ${
-                      sentence2Score === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setSentence2Score)}
-                  >
-                    Repitió correctamente +1
-                  </Button>
-                  <Button
-                    variant={sentence2Score === 0 ? "danger" : "outline-danger"}
-                    className={`toggle-button ${
-                      sentence2Score === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setSentence2Score)}
-                  >
-                    No repitió correctamente 0
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Nombrar palabras con F */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Pida al paciente que nombre el mayor número de palabras en 1
-                    minuto que comiencen con la letra "F"
-                  </p>
-                  <Button
-                    variant={wordsFScore === 1 ? "success" : "outline-success"}
-                    className={`toggle-button ${
-                      wordsFScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setWordsFScore)}
-                  >
-                    Nombró ≥11 palabras +1
-                  </Button>
-                  <Button
-                    variant={wordsFScore === 0 ? "danger" : "outline-danger"}
-                    className={`toggle-button ${
-                      wordsFScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setWordsFScore)}
-                  >
-                    Nombró &lt;11 palabras 0
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Sección Abstraction */}
-              <div className="section-title">Abstracción</div>
-
-              {/* Similaridad entre tren y bicicleta */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Pida al paciente que indique la similitud entre tren y
-                    bicicleta (por ejemplo, ambos son medios de transporte)
-                  </p>
-                  <Button
-                    variant={
-                      abstraction1Score === 1 ? "success" : "outline-success"
-                    }
-                    className={`toggle-button ${
-                      abstraction1Score === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setAbstraction1Score)}
-                  >
-                    Respondió correctamente +1
-                  </Button>
-                  <Button
-                    variant={
-                      abstraction1Score === 0 ? "danger" : "outline-danger"
-                    }
-                    className={`toggle-button ${
-                      abstraction1Score === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setAbstraction1Score)}
-                  >
-                    No respondió correctamente 0
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Similaridad entre reloj y regla */}
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Pida al paciente que indique la similitud entre reloj y
-                    regla (por ejemplo, ambos son herramientas de medición)
-                  </p>
-                  <Button
-                    variant={
-                      abstraction2Score === 1 ? "success" : "outline-success"
-                    }
-                    className={`toggle-button ${
-                      abstraction2Score === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setAbstraction2Score)}
-                  >
-                    Respondió correctamente +1
-                  </Button>
-                  <Button
-                    variant={
-                      abstraction2Score === 0 ? "danger" : "outline-danger"
-                    }
-                    className={`toggle-button ${
-                      abstraction2Score === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setAbstraction2Score)}
-                  >
-                    No respondió correctamente 0
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Sección Delayed Recall */}
-              <div className="section-title">Recuerdo Diferido</div>
-
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Pida al paciente que recuerde las palabras del test de
-                    memoria anterior (Ej. "Cara", "Terciopelo", "Iglesia",
-                    "Margarita", "Rojo")
-                  </p>
-                  <Button
-                    variant={
-                      delayedRecallScore === 5 ? "success" : "outline-success"
-                    }
-                    className={`toggle-button ${
-                      delayedRecallScore === 5 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(5, setDelayedRecallScore)}
-                  >
-                    Recordó todas las palabras +5
-                  </Button>
-                  <Button
-                    variant={
-                      delayedRecallScore === 4 ? "primary" : "outline-primary"
-                    }
-                    className={`toggle-button ${
-                      delayedRecallScore === 4 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(4, setDelayedRecallScore)}
-                  >
-                    Recordó 4 palabras +4
-                  </Button>
-                  <Button
-                    variant={
-                      delayedRecallScore === 3 ? "warning" : "outline-warning"
-                    }
-                    className={`toggle-button ${
-                      delayedRecallScore === 3 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(3, setDelayedRecallScore)}
-                  >
-                    Recordó 3 palabras +3
-                  </Button>
-                  <Button
-                    variant={delayedRecallScore === 2 ? "info" : "outline-info"}
-                    className={`toggle-button ${
-                      delayedRecallScore === 2 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(2, setDelayedRecallScore)}
-                  >
-                    Recordó 2 palabras +2
-                  </Button>
-                  <Button
-                    variant={
-                      delayedRecallScore === 1
-                        ? "secondary"
-                        : "outline-secondary"
-                    }
-                    className={`toggle-button ${
-                      delayedRecallScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setDelayedRecallScore)}
-                  >
-                    Recordó 1 palabra +1
-                  </Button>
-                  <Button
-                    variant={
-                      delayedRecallScore === 0 ? "danger" : "outline-danger"
-                    }
-                    className={`toggle-button ${
-                      delayedRecallScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setDelayedRecallScore)}
-                  >
-                    No recordó ninguna palabra 0
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Sección Orientation */}
-              <div className="section-title">Orientación</div>
-
-              <Row className="justify-content-center mt-4">
-                <Col md={8} className="d-flex flex-column">
-                  <p className="instructions-text">
-                    Pida al paciente que diga la fecha, mes, año, día, lugar y
-                    ciudad
-                  </p>
-                  <Button
-                    variant={
-                      orientationScore === 6 ? "success" : "outline-success"
-                    }
-                    className={`toggle-button ${
-                      orientationScore === 6 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(6, setOrientationScore)}
-                  >
-                    Todo correcto +6
-                  </Button>
-                  <Button
-                    variant={
-                      orientationScore === 5 ? "primary" : "outline-primary"
-                    }
-                    className={`toggle-button ${
-                      orientationScore === 5 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(5, setOrientationScore)}
-                  >
-                    5 correctas +5
-                  </Button>
-                  <Button
-                    variant={
-                      orientationScore === 4 ? "warning" : "outline-warning"
-                    }
-                    className={`toggle-button ${
-                      orientationScore === 4 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(4, setOrientationScore)}
-                  >
-                    4 correctas +4
-                  </Button>
-                  <Button
-                    variant={orientationScore === 3 ? "info" : "outline-info"}
-                    className={`toggle-button ${
-                      orientationScore === 3 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(3, setOrientationScore)}
-                  >
-                    3 correctas +3
-                  </Button>
-                  <Button
-                    variant={
-                      orientationScore === 2 ? "secondary" : "outline-secondary"
-                    }
-                    className={`toggle-button ${
-                      orientationScore === 2 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(2, setOrientationScore)}
-                  >
-                    2 correctas +2
-                  </Button>
-                  <Button
-                    variant={orientationScore === 1 ? "dark" : "outline-dark"}
-                    className={`toggle-button ${
-                      orientationScore === 1 ? "active" : ""
-                    } mb-2`}
-                    onClick={() => handleScoreChange(1, setOrientationScore)}
-                  >
-                    1 correcta +1
-                  </Button>
-                  <Button
-                    variant={
-                      orientationScore === 0 ? "danger" : "outline-danger"
-                    }
-                    className={`toggle-button ${
-                      orientationScore === 0 ? "active" : ""
-                    }`}
-                    onClick={() => handleScoreChange(0, setOrientationScore)}
-                  >
-                    Ninguna correcta 0
-                  </Button>
-                </Col>
-              </Row>
-
-              {/* Puntaje total */}
-              <div className="mt-4">
-                <h5>Puntaje Total: {totalScore}</h5>
-              </div>
-            </div>
+            </>
           )}
         </>
-      ) : (
-        <p>Cargando datos del paciente....</p>
       )}
     </Container>
   );
