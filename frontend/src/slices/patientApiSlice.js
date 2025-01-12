@@ -1,29 +1,36 @@
 // frontend/src/slices/patientApiSlice.js
 
-import { apiSlice } from './apiSlice';
+import { apiSlice } from "./apiSlice";
 
 // Asegúrate de que la ruta "/api/patients" sea accesible a todos los usuarios autenticados
 export const patientApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getPatients: builder.query({
-      query: () => '/api/patients',
-      providesTags: ['Patient'],
+      query: () => "/api/patients",
+      providesTags: ["Patient"],
     }),
     getPatientById: builder.query({
       query: (id) => `/api/patients/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Patient', id }],
+      providesTags: (result, error, id) => [{ type: "Patient", id }],
     }),
     getMyPatient: builder.query({
-      query: () => '/api/patients/me',
-      providesTags: ['Patient'],
+      query: () => "/api/patients/me",
+      providesTags: ["Patient"],
     }),
     updatePatient: builder.mutation({
       query: ({ id, ...patch }) => ({
         url: `/api/patients/${id}`,
-        method: 'PUT',
+        method: "PUT",
         body: patch,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Patient', id }],
+      invalidatesTags: (result, error, { id }) => [{ type: "Patient", id }],
+    }),
+    updateMyPatient: builder.mutation({
+      query: (patch) => ({
+        url: "/api/patients/me",
+        method: "PATCH",
+        body: patch,
+      }),
     }),
   }),
 });
@@ -33,4 +40,5 @@ export const {
   useGetPatientByIdQuery,
   useGetMyPatientQuery,
   useUpdatePatientMutation,
+  useUpdateMyPatientMutation,
 } = patientApiSlice;

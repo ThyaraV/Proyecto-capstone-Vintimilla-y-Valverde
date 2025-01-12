@@ -13,7 +13,7 @@ import {
   Spinner,
   Form,
 } from "react-bootstrap";
-import { useGetPatientsQuery } from "../slices/patientApiSlice";
+import { useGetPatientsQuery, useUpdateMyPatientMutation } from "../slices/patientApiSlice";
 import { useCreateMocaSelfMutation } from "../slices/mocaSelfApiSlice"; // Importar hook para enviar datos
 import Visuoespacial from "./MOCAmodules/Visuoespacial";
 import Identificacion from "./MOCAmodules/Identificacion";
@@ -25,7 +25,6 @@ import RecuerdoDiferido from "./MOCAmodules/RecuerdoDiferido";
 import Orientacion from "./MOCAmodules/Orientacion";
 import { FaPlay, FaStop, FaMicrophone } from "react-icons/fa"; // Importar iconos
 import "../assets/styles/MocaTest.css";
-import { useUpdatePatientMutation } from '../slices/patientApiSlice.js'; // Importar hook para actualizar paciente
 
 const MODULES = [
   { id: 0, name: "Visuoespacial", icon: "🧩", component: Visuoespacial },
@@ -55,16 +54,17 @@ const MocaStartSelf = () => {
   const [testCompleted, setTestCompleted] = useState(false); // Nuevo estado para detectar la finalización del test
   const [hasLessThan12YearsOfEducation, setHasLessThan12YearsOfEducation] = useState(false); // Nuevo estado para checkbox
 
+  // Inicializar el hook para actualizar el propio paciente
+  const [
+    updateMyPatient,
+    { isLoading: isUpdatingPatient, isSuccess: isUpdateSuccess, isError: isUpdateError, error: updateError },
+  ] = useUpdateMyPatientMutation();
+
   // Hooks para las mutaciones
   const [
     createMocaSelf,
     { isLoading: isSaving, isSuccess, isError, error: saveError },
   ] = useCreateMocaSelfMutation();
-
-  const [
-    updatePatient,
-    { isLoading: isUpdatingPatient, isSuccess: isUpdateSuccess, isError: isUpdateError, error: updateError },
-  ] = useUpdatePatientMutation();
 
   useEffect(() => {
     let interval;
@@ -163,9 +163,14 @@ const MocaStartSelf = () => {
       const savedRecord = await createMocaSelf(mocaData).unwrap();
       alert("Resultados guardados exitosamente.");
 
-      // Actualizar el campo mocaAssigned a false
-      await updatePatient({ id: selectedPatient._id, mocaAssigned: false }).unwrap();
-      alert("Estado de MOCA actualizado correctamente.");
+      try {
+        // Actualizar el campo mocaAssigned a false usando la nueva mutación
+        await updateMyPatient({ mocaAssigned: false }).unwrap();
+        alert("Estado de MOCA actualizado correctamente.");
+      } catch (err) {
+        console.error(err);
+        alert("Error al actualizar el estado de MOCA.");
+      }
 
       // Redirigir a la pantalla final de MoCA
       navigate(`/moca-final/${savedRecord._id}`);
@@ -184,7 +189,7 @@ const MocaStartSelf = () => {
 
     // Datos simulados de prueba
     const simulatedScores = {
-      Visuoespacial: { alternancia: 0, cube: 0, clock: 1, total: 1 },
+      Visuoespacial: { alternancia: 0, cube: 2, clock: 1, total: 1 },
       Identificación: { "1": "Un camello.", "2": "León.", "3": "Reina serán.", total: 0 },
       Memoria: { responses: ["ROSA", "CLAVEL"], total: 1 },
       Atención: { activity1: 0, activity2: 0, activity3: null, total: 0 },
@@ -249,9 +254,14 @@ const MocaStartSelf = () => {
 
       alert("Resultados simulados guardados exitosamente.");
 
-      // Actualizar el campo mocaAssigned a false
-      await updatePatient({ id: selectedPatient._id, mocaAssigned: false }).unwrap();
-      alert("Estado de MOCA actualizado correctamente.");
+      try {
+        // Actualizar el campo mocaAssigned a false usando la nueva mutación
+        await updateMyPatient({ mocaAssigned: false }).unwrap();
+        alert("Estado de MOCA actualizado correctamente.");
+      } catch (err) {
+        console.error(err);
+        alert("Error al actualizar el estado de MOCA.");
+      }
 
       // Redirigir a la pantalla final de MoCA
       navigate(`/moca-final/${savedRecord._id}`);

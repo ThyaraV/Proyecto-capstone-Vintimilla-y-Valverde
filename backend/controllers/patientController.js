@@ -109,10 +109,32 @@ const getMedicalHistoryByPatientId = asyncHandler(async (req, res) => {
   }
 });
 
+const updateMyPatient = asyncHandler(async (req, res) => {
+  const patient = await Patient.findOne({ user: req.user._id });
+
+  if (!patient) {
+    res.status(404);
+    throw new Error('Paciente no encontrado para este usuario');
+  }
+
+  const { mocaAssigned } = req.body;
+
+  if (typeof mocaAssigned !== 'boolean') {
+    res.status(400);
+    throw new Error('Campo mocaAssigned inválido');
+  }
+
+  patient.mocaAssigned = mocaAssigned;
+
+  const updatedPatient = await patient.save();
+  res.json(updatedPatient);
+});
+
 export {
   getPatients,
   getPatientById,
   getMyPatient,
   updatePatient,
   getMedicalHistoryByPatientId,
+  updateMyPatient,
 };

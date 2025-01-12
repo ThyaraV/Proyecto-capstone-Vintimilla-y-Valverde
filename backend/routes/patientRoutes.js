@@ -7,6 +7,7 @@ import {
   getMyPatient,
   updatePatient,
   getMedicalHistoryByPatientId,
+  updateMyPatient, // Importar el nuevo controlador
 } from '../controllers/patientController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -26,5 +27,8 @@ router.put('/:id', protect, admin, updatePatient);
 
 // Ruta para obtener el historial médico de un paciente específico (solo rol admin)
 router.get('/:id/medical-history', protect, admin, getMedicalHistoryByPatientId);
+
+// Nueva ruta para que los pacientes actualicen su propio registro
+router.patch('/me', protect, updateMyPatient); 
 
 export default router;
