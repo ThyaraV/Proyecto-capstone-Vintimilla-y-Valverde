@@ -6,10 +6,10 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useGetDoctorWithPatientsQuery } from '../slices/doctorApiSlice';
 import '../assets/styles/MocaScreenPanel.css';
-import Image2a from '../images/infopaciente.png';
-import Image3a from '../images/infopaciente.png';
-import Image4a from '../images/infopaciente.png';
-import ImageAssign from '../images/infopaciente.png'; // Usa la imagen que desees para la opción "Asignar"
+import Image2a from '../images/background/moca1.jpg';
+import Image3a from '../images/background/moca3.jpg';
+import Image4a from '../images/background/moca2.jpg';
+import ImageAssign from '../images/background/moca4.jpg'; // Usa la imagen que desees para la opción "Asignar"
 
 const MocaScreen = () => {
   const { userInfo } = useSelector((state) => state.auth);
