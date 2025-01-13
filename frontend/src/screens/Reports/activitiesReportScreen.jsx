@@ -19,24 +19,35 @@ import { useGetDoctorWithPatientsQuery } from "../../slices/doctorApiSlice";
 import {
   useGetTreatmentsByPatientQuery,
   useGetCompletedActivitiesByTreatmentQuery,
-} from "../../slices/treatmentSlice";
+  useGetAssignedActivities2Query, // Usamos el hook correcto
+} from "../../slices/treatmentSlice"; // Asegúrate de que el nombre del archivo sea correcto
 import "../../assets/styles/ActivityReport.css";
-import { FaDownload, FaPrint, FaChartBar, FaChartPie, FaUser, FaBriefcase, } from 'react-icons/fa';
+import {
+  FaDownload,
+  FaPrint,
+  FaChartBar,
+  FaChartPie,
+  FaUser,
+  FaBriefcase,
+  FaCheckCircle, // Importar el icono para actividades
+} from "react-icons/fa";
 import Loader from "../../components/Loader";
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 const ActivityReportScreen = () => {
+  // 1. OBTENER LISTA DE PACIENTES
   const {
     data: patients,
     isLoading: isLoadingPatients,
     error: errorPatients,
   } = useGetDoctorWithPatientsQuery();
 
+  // ESTADOS PARA ALMACENAR EL PACIENTE Y TRATAMIENTO SELECCIONADOS
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [selectedTreatment, setSelectedTreatment] = useState(null);
 
+  // 2. OBTENER LISTA DE TRATAMIENTOS PARA EL PACIENTE SELECCIONADO
   const {
     data: treatments,
     isLoading: isLoadingTreatments,
@@ -45,6 +56,7 @@ const ActivityReportScreen = () => {
     selectedPatient ? selectedPatient._id : skipToken
   );
 
+  // 3. OBTENER ACTIVIDADES COMPLETADAS POR TRATAMIENTO
   const {
     data: completedActivities,
     isLoading: isLoadingActivities,
@@ -53,12 +65,30 @@ const ActivityReportScreen = () => {
     selectedTreatment ? selectedTreatment._id : skipToken
   );
 
-  const [groupedData, setGroupedData] = useState({});
+  // 4. OBTENER ACTIVIDADES ASIGNADAS AL TRATAMIENTO+PACIENTE (useGetAssignedActivities2Query)
+  const {
+    data: assignedActivities,
+    isLoading: isLoadingAssignedActivities,
+    error: errorAssignedActivities,
+  } = useGetAssignedActivities2Query(
+    selectedTreatment && selectedPatient
+      ? {
+          treatmentId: selectedTreatment._id,
+          patientId: selectedPatient._id,
+        }
+      : skipToken
+  );
+
+  // ESTADOS PARA GRÁFICAS
   const [activityTypes, setActivityTypes] = useState([]);
   const [colorMap, setColorMap] = useState({});
   const [pieData, setPieData] = useState([]);
   const [barChartData, setBarChartData] = useState([]);
 
+  // ESTADO PARA ACTIVIDADES PENDIENTES
+  const [pendingActivities, setPendingActivities] = useState([]);
+
+  // COLORES PREDEFINIDOS PARA LAS GRÁFICAS
   const predefinedColors = [
     "#1f77b4",
     "#ff7f0e",
@@ -72,22 +102,44 @@ const ActivityReportScreen = () => {
     "#17becf",
   ];
 
-  // Referencia para el contenido a imprimir/descargar
+  // REFERENCIA PARA GENERAR PDF
   const reportRef = useRef();
 
-  // Estados para feedback al usuario
+  // ESTADOS PARA MOSTRAR MENSAJES DE ÉXITO O ERROR AL DESCARGAR PDF
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [downloadError, setDownloadError] = useState(false);
 
+  // ----------------------------------------------------------------------------
+  // useEffect para calcular las ACTIVIDADES PENDIENTES:
+  // (pending = assignedActivities - completedActivities)
+  // ----------------------------------------------------------------------------
+  useEffect(() => {
+    if (assignedActivities && completedActivities) {
+      const completedIds = new Set(
+        completedActivities.map((c) => c.activity._id.toString())
+      );
+      const pending = assignedActivities.filter(
+        (act) => !completedIds.has(act._id.toString())
+      );
+      setPendingActivities(pending);
+    } else {
+      setPendingActivities([]);
+    }
+  }, [assignedActivities, completedActivities]);
+
+  // ----------------------------------------------------------------------------
+  // useEffect para CONFIGURAR LOS DATOS DE LAS GRÁFICAS cuando
+  // cambien las actividades completadas o el tratamiento seleccionado
+  // ----------------------------------------------------------------------------
   useEffect(() => {
     if (completedActivities && selectedTreatment) {
-      // Obtener tipos únicos de actividades
+      // 1. OBTENER NOMBRES DE ACTIVIDAD ÚNICOS
       const types = [
         ...new Set(completedActivities.map((a) => a.activity.name)),
       ];
       setActivityTypes(types);
 
-      // Asignar colores a cada tipo de actividad
+      // 2. ASIGNAR COLORES
       const colors = {};
       types.forEach((type, index) => {
         colors[type] =
@@ -95,7 +147,7 @@ const ActivityReportScreen = () => {
       });
       setColorMap(colors);
 
-      // Agrupar actividades por fecha y tipo
+      // 3. AGRUPAR ACTIVIDADES POR FECHA
       const groupedByDate = {};
 
       completedActivities.forEach((activity) => {
@@ -111,8 +163,10 @@ const ActivityReportScreen = () => {
         }
 
         const activityName = activity.activity.name;
+        // Si no hay puntaje, usar 0
         const score = Math.max(Number(activity.scoreObtained), 0);
 
+        // Sumar el puntaje al tipo de actividad
         if (groupedByDate[formattedDate][activityName]) {
           groupedByDate[formattedDate][activityName] += score;
         } else {
@@ -120,11 +174,11 @@ const ActivityReportScreen = () => {
         }
       });
 
-      // Transformar el objeto agrupado en un array
+      // 4. TRANSFORMAR EL OBJETO AGRUPADO EN ARREGLO
       const transformedData = Object.values(groupedByDate);
       setBarChartData(transformedData);
 
-      // Preparar datos para el gráfico de pastel
+      // 5. DATOS PARA EL GRÁFICO DE PASTEL
       const totalScores = types.map((type) => ({
         name: type,
         value: completedActivities
@@ -134,8 +188,7 @@ const ActivityReportScreen = () => {
       }));
       setPieData(totalScores);
     } else {
-      // Limpiar datos si no hay actividades o tratamiento seleccionado
-      setGroupedData({});
+      // Si no hay actividades completadas o no hay tratamiento seleccionado
       setActivityTypes([]);
       setColorMap({});
       setPieData([]);
@@ -143,25 +196,29 @@ const ActivityReportScreen = () => {
     }
   }, [completedActivities, selectedTreatment]);
 
-  // Función para imprimir el reporte
+  // ----------------------------------------------------------------------------
+  // FUNCIÓN PARA IMPRIMIR
+  // ----------------------------------------------------------------------------
   const handlePrint = () => {
     window.print();
   };
 
-  // Función para descargar el reporte como PDF
+  // ----------------------------------------------------------------------------
+  // FUNCIÓN PARA DESCARGAR PDF
+  // ----------------------------------------------------------------------------
   const handleDownload = () => {
     const input = reportRef.current;
     html2canvas(input, { scale: 2 })
       .then((canvas) => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const imgProps= pdf.getImageProperties(imgData);
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+        const imgProps = pdf.getImageProperties(imgData);
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
         pdf.save("reporte_actividades.pdf");
         setDownloadSuccess(true);
-        setTimeout(() => setDownloadSuccess(false), 3000); // Ocultar mensaje después de 3 segundos
+        setTimeout(() => setDownloadSuccess(false), 3000); // Ocultar después de 3s
       })
       .catch((err) => {
         console.error("Error al generar el PDF:", err);
@@ -170,19 +227,27 @@ const ActivityReportScreen = () => {
       });
   };
 
+  // ----------------------------------------------------------------------------
+  // RENDER DEL COMPONENTE
+  // ----------------------------------------------------------------------------
   return (
     <div className="activity-report-screen">
       <header className="report-header">
         <h1>Reporte de Actividades de Pacientes</h1>
       </header>
+
       <div className="content">
-        {/* Selección de Paciente */}
+        {/* SELECCIÓN DE PACIENTE */}
         <section className="selection-section card">
-          <h3><FaUser /> Seleccionar Paciente</h3>
+          <h3>
+            <FaUser /> Seleccionar Paciente
+          </h3>
           {isLoadingPatients ? (
             <Loader />
           ) : errorPatients ? (
-            <p className="error-message">Error al cargar pacientes: {errorPatients.message}</p>
+            <p className="error-message">
+              Error al cargar pacientes: {errorPatients.message}
+            </p>
           ) : (
             <select
               className="patient-select"
@@ -203,14 +268,18 @@ const ActivityReportScreen = () => {
           )}
         </section>
 
-        {/* Selección de Tratamiento */}
+        {/* SELECCIÓN DE TRATAMIENTO */}
         {selectedPatient && (
           <section className="selection-section card">
-            <h3><FaBriefcase /> Seleccionar Tratamiento</h3>
+            <h3>
+              <FaBriefcase /> Seleccionar Tratamiento
+            </h3>
             {isLoadingTreatments ? (
               <p>Cargando tratamientos...</p>
             ) : errorTreatments ? (
-              <p className="error-message">Error al cargar tratamientos: {errorTreatments.message}</p>
+              <p className="error-message">
+                Error al cargar tratamientos: {errorTreatments.message}
+              </p>
             ) : (
               <select
                 className="patient-select"
@@ -232,7 +301,7 @@ const ActivityReportScreen = () => {
           </section>
         )}
 
-        {/* Botones de Acción */}
+        {/* BOTONES DE ACCIÓN */}
         {selectedTreatment && (
           <div className="action-buttons">
             <button className="btn btn-download" onClick={handleDownload}>
@@ -244,23 +313,35 @@ const ActivityReportScreen = () => {
           </div>
         )}
 
-        {/* Feedback al Usuario */}
-        {downloadSuccess && <p className="success-message">Reporte descargado exitosamente.</p>}
-        {downloadError && <p className="error-message">Error al descargar el reporte.</p>}
+        {/* FEEDBACK AL USUARIO */}
+        {downloadSuccess && (
+          <p className="success-message">Reporte descargado exitosamente.</p>
+        )}
+        {downloadError && (
+          <p className="error-message">Error al descargar el reporte.</p>
+        )}
 
-        {/* Sección de Gráficos */}
+        {/* SECCIÓN DE GRÁFICOS (CON REF PARA PDF) */}
         {selectedTreatment && (
           <section className="report-section card" ref={reportRef}>
-            <h2><FaChartBar /> Reporte de Actividades - {selectedTreatment.treatmentName}</h2>
+            <h2>
+              <FaChartBar /> Reporte de Actividades -{" "}
+              {selectedTreatment.treatmentName}
+            </h2>
+
             {isLoadingActivities ? (
               <Loader />
             ) : errorActivities ? (
-              <p className="error-message">Error al cargar actividades: {errorActivities.message}</p>
+              <p className="error-message">
+                Error al cargar actividades: {errorActivities.message}
+              </p>
             ) : completedActivities && completedActivities.length > 0 ? (
               <div className="charts-container">
-                {/* Gráfico de Barras */}
+                {/* GRÁFICO DE BARRAS */}
                 <div className="bar-chart-container">
-                  <h3><FaChartBar /> Actividades por Fecha</h3>
+                  <h3>
+                    <FaChartBar /> Actividades por Fecha
+                  </h3>
                   <ResponsiveContainer width="100%" height="90%">
                     <BarChart
                       data={barChartData}
@@ -271,7 +352,7 @@ const ActivityReportScreen = () => {
                         dataKey="date"
                         tick={{ angle: -45, textAnchor: "end" }}
                         interval={0}
-                        height={60} /* Espacio para etiquetas inclinadas */
+                        height={60} /* para las etiquetas inclinadas */
                       />
                       <YAxis
                         label={{
@@ -282,6 +363,7 @@ const ActivityReportScreen = () => {
                       />
                       <Tooltip />
                       <Legend verticalAlign="top" height={36} />
+
                       {activityTypes.map((type) => (
                         <Bar
                           key={type}
@@ -294,9 +376,11 @@ const ActivityReportScreen = () => {
                   </ResponsiveContainer>
                 </div>
 
-                {/* Gráfico de Pastel */}
+                {/* GRÁFICO DE PASTEL */}
                 <div className="pie-chart-container">
-                  <h3><FaChartPie /> Distribución de Actividades</h3>
+                  <h3>
+                    <FaChartPie /> Distribución de Actividades
+                  </h3>
                   <ResponsiveContainer width="100%" height="90%">
                     <PieChart>
                       <Pie
@@ -327,6 +411,32 @@ const ActivityReportScreen = () => {
             )}
           </section>
         )}
+
+        {/* SECCIÓN DE ACTIVIDADES PENDIENTES */}
+        {selectedTreatment &&
+          !isLoadingAssignedActivities &&
+          !errorAssignedActivities && (
+            <section className="report-section card">
+              <h2>
+                <FaCheckCircle /> Actividades Pendientes
+              </h2>
+              {pendingActivities.length > 0 ? (
+                <ul className="pending-activities-list">
+                  {pendingActivities.map((act) => (
+                    <li key={act._id} className="pending-activity-item">
+                      <FaCheckCircle className="activity-icon" />
+                      <div className="activity-details">
+                        <strong>{act.name}</strong>
+                        <p>{act.description}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No hay actividades pendientes para este tratamiento.</p>
+              )}
+            </section>
+          )}
       </div>
     </div>
   );
