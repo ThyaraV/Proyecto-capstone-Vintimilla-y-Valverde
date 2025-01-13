@@ -13,6 +13,7 @@ import {
   Spinner,
   Form,
 } from "react-bootstrap";
+import { useSelector } from "react-redux";
 import { useGetPatientsQuery, useUpdateMyPatientMutation } from "../slices/patientApiSlice";
 import { useCreateMocaSelfMutation } from "../slices/mocaSelfApiSlice"; // Importar hook para enviar datos
 import Visuoespacial from "./MOCAmodules/Visuoespacial";
@@ -43,6 +44,9 @@ const MocaStartSelf = () => {
   const { data: patients = [] } = useGetPatientsQuery();
   const selectedPatient = patients.find((patient) => patient._id === id);
 
+  const userInfo = useSelector((state) => state.auth.userInfo);
+  const isAdmin = userInfo?.isAdmin || false;
+
   const [testStarted, setTestStarted] = useState(false);
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -63,7 +67,7 @@ const MocaStartSelf = () => {
   // Hooks para las mutaciones
   const [
     createMocaSelf,
-    { isLoading: isSaving, isSuccess, isError, error: saveError },
+    { isLoading: isSaving, isSuccess, isError: isSaveError, error: saveError },
   ] = useCreateMocaSelfMutation();
 
   useEffect(() => {
@@ -192,7 +196,7 @@ const MocaStartSelf = () => {
       Visuoespacial: { alternancia: 0, cube: 2, clock: 1, total: 1 },
       Identificación: { "1": "Un camello.", "2": "León.", "3": "Reina serán.", total: 0 },
       Memoria: { responses: ["ROSA", "CLAVEL"], total: 1 },
-      Atención: { activity1: 0, activity2: 0, activity3: null, total: 0 },
+      Atencion: { activity1: 0, activity2: 0, activity3: null, total: 0 },
       Lenguaje: {
         totalScore: 0,
         activity1: {
@@ -205,7 +209,7 @@ const MocaStartSelf = () => {
         activity2: { activityScore: 0, words: [] },
         total: 0,
       },
-      Abstracción: {
+      Abstraccion: {
         totalScore: 1,
         activity1: 0,
         activity2: 1,
@@ -222,7 +226,7 @@ const MocaStartSelf = () => {
         },
         total: 0,
       },
-      Orientación: {
+      Orientacion: {
         date: { day: "2", month: "marzo", year: "2023" },
         weekday: "sábado",
         location: "",
@@ -489,17 +493,19 @@ const MocaStartSelf = () => {
         <>
           <h3 className="module-title text-center mb-4">
             {MODULES[currentModuleIndex].icon} {MODULES[currentModuleIndex].name}
-            <Button
-              variant="link"
-              onClick={() =>
-                handleSpeakModuleInstructions(MODULES[currentModuleIndex].name)
-              }
-              disabled={isSpeakingInstructions}
-              className="ms-3 text-decoration-none"
-              style={{ whiteSpace: "nowrap", minWidth: "180px" }}
-            >
-              {isSpeakingInstructions ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
-            </Button>
+            {isAdmin && (
+              <Button
+                variant="link"
+                onClick={() =>
+                  handleSpeakModuleInstructions(MODULES[currentModuleIndex].name)
+                }
+                disabled={isSpeakingInstructions}
+                className="ms-3 text-decoration-none"
+                style={{ whiteSpace: "nowrap", minWidth: "180px" }}
+              >
+                {isSpeakingInstructions ? <FaStop /> : <FaPlay />} Escuchar Instrucciones (Opciones no visibles para el paciente)
+              </Button>
+            )}
           </h3>
 
           <div className="module-container border p-4 mb-4">
@@ -522,71 +528,77 @@ const MocaStartSelf = () => {
 
           <hr className="my-4" />
 
-          <div className="progress-container mb-4">
-            <h5>Tiempo transcurrido: {formatTime(timeElapsed)}</h5>
-            <h5>Puntaje Actual: {currentScore}</h5>
-            <ProgressBar
-              now={
-                ((selectedModuleIndex !== null
-                  ? 1
-                  : currentModuleIndex + 1) /
-                  MODULES.length) *
-                100
-              }
-              label={`${
-                selectedModuleIndex !== null
-                  ? 1
-                  : currentModuleIndex + 1
-              } / ${MODULES.length}`}
-              className="mb-3"
-            />
-            <div className="module-status">
-              {MODULES.map((module, index) => (
-                <span
-                  key={module.id}
-                  className={`module-dot ${
-                    index < currentModuleIndex ||
-                    index === selectedModuleIndex
-                      ? "completed"
-                      : "pending"
-                  }`}
-                ></span>
-              ))}
-            </div>
-          </div>
-
-          <pre className="mt-4">
-            <strong>Puntajes por Módulo y Respuestas:</strong>
-            {Object.entries(individualScores).map(([moduleName, scores]) => (
-              <div key={moduleName}>
-                <strong>{moduleName}:</strong> {JSON.stringify(scores)}
-              </div>
-            ))}
-          </pre>
-
-          <div className="mt-5">
-            <h4 className="text-center">Selecciona un Módulo para Probar:</h4>
-            <ListGroup horizontal className="flex-wrap justify-content-center">
-              {MODULES.map((module, index) => (
-                <ListGroup.Item key={module.id} className="m-2">
-                  <Button
-                    variant={
-                      index === currentModuleIndex ||
+          {isAdmin && (
+            <div className="progress-container mb-4">
+              <h5>Tiempo transcurrido: {formatTime(timeElapsed)} (Opciones no visibles para el paciente)</h5>
+              <h5>Puntaje Actual: {currentScore} (Opciones no visibles para el paciente)</h5>
+              <ProgressBar
+                now={
+                  ((selectedModuleIndex !== null
+                    ? 1
+                    : currentModuleIndex + 1) /
+                    MODULES.length) *
+                  100
+                }
+                label={`${
+                  selectedModuleIndex !== null
+                    ? 1
+                    : currentModuleIndex + 1
+                } / ${MODULES.length}`}
+                className="mb-3"
+              />
+              <div className="module-status">
+                {MODULES.map((module, index) => (
+                  <span
+                    key={module.id}
+                    className={`module-dot ${
+                      index < currentModuleIndex ||
                       index === selectedModuleIndex
-                        ? "primary"
-                        : "outline-primary"
-                    }
-                    onClick={() => handleSelectModule(index)}
-                  >
-                    {module.icon} {module.name}
-                  </Button>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          </div>
+                        ? "completed"
+                        : "pending"
+                    }`}
+                  ></span>
+                ))}
+              </div>
+            </div>
+          )}
 
-          {/* Botón para guardar resultados reales, visible solo cuando el test está completado */}
-          {testCompleted && (
+          {isAdmin && (
+            <pre className="mt-4">
+              <strong>Puntajes por Módulo y Respuestas (Opciones no visibles para el paciente):</strong>
+              {Object.entries(individualScores).map(([moduleName, scores]) => (
+                <div key={moduleName}>
+                  <strong>{moduleName}:</strong> {JSON.stringify(scores)}
+                </div>
+              ))}
+            </pre>
+          )}
+
+          {isAdmin && (
+            <div className="mt-5">
+              <h4 className="text-center">Selecciona un Módulo para Probar (Opciones no visibles para el paciente):</h4>
+              <ListGroup horizontal className="flex-wrap justify-content-center">
+                {MODULES.map((module, index) => (
+                  <ListGroup.Item key={module.id} className="m-2">
+                    <Button
+                      variant={
+                        index === currentModuleIndex ||
+                        index === selectedModuleIndex
+                          ? "primary"
+                          : "outline-primary"
+                      }
+                      onClick={() => handleSelectModule(index)}
+                    >
+                      {module.icon} {module.name}
+                    </Button>
+                  </ListGroup.Item>
+                ))}
+              </ListGroup>
+            </div>
+          )}
+
+          {/* Botón para guardar resultados reales, visible solo cuando el test está completado y es admin */}
+          {testCompleted && isAdmin && (
             <Row className="mt-4">
               <Col className="d-flex justify-content-end">
                 <Button
@@ -615,51 +627,53 @@ const MocaStartSelf = () => {
             </Row>
           )}
 
-          {/* Botón adicional para simular y guardar resultados */}
-          <Row className="mt-4">
-            <Col className="d-flex justify-content-end">
-              <Button
-                variant="secondary"
-                onClick={handleSimulateAndSaveResults}
-                disabled={isSaving || testCompleted || isUpdatingPatient}
-                size="lg"
-              >
-                {isSaving || isUpdatingPatient ? (
-                  <>
-                    <Spinner
-                      as="span"
-                      animation="border"
-                      size="sm"
-                      role="status"
-                      aria-hidden="true"
-                      className="me-2"
-                    />
-                    Simulando...
-                  </>
-                ) : (
-                  "Simular y Guardar Resultados"
-                )}
-              </Button>
-            </Col>
-          </Row>
+          {/* Botón adicional para simular y guardar resultados, visible solo para admin */}
+          {isAdmin && (
+            <Row className="mt-4">
+              <Col className="d-flex justify-content-end">
+                <Button
+                  variant="secondary"
+                  onClick={handleSimulateAndSaveResults}
+                  disabled={isSaving || testCompleted || isUpdatingPatient}
+                  size="lg"
+                >
+                  {isSaving || isUpdatingPatient ? (
+                    <>
+                      <Spinner
+                        as="span"
+                        animation="border"
+                        size="sm"
+                        role="status"
+                        aria-hidden="true"
+                        className="me-2"
+                      />
+                      Simulando...
+                    </>
+                  ) : (
+                    "Simular y Guardar Resultados"
+                  )}
+                </Button>
+              </Col>
+            </Row>
+          )}
 
           {/* Mensajes de éxito o error al guardar */}
-          {isSuccess && (
+          {isSuccess && isAdmin && (
             <Alert variant="success" className="mt-3 text-center">
               Resultados guardados exitosamente.
             </Alert>
           )}
-          {isError && (
+          {isSaveError && isAdmin && (
             <Alert variant="danger" className="mt-3 text-center">
               {saveError?.data?.error || "Hubo un error al guardar los resultados."}
             </Alert>
           )}
-          {isUpdateSuccess && (
+          {isUpdateSuccess && isAdmin && (
             <Alert variant="success" className="mt-3 text-center">
               Estado de MOCA actualizado correctamente.
             </Alert>
           )}
-          {isUpdateError && (
+          {isUpdateError && isAdmin && (
             <Alert variant="danger" className="mt-3 text-center">
               {updateError?.data?.error || "Hubo un error al actualizar el estado de MOCA."}
             </Alert>
