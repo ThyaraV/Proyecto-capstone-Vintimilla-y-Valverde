@@ -41,27 +41,35 @@ const ChatScreen = () => {
   const selectedChatRef = useRef(selectedChat);
   const messagesEndRef = useRef(null); // Referencia para el scroll automático
 
+  // Actualizar la referencia de selectedChat cuando cambia
   useEffect(() => {
     selectedChatRef.current = selectedChat;
   }, [selectedChat]);
 
+  // Conectar a Socket.IO una sola vez
   useEffect(() => {
     if (userInfo) {
       socketRef.current = io(ENDPOINT);
       socketRef.current.emit("setup", userInfo);
       socketRef.current.on("connected", () => setSocketConnected(true));
 
+      // Escuchar mensajes nuevos
       socketRef.current.on("messageReceived", (newMessageReceived) => {
+        console.log("Mensaje recibido:", newMessageReceived); // Log para depuración
+
         const chatId = newMessageReceived.chat._id || newMessageReceived.chat;
         const senderId = newMessageReceived.sender._id || newMessageReceived.sender;
 
         if (senderId === userInfo._id) {
+          // Ignorar mensajes enviados por el usuario actual
           return;
         }
 
         if (selectedChatRef.current && selectedChatRef.current._id === chatId) {
+          // Si el mensaje es para el chat seleccionado, actualizar los mensajes automáticamente
           setMessages((prevMessages) => [...prevMessages, newMessageReceived]);
         } else {
+          // Si el mensaje es para otro chat, incrementar el contador de mensajes no leídos
           setNewMessageNotifications((prev) => ({
             ...prev,
             [chatId]: (prev[chatId] || 0) + 1
@@ -76,6 +84,7 @@ const ChatScreen = () => {
     }
   }, [userInfo]);
 
+  // Obtener mensajes del chat seleccionado
   const { data: chatMessages = [], refetch: refetchMessages } = useGetMessagesQuery(
     selectedChat?._id,
     { skip: !selectedChat }
@@ -85,21 +94,25 @@ const ChatScreen = () => {
     if (chatMessages) setMessages(chatMessages);
   }, [chatMessages]);
 
+  // Unirse al chat seleccionado
   useEffect(() => {
     if (socketConnected && selectedChat) {
       socketRef.current.emit("joinChat", selectedChat._id);
       refetchMessages();
 
+      // Eliminar el contador de mensajes no leídos para este chat
       setNewMessageNotifications((prev) => {
         const { [selectedChat._id]: _, ...rest } = prev;
         return rest;
       });
     }
-  }, [selectedChat, socketConnected]);
+  }, [selectedChat, socketConnected, refetchMessages]);
 
   useEffect(() => {
     // Scroll automático al final de los mensajes
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   const handleSendMessage = async () => {
@@ -118,8 +131,10 @@ const ChatScreen = () => {
       const sentMessage = await sendMessage(messageData).unwrap();
       setNewMessage("");
 
+      // Emitir el mensaje a través de Socket.IO
       socketRef.current.emit("sendMessage", sentMessage);
 
+      // Actualizar mensajes en el chat actual
       setMessages((prevMessages) => [...prevMessages, sentMessage]);
     } catch (error) {
       toast.error("Error al enviar el mensaje");

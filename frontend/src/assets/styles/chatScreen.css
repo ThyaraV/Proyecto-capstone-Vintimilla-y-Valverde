@@ -10,6 +10,7 @@ body, html, .chat-container {
 .chat-container {
   display: flex;
   height: 100vh;
+  width: 100%;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -250,6 +251,7 @@ body, html, .chat-container {
 @media (max-width: 768px) {
   .chat-container {
       flex-direction: column;
+      height: 100vh; /* Asegurar que ocupe toda la altura */
   }
 
   .chat-sidebar {

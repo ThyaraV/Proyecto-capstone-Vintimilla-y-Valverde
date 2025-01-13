@@ -15,7 +15,6 @@ import treatmentRoutes from "./routes/treatmentRoutes.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
 import mocaSelfRoutes from "./routes/mocaSelfRoutes.js";
 import axios from "axios"; // Importar axios para realizar solicitudes HTTP
-import { initSocket } from './socket.js';
 
 import connectDB from "./config/db.js";
 
@@ -129,6 +128,8 @@ io.on("connection", (socket) => {
 
   // Manejar el envío de mensajes
   socket.on("sendMessage", (message) => {
+    console.log("Mensaje enviado:", message); // Log para depuración
+
     const chatId = message.chat._id || message.chat;
 
     // Emitir el mensaje a todos los usuarios en el chat excepto al remitente
@@ -141,8 +142,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// Inicializar Socket.IO
-initSocket(httpServer);
+// Nota: Eliminado initSocket(httpServer), ya que Socket.IO se configura directamente arriba
 
 // Iniciar el servidor en el puerto especificado
 httpServer.listen(port, () => {
