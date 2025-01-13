@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
-import { FaUser, FaComments, FaBrain, FaBars, FaBell, FaTachometerAlt, FaRegChartBar } from "react-icons/fa"; // Importar FaTachometerAlt, FaRegChartBar
+import { FaUser, FaComments, FaBrain, FaBars, FaBell, FaTachometerAlt, FaRegChartBar, FaSignOutAlt, FaCogs, FaUsers, FaQuestionCircle } from "react-icons/fa"; // Importar íconos adicionales
 import logo from "../assets/logoHigeasinfondo.png";
 import { LinkContainer } from "react-router-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
@@ -79,8 +79,10 @@ const Header = () => {
 
               {/* Enlace de usuario y opciones de administración */}
               {userInfo ? (
-                <NavDropdown title={userInfo.name} id="username">
-                  <NavDropdown.Item onClick={logoutHandler}>Cerrar Sesión</NavDropdown.Item>
+                <NavDropdown title={userInfo.name} id="username" className="custom-dropdown">
+                  <NavDropdown.Item onClick={logoutHandler}>
+                    <FaSignOutAlt className="dropdown-icon" /> Cerrar Sesión
+                  </NavDropdown.Item>
                 </NavDropdown>
               ) : (
                 <LinkContainer to="/login">
@@ -92,11 +94,19 @@ const Header = () => {
 
               {/* Opciones del administrador */}
               {userInfo && userInfo.isAdmin && (
-                <NavDropdown title="Admin" id="adminmenu">
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist', 'orderlist')}>Ayuda</NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/productlist', 'productlist')}>Configuración</NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/userlist', 'userlist')}>Usuarios</NavDropdown.Item>
-                  <NavDropdown.Item onClick={() => navigateTo('/admin/activities', 'adminActivities')}>Actividades (Admin)</NavDropdown.Item>
+                <NavDropdown title="Admin" id="adminmenu" className="custom-dropdown">
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist', 'orderlist')}>
+                    <FaQuestionCircle className="dropdown-icon" /> Ayuda
+                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/productlist', 'productlist')}>
+                    <FaCogs className="dropdown-icon" /> Configuración
+                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/userlist', 'userlist')}>
+                    <FaUsers className="dropdown-icon" /> Usuarios
+                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={() => navigateTo('/admin/activities', 'adminActivities')}>
+                    <FaBrain className="dropdown-icon" /> Actividades (Admin)
+                  </NavDropdown.Item>
                 </NavDropdown>
               )}
             </Nav>

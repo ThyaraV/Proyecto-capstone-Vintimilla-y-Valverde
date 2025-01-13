@@ -37,7 +37,7 @@
   overflow: hidden;
 }
 
-.arrow {
+/*.arrow {
   position: absolute;
   top: 80%;
   left: 50%;
@@ -48,6 +48,51 @@
   border-bottom: 20px solid black;
   transform-origin: bottom;
   transition: transform 0.5s ease;
+  transform: translateX(-50%);
+}*/ 
+
+
+/*.arrow {
+  background-color: yellowgreen;
+  justify-content: center;
+  position: absolute;
+  top: 85%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 20px solid black;
+  transform-origin: 50% 0%; 
+  transition: transform 0.5s ease; 
+  transform: translateX(-50%) rotate(-90deg); 
+}  */
+
+.arrow {
+  position: absolute;
+  top: 50%; /* Ajusta para colocar la flecha correctamente */
+  left: 50%;
+  width: 8px; /* Grosor de la flecha */
+  height: 60px; /* Altura de la flecha */
+  background-color: black; /* Color de la flecha */
+  transform-origin: bottom center;
+  transform: translateX(-50%) rotate(0deg); /* Rotación inicial */
+  transition: transform 0.5s ease; /* Suavidad en el movimiento */
+  z-index: 2; /* Asegura que esté visible */
+  border-radius: 4px; /* Redondea los bordes */
+}
+
+/* Triángulo para la punta de la flecha */
+.arrow::after {
+  content: '';
+  position: absolute;
+  top: -10px; /* Ajusta para conectar correctamente la punta */
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 14px solid black;
   transform: translateX(-50%);
 }
 

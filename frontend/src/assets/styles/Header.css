@@ -77,7 +77,7 @@
 }
 
 .menu-item {
-  background-color: transparent;
+  background-color: rgb(74, 74, 214);
   border: none;
   padding: 10px;
   color: rgb(10, 10, 10);
@@ -193,12 +193,13 @@
 
 /* Menú lateral */
 .sidebar {
+  background: #34495e; 
   position: fixed;
   top: 0;
   left: -300px; /* Oculto por defecto */
   width: 300px;
   height: 100vh;
-  background: rgba(25, 134, 243, 0.7); /* Transparente borroso */
+  background: rgba(25, 134, 243, 0.795); /* Transparente borroso */
   backdrop-filter: blur(10px); /* Borroso */
   color: #ffffff;
   display: flex;
@@ -211,6 +212,7 @@
 }
 
 .sidebar.open {
+  background: #177fee; 
   transform: translateX(300px);
 }
 
@@ -232,6 +234,7 @@
 }
 
 .sidebar-menu {
+  background: #007bff; 
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -256,7 +259,7 @@
 .sidebar-menu button.active {
   opacity: 1;
   transform: translateX(10px);
-  color: #1986f3; /* Color al pasar el cursor */
+  color: #f1c40f; /* Color al pasar el cursor */
   font-weight: bold;
 }
 
@@ -325,3 +328,113 @@
   align-items: center;
   gap: 10px;
 }
+
+/* src/assets/styles/Header.css */
+
+/* Estilos Generales (mantén los existentes y añade los siguientes) */
+
+/* Estilos para los dropdown personalizados */
+.custom-dropdown .dropdown-menu {
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  margin-top: 10px;
+  animation: fadeInDropdown 0.3s ease-in-out;
+}
+
+.custom-dropdown .dropdown-toggle::after {
+  margin-left: 0.255em;
+}
+
+.custom-dropdown .dropdown-item {
+  color: #ecf0f1; /* Texto claro */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.custom-dropdown .dropdown-item:hover,
+.custom-dropdown .dropdown-item:focus {
+  background-color: #f1c40f; /* Color de fondo al pasar el cursor */
+  color: #ffffff;
+  transform: translateX(5px);
+}
+
+.custom-dropdown .dropdown-icon {
+  margin-right: 8px;
+  color: #f1c40f; /* Color de los iconos */
+}
+
+@keyframes fadeInDropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Estilos para el botón de toggle del menú */
+.menu-toggle-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  margin-right: 15px;
+  transition: color 0.3s;
+}
+
+.menu-toggle-btn:hover {
+  color: #0073ff; /* Color al pasar el cursor */
+}
+
+/* Estilos para el logo */
+.navbar-brand img {
+  transition: transform 0.3s;
+}
+
+.navbar-brand img:hover {
+  transform: scale(1.05);
+}
+
+/* Estilos para los enlaces de navegación */
+.navbar-nav .nav-link {
+  color: #ecf0f1 !important; /* Texto claro */
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.navbar-nav .nav-link:hover {
+  color: #ecf0f1 !important; /* Color al pasar el cursor */
+  transform: translateY(-2px);
+}
+
+/* Estilos para los íconos en los enlaces */
+.navbar-nav .nav-link svg {
+  transition: color 0.2s;
+}
+
+.navbar-nav .nav-link:hover svg {
+  color: #f1c40f;
+}
+
+/* Responsividad mejorada */
+@media (max-width: 992px) {
+  .navbar-nav .nav-link {
+    padding: 10px 15px;
+  }
+
+  .custom-dropdown .dropdown-menu {
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    right: 0;
+    left: auto;
+  }
+}
+
+/* Otros estilos existentes permanecen intactos */
