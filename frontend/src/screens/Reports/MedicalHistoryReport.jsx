@@ -22,7 +22,11 @@ import {
   FaBrain,
   FaUserCheck,
   FaDownload, // Icono de Descargar
-  FaPrint // Icono de Imprimir
+  FaPrint, // Icono de Imprimir
+  FaAllergies,
+  FaDiagnoses,
+  FaAmbulance
+   
 } from 'react-icons/fa';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -151,16 +155,16 @@ const PatientReportScreen = () => {
                 {/* Información del Paciente */}
                 <div className="details-card">
                   <h3>Información del Paciente</h3>
-                  <p><FaSchool /> <strong>Escuela:</strong> {patient.school}</p>
+                  <p><FaUserFriends /> <strong>Representante Familiar:</strong> {patient.school}</p>
                   <p><FaBirthdayCake /> <strong>Fecha de Nacimiento:</strong> {new Date(patient.birthdate).toLocaleDateString()}</p>
                   <p><FaVenusMars /> <strong>Género:</strong> {patient.gender}</p>
                   <p><FaSuitcase /> <strong>Nivel Educativo:</strong> {patient.educationalLevel}</p>
-                  <p><FaUserFriends /> <strong>Representante Familiar:</strong> {patient.familyRepresentative}</p>
+                  <p><FaAmbulance /> <strong>Tratamientos Previos:</strong> {patient.address}</p>
                   <p><FaHome /> <strong>Dirección:</strong> {patient.address}</p>
                   <p><FaHandshake /> <strong>Estado Civil:</strong> {patient.maritalStatus}</p>
-                  <p><FaBriefcase /> <strong>Profesión:</strong> {patient.profession}</p>
+                  <p><FaDiagnoses /> <strong>Diagnósticos previos:</strong> {patient.profession}</p>
                   <p><FaBrain /> <strong>Etapa Cognitiva:</strong> {patient.cognitiveStage}</p>
-                  <p><FaUserCheck /> <strong>Referido a:</strong> {patient.referredTo}</p>
+                  <p><FaAllergies /> <strong>Alergias:</strong> {patient.referredTo}</p>
                 </div>
               </div>
             ) : (

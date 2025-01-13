@@ -1,230 +1,217 @@
-// src/components/MocaScreen/MocaScreen.jsx
+// src/screens/Reports/MoodScreen.jsx
 
-import React, { useState, useEffect } from 'react';
-import { useGetAllMocaSelfsQuery } from '../../slices/mocaSelfApiSlice';
-import '../../assets/styles/MocaScreen.css'; // Archivo de estilos
-import { Button, Spinner, Alert } from 'react-bootstrap';
-import { PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useGetDoctorWithPatientsQuery } from '../../slices/doctorApiSlice';
+import '../../assets/styles/Mood.css';
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { FaDownload, FaPrint, FaUser } from 'react-icons/fa';
+import Loader from "../../components/Loader";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AA336A', '#33AA99', '#FF6699', '#9966FF'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AA336A', '#33AA99'];
 
-const MocaScreen = () => {
-  const { data: mocaRecords = [], isLoading, isError, error } = useGetAllMocaSelfsQuery();
+const MoodScreen = () => {
+  const { data: patients, isLoading, error } = useGetDoctorWithPatientsQuery();
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [filteredRecords, setFilteredRecords] = useState([]);
-  const [averageScore, setAverageScore] = useState(0);
-  const [scoreDistribution, setScoreDistribution] = useState([]);
-  const [scoreTrend, setScoreTrend] = useState([]);
-  const navigate = useNavigate();
+  const [moodData, setMoodData] = useState([]);
+  const [chartData, setChartData] = useState([]);
 
-  // Extraer lista única de pacientes de los registros MoCA
-  const patients = React.useMemo(() => {
-    const uniquePatients = {};
-    mocaRecords.forEach(record => {
-      if (record.patientId && record.patientName) {
-        uniquePatients[record.patientId] = record.patientName;
-      }
-    });
-    return Object.entries(uniquePatients).map(([id, name]) => ({ id, name }));
-  }, [mocaRecords]);
+  const reportRef = useRef();
 
-  // Manejar la selección de un paciente
-  const handlePatientClick = (patient) => {
+  // Estados para feedback al usuario
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [downloadError, setDownloadError] = useState(false);
+
+  const handlePatientClick = async (patient) => {
     setSelectedPatient(patient);
+    try {
+      const res = await fetch(`/api/users/${patient._id}/moods`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (!res.ok) {
+        setMoodData([]);
+        setChartData([]);
+        return;
+      }
+      const data = await res.json();
+      
+      // Ordenar los datos de la fecha más reciente a la más antigua
+      data.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setMoodData(data);
+    } catch (err) {
+      setMoodData([]);
+      setChartData([]);
+    }
   };
 
-  // Filtrar registros MoCA para el paciente seleccionado
   useEffect(() => {
-    if (selectedPatient) {
-      const records = mocaRecords.filter(record => record.patientId === selectedPatient.id);
-      setFilteredRecords(records);
-    } else {
-      setFilteredRecords([]);
-    }
-  }, [selectedPatient, mocaRecords]);
+    if (moodData.length > 0) {
+      const moodCount = moodData.reduce((acc, curr) => {
+        acc[curr.mood] = (acc[curr.mood] || 0) + 1;
+        return acc;
+      }, {});
 
-  // Calcular el puntaje promedio y la distribución de puntajes
-  useEffect(() => {
-    if (filteredRecords.length > 0) {
-      const totalScore = filteredRecords.reduce((acc, curr) => acc + (curr.totalScore || 0), 0);
-      const avgScore = (totalScore / filteredRecords.length).toFixed(2);
-      setAverageScore(avgScore);
-
-      // Distribución de puntajes en rangos
-      const distribution = {
-        '0-10': 0,
-        '11-20': 0,
-        '21-30': 0,
-      };
-
-      filteredRecords.forEach(record => {
-        const score = record.totalScore;
-        if (score >= 0 && score <= 10) {
-          distribution['0-10'] += 1;
-        } else if (score >= 11 && score <= 20) {
-          distribution['11-20'] += 1;
-        } else if (score >= 21 && score <= 30) {
-          distribution['21-30'] += 1;
-        }
-      });
-
-      const formattedDistribution = Object.keys(distribution).map(range => ({
-        range,
-        count: distribution[range],
+      const formattedData = Object.keys(moodCount).map((mood) => ({
+        name: mood,
+        value: moodCount[mood],
       }));
-      setScoreDistribution(formattedDistribution);
 
-      // Tendencia de puntajes a lo largo del tiempo
-      const trend = filteredRecords
-        .map(record => ({
-          date: new Date(record.testDate).toLocaleDateString(),
-          score: record.totalScore,
-        }))
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-      setScoreTrend(trend);
+      setChartData(formattedData);
     } else {
-      setAverageScore(0);
-      setScoreDistribution([]);
-      setScoreTrend([]);
+      setChartData([]);
     }
-  }, [filteredRecords]);
+  }, [moodData]);
+
+  // Función para imprimir el reporte
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Función para descargar el reporte como PDF
+  const handleDownload = () => {
+    const input = reportRef.current;
+    html2canvas(input, { scale: 2 })
+      .then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save("reporte_estado_emocional.pdf");
+        setDownloadSuccess(true);
+        setTimeout(() => setDownloadSuccess(false), 3000);
+      })
+      .catch((err) => {
+        console.error("Error al generar el PDF:", err);
+        setDownloadError(true);
+        setTimeout(() => setDownloadError(false), 3000);
+      });
+  };
 
   return (
-    <div className="moca-screen">
-      <h1>Reporte de Resultados MoCA</h1>
-      {isLoading ? (
-        <div className="text-center my-5">
-          <Spinner animation="border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </Spinner>
-          <p>Cargando registros de MoCA...</p>
-        </div>
-      ) : isError ? (
-        <Alert variant="danger" className="my-5">
-          {error?.data?.error || 'Hubo un error al cargar los registros de MoCA.'}
-        </Alert>
-      ) : (
-        <>
-          {/* Lista de Pacientes */}
-          <div className="patients-list">
-            <h3>Lista de Pacientes</h3>
-            {patients.length === 0 ? (
-              <p>No hay pacientes disponibles.</p>
+    <div className="mood-screen">
+      <header className="report-header">
+        <h1>Estado Emocional</h1>
+      </header>
+      <div className="content">
+        {/* Selección de Paciente */}
+        <section className="selection-section card">
+          <h3><FaUser /> Lista de Pacientes</h3>
+          {isLoading ? (
+            <Loader />
+          ) : error ? (
+            <p className="error-message">Error al cargar pacientes</p>
+          ) : (
+            <ul className="patients-list">
+              {patients.map((patient) => (
+                <li
+                  key={patient._id}
+                  onClick={() => handlePatientClick(patient)}
+                  className={`patient-item ${
+                    selectedPatient && selectedPatient._id === patient._id ? 'active' : ''
+                  }`}
+                >
+                  {patient.user.name} {patient.user.lastName}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Botones de Acción */}
+        {selectedPatient && (
+          <div className="action-buttons">
+            <button className="btn btn-download" onClick={handleDownload}>
+              <FaDownload className="btn-icon" /> Descargar Reporte
+            </button>
+            <button className="btn btn-print" onClick={handlePrint}>
+              <FaPrint className="btn-icon" /> Imprimir Reporte
+            </button>
+          </div>
+        )}
+
+        {/* Feedback al Usuario */}
+        {downloadSuccess && <p className="success-message">Reporte descargado exitosamente.</p>}
+        {downloadError && <p className="error-message">Error al descargar el reporte.</p>}
+
+        {/* Sección de Datos Emocionales */}
+        {selectedPatient && (
+          <div className="mood-data card" ref={reportRef}>
+            <h3>Registros de estado emocional de {selectedPatient.user.name}</h3>
+            {moodData.length > 0 ? (
+              <div className="mood-content">
+                {/* Gráfica de Pastel */}
+                <div className="mood-chart">
+                  <PieChart width={400} height={400}>
+                    <Legend
+                      layout="horizontal"
+                      verticalAlign="top"
+                      align="center"
+                      wrapperStyle={{ marginBottom: '20px' }}
+                    />
+                    <Pie
+                      data={chartData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={150}
+                      label
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </div>
+                {/* Tabla de Datos Emocionales */}
+                <table className="mood-table">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Hora</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {moodData.map((item) => {
+                      const dateObj = new Date(item.date);
+                      const date = dateObj.toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                      });
+                      const time = dateObj.toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      });
+                      return (
+                        <tr key={item._id}>
+                          <td>{date}</td>
+                          <td>{time}</td>
+                          <td>{item.mood}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              <ul className="list-group">
-                {patients.map(patient => (
-                  <li
-                    key={patient.id}
-                    className={`list-group-item ${selectedPatient && selectedPatient.id === patient.id ? 'active' : ''}`}
-                    onClick={() => handlePatientClick(patient)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {patient.name}
-                  </li>
-                ))}
-              </ul>
+              <p>No hay datos de estado emocional para este paciente.</p>
             )}
           </div>
-
-          {/* Reportes para el Paciente Seleccionado */}
-          {selectedPatient && (
-            <div className="report-details my-5">
-              <h3>Resultados de MoCA para: {selectedPatient.name}</h3>
-              {filteredRecords.length === 0 ? (
-                <Alert variant="info">
-                  No hay registros de MoCA para este paciente.
-                </Alert>
-              ) : (
-                <>
-                  {/* Gráfico de Distribución de Puntajes */}
-                  <div className="chart-container my-4">
-                    <h4>Distribución de Puntajes</h4>
-                    <PieChart width={400} height={400}>
-                      <Pie
-                        data={scoreDistribution}
-                        dataKey="count"
-                        nameKey="range"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={150}
-                        label
-                      >
-                        {scoreDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  </div>
-
-                  {/* Gráfico de Tendencia de Puntajes */}
-                  <div className="chart-container my-4">
-                    <h4>Tendencia de Puntajes a lo Largo del Tiempo</h4>
-                    <BarChart
-                      width={600}
-                      height={300}
-                      data={scoreTrend}
-                      margin={{
-                        top: 5, right: 30, left: 20, bottom: 5,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="score" fill="#8884d8" name="Puntaje MoCA" />
-                    </BarChart>
-                  </div>
-
-                  {/* Puntaje Promedio */}
-                  <div className="average-score my-4">
-                    <h4>Puntaje Promedio de MoCA: {averageScore}</h4>
-                  </div>
-
-                  {/* Tabla de Registros MoCA */}
-                  <div className="table-container my-4">
-                    <h4>Detalles de los Registros MoCA</h4>
-                    <table className="table table-striped">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Fecha de la Prueba</th>
-                          <th>Puntaje Total</th>
-                          <th>Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredRecords.map((record, index) => (
-                          <tr key={record._id}>
-                            <td>{index + 1}</td>
-                            <td>{new Date(record.testDate).toLocaleDateString()}</td>
-                            <td>{record.totalScore}</td>
-                            <td>
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => navigate(`/moca-final/${record._id}`)}
-                              >
-                                Ver Detalles
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 };
 
-export default MocaScreen;
+export default MoodScreen;

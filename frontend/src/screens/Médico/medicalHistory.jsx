@@ -190,7 +190,7 @@ const MedicalHistory = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Escuela"
+                    label="Representante"
                     fullWidth
                     variant="outlined"
                     error={!!errors.school}
@@ -265,7 +265,7 @@ const MedicalHistory = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Representante Familiar"
+                    label="Tratamientos previos"
                     fullWidth
                     variant="outlined"
                     error={!!errors.familyRepresentative}
@@ -320,7 +320,7 @@ const MedicalHistory = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Profesión"
+                    label="Diagnósticos Previos"
                     fullWidth
                     variant="outlined"
                     error={!!errors.profession}
@@ -352,7 +352,7 @@ const MedicalHistory = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Referencia a"
+                    label="Alergias"
                     fullWidth
                     variant="outlined"
                     error={!!errors.referredTo}
@@ -361,24 +361,6 @@ const MedicalHistory = () => {
                 )}
               />
             </Grid>
-            {/* 
-            <Grid item xs={12} sm={6}>
-              <Controller
-                name="doctor"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Doctor"
-                    fullWidth
-                    variant="outlined"
-                    error={!!errors.doctor}
-                    helperText={errors.doctor?.message}
-                  />
-                )}
-              />
-            </Grid>
-            */}
 
             {/* Botones */}
             <Grid item xs={12} display="flex" justifyContent="flex-end" spacing={2}>
