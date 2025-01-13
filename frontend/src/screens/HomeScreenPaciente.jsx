@@ -25,6 +25,7 @@ import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'moment/locale/es'; // Importa el idioma español
+import backgroundImage from '../assets/cerebro.png';
 
 moment.locale('es');
 const localizer = momentLocalizer(moment);
@@ -410,7 +411,7 @@ const HomeScreenPaciente = () => {
   });
 
   // ** Retorno principal del componente **
-  return (
+  return (   
     <div className="home-screen-container">
       {/* Popup de Estado de Ánimo */}
       {isMoodPopupOpen && (
@@ -462,6 +463,7 @@ const HomeScreenPaciente = () => {
           <p>Redirigiendo a la prueba MoCA...</p>
         </div>
       )}
+      <hr className="custom-separator" />
 
       <h2>Calendario de Actividades</h2>
       <BigCalendar
@@ -476,8 +478,8 @@ const HomeScreenPaciente = () => {
             event.type === 'medication'
               ? '#FFD700'
               : event.type === 'completed'
-              ? '#32CD32'
-              : '#FF6347';
+                ? '#32CD32'
+                : '#FF6347';
           return {
             style: {
               backgroundColor: bg,
@@ -534,7 +536,40 @@ const HomeScreenPaciente = () => {
           <span className="title">Mensajes</span>
         </li>
       </ul>
-    </div>
+
+      {/* Mostrar Tratamiento Activo */}
+      {activeTreatment && (
+        <div className="active-treatment-container">
+          <hr className="custom-separator" />
+          <h2>Videos de apoyo</h2>
+
+          {/* Mostrar Videos de Ejercicio */}
+          {activeTreatment.exerciseVideos && activeTreatment.exerciseVideos.length > 0 && (
+            <div className="video-grid">
+              {activeTreatment.exerciseVideos.map((video) => (
+                <div className="video-card" key={video.url}>
+                  <h4>{video.title}</h4>
+                  <p>{video.description}</p>
+                  <iframe
+                    width="100%" // Esto asegura que el video se ajuste al tamaño de la tarjeta
+                    height="250" // Altura ajustada para mantener proporción
+                    src={video.url.replace('watch?v=', 'embed/')}
+                    title={video.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+
+
+    </div> 
+       
   );
 };
 

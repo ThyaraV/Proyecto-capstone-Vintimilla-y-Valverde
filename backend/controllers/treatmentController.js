@@ -827,8 +827,8 @@ export const getActiveTreatment2 = asyncHandler(async (req, res) => {
   const activeTreatment = await Treatment.findOne({
     patients: patientId, // Usar 'patientId' directamente
     active: true,
-  }).populate('assignedActivities');
-
+  }).populate('assignedActivities')
+  .select('exerciseVideos treatmentName description');
   if (!activeTreatment) {
     console.log("getActiveTreatment2 - No active treatment found for patient:", patientId);
     res.status(404);

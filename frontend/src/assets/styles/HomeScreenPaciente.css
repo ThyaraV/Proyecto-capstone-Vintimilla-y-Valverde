@@ -1,5 +1,4 @@
 /* src/assets/styles/HomeScreenPaciente.css */
-
 /* Contenedor principal */
 .home-screen-container {
   padding: 2rem;
@@ -8,7 +7,8 @@
   background-color: #eeecec;
   border-radius: 15px;
   min-height: 80vh;
-}
+} 
+
 
 /* Contenido principal: Agenda y Calendario */
 .main-content {
@@ -34,7 +34,6 @@
   max-width: 60%; /* Define un ancho mayor para el calendario */
   display: flex;
   justify-content: flex-end; /* Alinea el calendario hacia la derecha */
-  
 }
 
 .custom-calendar {
@@ -285,4 +284,67 @@ ul.message-icon-container li:hover .title {
 /* Cambia si deseas */
 .moca-assigned-floating-message:hover {
   background-color: #e68a00;
+}
+
+
+/*Estilos para los videos*/
+.exercise-videos-container {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Tres columnas */
+  gap: 30px; /* Espaciado entre tarjetas */
+  justify-items: center; /* Centra horizontalmente cada tarjeta */
+  align-items: start; /* Alinea cada tarjeta en la parte superior */
+}
+
+.video-card {
+  text-align: center;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  max-width: 100%; /* Asegura que no exceda el contenedor */
+}
+
+.video-card h4 {
+  margin-bottom: 10px;
+  font-size: 1.2em;
+  color: #2f80ed;
+}
+
+.video-card iframe {
+  border-radius: 8px;
+  max-width: 100%;
+  height: auto;
+}
+
+.video-card p {
+  font-size: 0.9em;
+  color: #555;
+}
+
+/* Hover con efectos */
+.video-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsividad */
+@media (max-width: 1024px) {
+  .video-grid {
+    grid-template-columns: repeat(2, 1fr); /* Dos columnas en pantallas medianas */
+  }
+}
+
+@media (max-width: 768px) {
+  .video-grid {
+    grid-template-columns: 1fr; /* Una columna en pantallas pequeñas */
+  }
 }
