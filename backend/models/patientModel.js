@@ -25,7 +25,7 @@ const patientSchema = new mongoose.Schema({
   // Campo para asignar la prueba MOCA al paciente
   mocaAssigned: {
     type: Boolean,
-    default: true,
+    default: true, // Asegurado que el valor por defecto es false
   },
 });
 

@@ -14,7 +14,7 @@ import {
   Form,
 } from "react-bootstrap";
 import { useSelector } from "react-redux";
-import { useGetPatientsQuery, useUpdateMyPatientMutation } from "../slices/patientApiSlice";
+import { useGetPatientsQuery, useUpdatePatientMutation } from "../slices/patientApiSlice";
 import { useCreateMocaSelfMutation } from "../slices/mocaSelfApiSlice"; // Importar hook para enviar datos
 import Visuoespacial from "./MOCAmodules/Visuoespacial";
 import Identificacion from "./MOCAmodules/Identificacion";
@@ -58,11 +58,11 @@ const MocaStartSelf = () => {
   const [testCompleted, setTestCompleted] = useState(false); // Nuevo estado para detectar la finalización del test
   const [hasLessThan12YearsOfEducation, setHasLessThan12YearsOfEducation] = useState(false); // Nuevo estado para checkbox
 
-  // Inicializar el hook para actualizar el propio paciente
+  // Inicializar el hook para actualizar el paciente
   const [
-    updateMyPatient,
+    updatePatient,
     { isLoading: isUpdatingPatient, isSuccess: isUpdateSuccess, isError: isUpdateError, error: updateError },
-  ] = useUpdateMyPatientMutation();
+  ] = useUpdatePatientMutation();
 
   // Hooks para las mutaciones
   const [
@@ -168,8 +168,8 @@ const MocaStartSelf = () => {
       alert("Resultados guardados exitosamente.");
 
       try {
-        // Actualizar el campo mocaAssigned a false usando la nueva mutación
-        await updateMyPatient({ mocaAssigned: false }).unwrap();
+        // Actualizar el campo mocaAssigned a false usando la mutación correcta
+        await updatePatient({ id: selectedPatient._id, mocaAssigned: false }).unwrap();
         alert("Estado de MOCA actualizado correctamente.");
       } catch (err) {
         console.error(err);
@@ -259,8 +259,8 @@ const MocaStartSelf = () => {
       alert("Resultados simulados guardados exitosamente.");
 
       try {
-        // Actualizar el campo mocaAssigned a false usando la nueva mutación
-        await updateMyPatient({ mocaAssigned: false }).unwrap();
+        // Actualizar el campo mocaAssigned a false usando la mutación correcta
+        await updatePatient({ id: selectedPatient._id, mocaAssigned: false }).unwrap();
         alert("Estado de MOCA actualizado correctamente.");
       } catch (err) {
         console.error(err);
