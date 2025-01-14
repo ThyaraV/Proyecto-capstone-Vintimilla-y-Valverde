@@ -335,7 +335,6 @@
 
 /* Estilos para los dropdown personalizados */
 .custom-dropdown .dropdown-menu {
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
   border: none;
   border-radius: 8px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
@@ -348,7 +347,7 @@
 }
 
 .custom-dropdown .dropdown-item {
-  color: #ecf0f1; /* Texto claro */
+  color: #000000; /* Texto claro */
   display: flex;
   align-items: center;
   gap: 10px;
