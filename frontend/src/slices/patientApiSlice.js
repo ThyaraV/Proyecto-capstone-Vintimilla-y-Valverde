@@ -2,12 +2,17 @@
 
 import { apiSlice } from "./apiSlice";
 
-// Asegúrate de que la ruta "/api/patients" sea accesible a todos los usuarios autenticados
 export const patientApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getPatients: builder.query({
       query: () => "/api/patients",
-      providesTags: ["Patient"],
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ _id }) => ({ type: 'Patient', id: _id })),
+              { type: 'Patient', id: 'LIST' },
+            ]
+          : [{ type: 'Patient', id: 'LIST' }],
     }),
     getPatientById: builder.query({
       query: (id) => `/api/patients/${id}`,
@@ -15,7 +20,7 @@ export const patientApiSlice = apiSlice.injectEndpoints({
     }),
     getMyPatient: builder.query({
       query: () => "/api/patients/me",
-      providesTags: ["Patient"],
+      providesTags: (result, error, id) => [{ type: "Patient", id: result?._id }],
     }),
     updatePatient: builder.mutation({
       query: ({ id, ...patch }) => ({
@@ -31,6 +36,7 @@ export const patientApiSlice = apiSlice.injectEndpoints({
         method: "PATCH",
         body: patch,
       }),
+      invalidatesTags: [{ type: "Patient", id: 'LIST' }],
     }),
   }),
 });

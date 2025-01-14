@@ -1,9 +1,9 @@
 // src/screens/MOCAmodules/MocaAssign.jsx
 
-import React, { useState } from 'react';
-import { Container, ListGroup, Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Container, ListGroup, Row, Col, Form, Alert, Spinner } from 'react-bootstrap';
 import { useGetPatientsQuery, useUpdatePatientMutation } from '../slices/patientApiSlice';
-import '../assets/styles/MocaAssign.css'; // Asegúrate de crear este archivo de estilos o ajusta según tus necesidades
+import '../assets/styles/MocaAssign.css'; 
 
 const MocaAssign = () => {
   // Obtener la lista de pacientes
@@ -16,13 +16,15 @@ const MocaAssign = () => {
   ] = useUpdatePatientMutation();
 
   // Estado local para manejar los switches
-  const [switchStates, setSwitchStates] = useState(
-    () =>
-      patients.reduce((acc, patient) => {
-        acc[patient._id] = patient.mocaAssigned;
-        return acc;
-      }, {})
-  );
+  const [switchStates, setSwitchStates] = useState({});
+
+  useEffect(() => {
+    const initialSwitchStates = patients.reduce((acc, patient) => {
+      acc[patient._id] = Boolean(patient.mocaAssigned);
+      return acc;
+    }, {});
+    setSwitchStates(initialSwitchStates);
+  }, [patients]);
 
   // Manejar el cambio del switch
   const handleToggle = async (patientId) => {
@@ -99,8 +101,8 @@ const MocaAssign = () => {
                   <Form.Check
                     type="switch"
                     id={`moca-switch-${patient._id}`}
-                    label={patient.mocaAssigned ? 'Asignada' : 'No Asignada'}
-                    checked={switchStates[patient._id]}
+                    label={switchStates[patient._id] ? 'Asignada' : 'No Asignada'}
+                    checked={switchStates[patient._id] === true}
                     onChange={() => handleToggle(patient._id)}
                     disabled={isUpdating}
                   />

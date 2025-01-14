@@ -19,7 +19,13 @@ const getPatients = asyncHandler(async (req, res) => {
       .populate('doctor', 'user');
   }
 
-  res.json(patients);
+  // Asegurar que todos los pacientes tienen el campo mocaAssigned definido
+  const patientsWithMoca = patients.map(patient => ({
+    ...patient.toObject(),
+    mocaAssigned: patient.mocaAssigned !== undefined ? patient.mocaAssigned : false,
+  }));
+
+  res.json(patientsWithMoca);
 });
 
 // Obtener un paciente por ID
@@ -29,7 +35,9 @@ const getPatientById = asyncHandler(async (req, res) => {
     .populate('doctor', 'user');
 
   if (patient) {
-    res.json(patient);
+    const patientObj = patient.toObject();
+    patientObj.mocaAssigned = patient.mocaAssigned !== undefined ? patient.mocaAssigned : false;
+    res.json(patientObj);
   } else {
     res.status(404);
     throw new Error('Paciente no encontrado');
@@ -43,12 +51,14 @@ const getMyPatient = asyncHandler(async (req, res) => {
     .populate('user', 'name lastName cardId email phoneNumber')
     .populate('doctor', 'user');
 
-  if (!patient) {
+  if (patient) {
+    const patientObj = patient.toObject();
+    patientObj.mocaAssigned = patient.mocaAssigned !== undefined ? patient.mocaAssigned : false;
+    res.json(patientObj);
+  } else {
     res.status(404);
     throw new Error('No se encontró un paciente asociado a este usuario');
   }
-
-  res.json(patient);
 });
 
 // Actualizar un paciente
@@ -56,20 +66,20 @@ const updatePatient = asyncHandler(async (req, res) => {
   const patient = await Patient.findById(req.params.id);
 
   if (patient) {
-    patient.school = req.body.school || patient.school;
-    patient.birthdate = req.body.birthdate || patient.birthdate;
-    patient.gender = req.body.gender || patient.gender;
-    patient.educationalLevel = req.body.educationalLevel || patient.educationalLevel;
-    patient.familyRepresentative = req.body.familyRepresentative || patient.familyRepresentative;
-    patient.address = req.body.address || patient.address;
-    patient.maritalStatus = req.body.maritalStatus || patient.maritalStatus;
-    patient.profession = req.body.profession || patient.profession;
-    patient.cognitiveStage = req.body.cognitiveStage || patient.cognitiveStage;
-    patient.referredTo = req.body.referredTo || patient.referredTo;
-    patient.doctor = req.body.doctor || patient.doctor;
+    patient.school = req.body.school ?? patient.school;
+    patient.birthdate = req.body.birthdate ?? patient.birthdate;
+    patient.gender = req.body.gender ?? patient.gender;
+    patient.educationalLevel = req.body.educationalLevel ?? patient.educationalLevel;
+    patient.familyRepresentative = req.body.familyRepresentative ?? patient.familyRepresentative;
+    patient.address = req.body.address ?? patient.address;
+    patient.maritalStatus = req.body.maritalStatus ?? patient.maritalStatus;
+    patient.profession = req.body.profession ?? patient.profession;
+    patient.cognitiveStage = req.body.cognitiveStage ?? patient.cognitiveStage;
+    patient.referredTo = req.body.referredTo ?? patient.referredTo;
+    patient.doctor = req.body.doctor ?? patient.doctor;
 
     // Actualizar la asignación de la prueba MOCA
-    if (req.body.mocaAssigned !== undefined) {
+    if (typeof req.body.mocaAssigned === 'boolean') {
       patient.mocaAssigned = req.body.mocaAssigned;
     }
 
@@ -102,7 +112,9 @@ const getMedicalHistoryByPatientId = asyncHandler(async (req, res) => {
   const patient = await Patient.findById(patientId).populate('user', 'name lastName email phoneNumber cardId');
 
   if (patient) {
-    res.json(patient);
+    const patientObj = patient.toObject();
+    patientObj.mocaAssigned = patient.mocaAssigned !== undefined ? patient.mocaAssigned : false;
+    res.json(patientObj);
   } else {
     res.status(404);
     throw new Error('Paciente no encontrado');
