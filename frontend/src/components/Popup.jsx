@@ -15,11 +15,21 @@ function Popup({ moods, setSelectedMood }) {
   return (
     <div className="popup">
       <div className="popup-content">
-        <h1>¿Cómo se siente hoy?</h1>
+      <h1 style={{ color: "black" }}>¿Cómo se siente hoy?</h1>
         <div className="mood-meter">
           {/* Flecha del velocímetro */}
-          <div className="arrow" style={{ transform: `rotate(${selectedIndex * (180 / (moods.length - 1)) - 90}deg)` }}></div>
-          
+          <div className="arrow"
+            style={{
+              transform: `rotate(${Math.max(
+                -90,
+                Math.min(selectedIndex * (180 / (moods.length - 1)) - 90, 90)
+              )}deg)`,
+            }}
+          >
+            <div className="cube">
+            </div>
+          </div>
+
           {/* Contenedor para los emojis con coordenadas personalizadas */}
           <div className="emojis-container">
             {moods.map((mood, index) => {
@@ -29,6 +39,7 @@ function Popup({ moods, setSelectedMood }) {
               const radius = 110;
               const x = radius * Math.cos(angle) + 150;
               const y = radius * Math.sin(angle) + 130;
+
               return (
                 <div
                   key={index}
@@ -37,6 +48,7 @@ function Popup({ moods, setSelectedMood }) {
                 >
                   <button
                     className="mood-button"
+                    onMouseEnter={() => setSelectedIndex(index)} // Actualiza el índice al pasar el mouse
                     onClick={() => handleSelectMood(index)}
                     style={{ color: mood.color }}
                   >
@@ -49,8 +61,8 @@ function Popup({ moods, setSelectedMood }) {
         </div>
       </div>
     </div>
+
   );
 }
 
 export default Popup;
-

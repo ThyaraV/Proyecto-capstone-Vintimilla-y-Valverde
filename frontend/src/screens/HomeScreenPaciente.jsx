@@ -448,14 +448,14 @@ const HomeScreenPaciente = () => {
         </div>
       )}
 
-      {/* Mostrar información del paciente para MoCA (Depuración) */}
+      {/* Mostrar información del paciente para MoCA (Depuración) 
       {currentPatient && (
         <div style={{ backgroundColor: '#f8d7da', padding: '10px', marginBottom: '10px' }}>
           <strong>Depuración Paciente:</strong>
           <p>ID Paciente: {currentPatient._id}</p>
           <p>mocaAssigned: {currentPatient.mocaAssigned.toString()}</p>
         </div>
-      )}
+      )}*/}
 
       {/* Redirigir a MoCA si mocaAssigned es true y no hay tratamiento activo */}
       {currentPatient && currentPatient.mocaAssigned && !activeTreatment && (
