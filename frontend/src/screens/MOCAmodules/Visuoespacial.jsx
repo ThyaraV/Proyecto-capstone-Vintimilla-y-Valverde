@@ -1,11 +1,16 @@
 // src/screens/MOCAmodules/Visuoespacial.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Alert, Spinner, Form, Row, Col } from 'react-bootstrap';
+import { Button, Alert, Spinner, Form, Row, Col, ListGroup } from 'react-bootstrap';
 import { FaPlay, FaStop } from 'react-icons/fa';
+import { useSelector } from 'react-redux';
 import cubo from '../../images/cubo_image.jpg';
 
 const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
+  // Para determinar si el usuario es admin o paciente
+  const userInfo = useSelector((state) => state.auth.userInfo);
+  const isAdmin = userInfo?.isAdmin || false;
+
   const [currentActivity, setCurrentActivity] = useState(0);
   const [alternanciaScore, setAlternanciaScore] = useState(null);
   const [cubeScore, setCubeScore] = useState(null);
@@ -58,7 +63,9 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
     }
   };
 
+  // Mostrar los botones de cambio de actividad solo si es Admin
   const handleSelectActivity = (activityIndex) => {
+    if (!isAdmin) return;
     setCurrentActivity(activityIndex);
   };
 
@@ -72,6 +79,7 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
           isSpeaking={isSpeaking}
           speakInstructions={speakInstructions}
           isFirstModule={isFirstModule}
+          isAdmin={isAdmin}
         />
       )}
       {currentActivity === 1 && (
@@ -83,6 +91,7 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
           isSpeaking={isSpeaking}
           speakInstructions={speakInstructions}
           isFirstModule={isFirstModule}
+          isAdmin={isAdmin}
         />
       )}
       {currentActivity === 2 && (
@@ -94,23 +103,29 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
           isSpeaking={isSpeaking}
           speakInstructions={speakInstructions}
           isFirstModule={isFirstModule}
+          isAdmin={isAdmin}
         />
       )}
 
-      <div className="d-flex justify-content-center mt-4">
-        <Button variant="secondary" onClick={() => handleSelectActivity(0)} className="me-2">
-          Actividad 1
-        </Button>
-        <Button variant="secondary" onClick={() => handleSelectActivity(1)} className="me-2">
-          Actividad 2
-        </Button>
-        <Button variant="secondary" onClick={() => handleSelectActivity(2)}>
-          Actividad 3
-        </Button>
-      </div>
+      {/* Botones para seleccionar actividad (solo admin) */}
+      {isAdmin && (
+        <div className="d-flex justify-content-center mt-4">
+          <Button variant="secondary" onClick={() => handleSelectActivity(0)} className="me-2">
+            Actividad 1
+          </Button>
+          <Button variant="secondary" onClick={() => handleSelectActivity(1)} className="me-2">
+            Actividad 2
+          </Button>
+          <Button variant="secondary" onClick={() => handleSelectActivity(2)}>
+            Actividad 3
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
+
+// ========================= Alternancia Conceptual =========================
 
 const AlternanciaConceptualActivity = ({
   setAlternanciaScore,
@@ -118,24 +133,26 @@ const AlternanciaConceptualActivity = ({
   handlePrevious,
   isSpeaking,
   speakInstructions,
-  isFirstModule
+  isFirstModule,
+  isAdmin,
 }) => {
   const labels = ['1', 'A', '2', 'B', '3', 'C', '4', 'D', '5', 'E'];
   const svgSize = 450;
 
   const fixedMarkers = [
-    { label: '1', x: 50, y: 225 },
+    { label: '1', x: 50,  y: 225 },
     { label: 'A', x: 150, y: 50 },
     { label: '2', x: 300, y: 225 },
     { label: 'B', x: 400, y: 50 },
     { label: '3', x: 400, y: 400 },
     { label: 'C', x: 300, y: 350 },
     { label: '4', x: 150, y: 400 },
-    { label: 'D', x: 50, y: 350 },
+    { label: 'D', x: 50,  y: 350 },
     { label: '5', x: 200, y: 275 },
     { label: 'E', x: 250, y: 125 },
   ];
 
+  // Mantener las líneas punteadas de referencia
   const initialConnections = [
     { from: 0, to: 1, dashed: true },
     { from: 1, to: 2, dashed: true },
@@ -143,7 +160,8 @@ const AlternanciaConceptualActivity = ({
 
   const [markers] = useState(fixedMarkers);
   const [connections, setConnections] = useState(initialConnections);
-  const [selectedMarker, setSelectedMarker] = useState(2);
+  // selectedMarker inicialmente en null (no comienza en ninguno)
+  const [selectedMarker, setSelectedMarker] = useState(null);
   const [mousePosition, setMousePosition] = useState(null);
   const [score, setScore] = useState(null);
   const [answers, setAnswers] = useState([]);
@@ -153,12 +171,15 @@ const AlternanciaConceptualActivity = ({
       setConnections((prev) => [...prev, { from: selectedMarker, to: index, dashed: false }]);
       setSelectedMarker(index);
       setAnswers((prev) => [...prev, `${markers[selectedMarker].label}-${markers[index].label}`]);
+    } else {
+      // Si no hay un marcador seleccionado, el usuario comenzará desde este
+      setSelectedMarker(index);
     }
   };
 
   const handleReset = () => {
     setConnections(initialConnections);
-    setSelectedMarker(2);
+    setSelectedMarker(null);
     setMousePosition(null);
     setScore(null);
     setAnswers([]);
@@ -198,26 +219,29 @@ const AlternanciaConceptualActivity = ({
     <div className="module-container">
       <div className="d-flex align-items-center mb-2">
         <h4 className="mb-0">Alternancia Conceptual</h4>
-        <Button
-          variant="link"
-          onClick={() =>
-            speakInstructions(
-              `Instrucciones: Dibuje una línea alternando entre cifras y letras, respetando el orden numérico y alfabético. 
-               Inicie en 1, vaya a A, luego 2, B, etc., hasta terminar en E. Se califica si logra la secuencia completa 
-               sin errores corregidos tardíamente. Puede usar Reiniciar si se equivoca.`
-            )
-          }
-          disabled={isSpeaking}
-          className="ms-3 text-decoration-none"
-          style={{ whiteSpace: "nowrap", minWidth: "220px" }}
-        >
-          {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
-        </Button>
+        {isAdmin && (
+          <Button
+            variant="link"
+            onClick={() =>
+              speakInstructions(
+                `Instrucciones: Dibuje una línea alternando entre cifras y letras, 
+                 respetando el orden numérico y alfabético. Comience en 1, vaya a A, 
+                 luego a 2, B, etc., hasta E. Se puntúa con +1 si la secuencia final 
+                 es totalmente correcta. Puede pulsar Reiniciar para comenzar de nuevo.`
+              )
+            }
+            disabled={isSpeaking}
+            className="ms-3 text-decoration-none"
+            style={{ whiteSpace: "nowrap", minWidth: "220px" }}
+          >
+            {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones (Admin)
+          </Button>
+        )}
       </div>
 
       <p>
-        “Dibuje una línea alternando entre cifras y letras, respetando el orden numérico y alfabético. 
-        Inicie en 1 y termine en E. Se evaluará la secuencia final y se calificará en función de su precisión.”
+        “Dibuje una línea alternando entre cifras y letras, respetando el orden 
+        numérico y alfabético. Inicie en 1 y termine en E. Se evaluará la secuencia final.”
       </p>
 
       <div className="d-flex justify-content-center">
@@ -299,36 +323,48 @@ const AlternanciaConceptualActivity = ({
         </svg>
       </div>
 
-      <div className="mt-3 text-center">
-        <Form.Group className="mb-3">
-          <Form.Label><strong>Respuestas seleccionadas (trazos):</strong></Form.Label>
-          <div>
-            {answers.map((item, i) => (
-              <div key={i}>{item}</div>
-            ))}
-          </div>
-        </Form.Group>
-      </div>
+      {/* Ocultar respuestas seleccionadas (trazos) si NO es admin */}
+      {isAdmin && (
+        <div className="mt-3 text-center">
+          <Form.Group className="mb-3">
+            <Form.Label><strong>Respuestas seleccionadas (trazos) (Admin):</strong></Form.Label>
+            <div>
+              {answers.map((item, i) => (
+                <div key={i}>{item}</div>
+              ))}
+            </div>
+          </Form.Group>
+        </div>
+      )}
 
-      <Row className="mt-4 justify-content-center">
-        <Col xs="auto">
-          <Button variant="warning" onClick={handleReset} className="me-2">
-            Reiniciar
-          </Button>
+      <Row className="mt-4">
+        {/* Ocultar botón de "Regresar" si NO es admin */}
+        {isAdmin && (
+          <Col xs="auto">
+            <Button
+              variant="warning"
+              onClick={handleReset}
+              className="me-2"
+            >
+              Reiniciar
+            </Button>
+          </Col>
+        )}
+
+        <Col className="d-flex justify-content-end">
           <Button
             variant="success"
             onClick={handleContinue}
-            disabled={connections.length < labels.length - 1}
-            className="me-2"
           >
             Continuar
           </Button>
         </Col>
       </Row>
-
     </div>
   );
 };
+
+// ========================= Cubo Activity =========================
 
 const CuboActivity = ({
   cubeScore,
@@ -337,7 +373,8 @@ const CuboActivity = ({
   handlePrevious,
   isSpeaking,
   speakInstructions,
-  isFirstModule
+  isFirstModule,
+  isAdmin
 }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [lines, setLines] = useState([]);
@@ -352,7 +389,7 @@ const CuboActivity = ({
   const [alertMessage, setAlertMessage] = useState('');
   const [alertVariant, setAlertVariant] = useState('success');
 
-  // Para habilitar "Continuar" solo cuando hay un cubeScore
+  // Para habilitar "Continuar" solo cuando se ha evaluado
   const [evaluated, setEvaluated] = useState(false);
 
   const handleMouseDown = (e) => {
@@ -480,23 +517,25 @@ const CuboActivity = ({
     <div className="module-container">
       <div className="d-flex align-items-center mb-2">
         <h4 className="mb-0">Capacidades Visuoconstructivas (Cubo)</h4>
-        <Button
-          variant="link"
-          onClick={() =>
-            speakInstructions(
-              `Instrucciones: Copie este dibujo de la manera más precisa posible. Se califica 
-               si el dibujo cumple todos los criterios (tridimensional, líneas presentes, no sobran líneas, 
-               etc.). Puede usar deshacer, rehacer o borrar todo. Debe presionar "Evaluar" para obtener el puntaje.`
-            )
-          }
-          disabled={isSpeaking}
-          className="ms-3 text-decoration-none"
-          style={{ whiteSpace: "nowrap", minWidth: "220px" }}
-        >
-          {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
-        </Button>
+        {isAdmin && (
+          <Button
+            variant="link"
+            onClick={() =>
+              speakInstructions(
+                `Instrucciones: Copie este dibujo de la manera más precisa posible. 
+                 Se califica si el dibujo cumple todos los criterios (formas, líneas, 
+                 proporciones). Use deshacer, rehacer o borrar y luego presione "Evaluar".`
+              )
+            }
+            disabled={isSpeaking}
+            className="ms-3 text-decoration-none"
+            style={{ whiteSpace: "nowrap", minWidth: "220px" }}
+          >
+            {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones (Admin)
+          </Button>
+        )}
       </div>
-      <p>“Copie este dibujo de la manera más precisa posible”. Se evaluará el resultado final y se calificará en base a los criterios establecidos.</p>
+      <p>“Copie este dibujo de la manera más precisa posible”. Se califica la exactitud y completitud del cubo.</p>
 
       <div className="d-flex justify-content-center">
         <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -520,12 +559,16 @@ const CuboActivity = ({
 
       <Row className="mt-3 justify-content-center">
         <Col xs="auto" className="d-flex">
-          <Button variant="outline-secondary" onClick={handleUndo} className="me-2">
-            Deshacer
-          </Button>
-          <Button variant="outline-secondary" onClick={handleRedo} className="me-2">
-            Rehacer
-          </Button>
+          {isAdmin && (
+            <>
+              <Button variant="outline-secondary" onClick={handleUndo} className="me-2">
+                Deshacer
+              </Button>
+              <Button variant="outline-secondary" onClick={handleRedo} className="me-2">
+                Rehacer
+              </Button>
+            </>
+          )}
           <Button variant="warning" onClick={handleClear}>
             Borrar dibujo
           </Button>
@@ -591,6 +634,14 @@ const CuboActivity = ({
       </div>
 
       <Row className="mt-4">
+        {/* Botón de regresar (solo admin) */}
+        {isAdmin && (
+          <Col xs="auto">
+            <Button variant="secondary" onClick={handlePrevious} className="me-2">
+              Regresar
+            </Button>
+          </Col>
+        )}
         <Col className="d-flex justify-content-end">
           <Button
             variant="success"
@@ -605,6 +656,8 @@ const CuboActivity = ({
   );
 };
 
+// ========================= Reloj Activity =========================
+
 const RelojActivity = ({
   clockScore,
   setClockScore,
@@ -612,7 +665,8 @@ const RelojActivity = ({
   handlePrevious,
   isSpeaking,
   speakInstructions,
-  isFirstModule
+  isFirstModule,
+  isAdmin
 }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [lines, setLines] = useState([]);
@@ -762,24 +816,25 @@ Agujas: ${agujas}`);
     <div className="module-container">
       <div className="d-flex align-items-center mb-2">
         <h4 className="mb-0">Capacidades Visuoconstructivas (Reloj)</h4>
-        <Button
-          variant="link"
-          onClick={() =>
-            speakInstructions(
-              `Instrucciones: Dibuje un reloj que incluya todos los números y marque las 11 y 10. 
-               Se califica el contorno, los números y las agujas. Puede deshacer, rehacer o borrar todo, 
-               y luego presionar "Evaluar" para obtener el puntaje.`
-            )
-          }
-          disabled={isSpeaking}
-          className="ms-3 text-decoration-none"
-          style={{ whiteSpace: "nowrap", minWidth: "220px" }}
-        >
-          {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
-        </Button>
+        {isAdmin && (
+          <Button
+            variant="link"
+            onClick={() =>
+              speakInstructions(
+                `Instrucciones: Dibuje un reloj, con todos los números, y marque las 11 y 10. 
+                 Se revisará contorno, números y agujas. Use deshacer, rehacer o borrar, luego Evaluar.`
+              )
+            }
+            disabled={isSpeaking}
+            className="ms-3 text-decoration-none"
+            style={{ whiteSpace: "nowrap", minWidth: "220px" }}
+          >
+            {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones (Admin)
+          </Button>
+        )}
       </div>
 
-      <p>“Dibuje un reloj que incluya todos los números y marque las 11 y 10. Al evaluar, se revisará contorno, números y agujas.”</p>
+      <p>“Dibuje un reloj que incluya todos los números y marque las 11 y 10. Se evaluarán contorno, números y agujas.”</p>
 
       <div className="d-flex justify-content-center">
         <canvas
@@ -796,12 +851,16 @@ Agujas: ${agujas}`);
 
       <Row className="mt-3 justify-content-center">
         <Col xs="auto" className="d-flex">
-          <Button variant="outline-secondary" onClick={handleUndo} className="me-2">
-            Deshacer
-          </Button>
-          <Button variant="outline-secondary" onClick={handleRedo} className="me-2">
-            Rehacer
-          </Button>
+          {isAdmin && (
+            <>
+              <Button variant="outline-secondary" onClick={handleUndo} className="me-2">
+                Deshacer
+              </Button>
+              <Button variant="outline-secondary" onClick={handleRedo} className="me-2">
+                Rehacer
+              </Button>
+            </>
+          )}
           <Button variant="warning" onClick={handleClear}>
             Borrar dibujo
           </Button>
@@ -867,6 +926,14 @@ Agujas: ${agujas}`);
       </div>
 
       <Row className="mt-4">
+        {/* Botón de regresar (solo admin) */}
+        {isAdmin && (
+          <Col xs="auto">
+            <Button variant="secondary" onClick={handlePrevious} className="me-2">
+              Regresar
+            </Button>
+          </Col>
+        )}
         <Col className="d-flex justify-content-end">
           <Button
             variant="success"
