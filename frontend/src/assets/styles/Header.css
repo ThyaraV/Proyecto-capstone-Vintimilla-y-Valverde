@@ -2,7 +2,7 @@
 
 /* Estilos para el contenedor del menú */
 .menu-container {
-  position: relative;
+  position: relative;  
 }
 
 .menu-container.open .menu-content {
@@ -234,7 +234,7 @@
 }
 
 .sidebar-menu {
-  background: #007bff; 
+  background: transparent; 
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -340,10 +340,12 @@
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
   margin-top: 10px;
   animation: fadeInDropdown 0.3s ease-in-out;
+  
 }
 
 .custom-dropdown .dropdown-toggle::after {
   margin-left: 0.255em;
+  
 }
 
 .custom-dropdown .dropdown-item {
@@ -352,18 +354,19 @@
   align-items: center;
   gap: 10px;
   transition: background-color 0.2s, transform 0.2s;
+  
 }
 
 .custom-dropdown .dropdown-item:hover,
 .custom-dropdown .dropdown-item:focus {
-  background-color: #f1c40f; /* Color de fondo al pasar el cursor */
+  background-color: #f1c40f9d; /* Color de fondo al pasar el cursor */
   color: #ffffff;
-  transform: translateX(5px);
+  transform: translateX(3px);
 }
 
 .custom-dropdown .dropdown-icon {
   margin-right: 8px;
-  color: #f1c40f; /* Color de los iconos */
+  color: #888063; /* Color de los iconos */
 }
 
 @keyframes fadeInDropdown {
@@ -388,7 +391,7 @@
 }
 
 .menu-toggle-btn:hover {
-  color: #0073ff; /* Color al pasar el cursor */
+  color: #204e86; /* Color al pasar el cursor */
 }
 
 /* Estilos para el logo */
@@ -420,7 +423,7 @@
 }
 
 .navbar-nav .nav-link:hover svg {
-  color: #f1c40f;
+  color: #ffffff;
 }
 
 /* Responsividad mejorada */
@@ -435,5 +438,4 @@
     left: auto;
   }
 }
-
 /* Otros estilos existentes permanecen intactos */
