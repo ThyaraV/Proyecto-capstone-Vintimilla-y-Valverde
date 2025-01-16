@@ -1,3 +1,5 @@
+// src/screens/MocaStart.jsx
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -11,7 +13,7 @@ import {
   Spinner,
   Card,
 } from "react-bootstrap";
-import { useGetPatientsQuery } from "../slices/patientApiSlice";
+import { useGetPatientsQuery, useUpdatePatientMutation } from "../slices/patientApiSlice";
 import { useCreateMocaSelfMutation } from "../slices/mocaSelfApiSlice";
 
 import "../assets/styles/MocaStart.css"; // Asegúrate de tener este archivo en tu proyecto
@@ -70,6 +72,17 @@ const MocaStart = () => {
     createMocaSelf,
     { isLoading: isSaving, isSuccess: isSaveSuccess, isError: isSaveError, error: saveError },
   ] = useCreateMocaSelfMutation();
+
+  // == Mutación para Actualizar mocaAssigned ==
+  const [
+    updatePatient,
+    {
+      isLoading: isUpdatingPatient,
+      isSuccess: isUpdateSuccess,
+      isError: isUpdateError,
+      error: updateError,
+    },
+  ] = useUpdatePatientMutation();
 
   // == Funciones de Cálculo por Módulo ==
   const getVisuoespacialScore = () =>
@@ -147,7 +160,7 @@ const MocaStart = () => {
     }
   };
 
-  // == Guardar Resultados (Sin actualizar Moca en Paciente) ==
+  // == Guardar Resultados (Con Actualización de mocaAssigned) ==
   const handleSaveResults = async () => {
     if (!selectedPatient) {
       alert("Paciente no seleccionado.");
@@ -213,6 +226,16 @@ const MocaStart = () => {
     try {
       const savedRecord = await createMocaSelf(mocaData).unwrap();
       alert("Resultados guardados exitosamente.");
+
+      try {
+        // Actualizar el campo mocaAssigned a false usando la mutación correcta
+        await updatePatient({ id: selectedPatient._id, mocaAssigned: false }).unwrap();
+        alert("Estado de MOCA actualizado correctamente.");
+      } catch (err) {
+        console.error(err);
+        alert("Error al actualizar el estado de MOCA.");
+      }
+
       navigate(`/moca-final/${savedRecord._id}`);
     } catch (err) {
       console.error("Error al guardar resultados:", err);
@@ -289,6 +312,16 @@ const MocaStart = () => {
     try {
       const savedRecord = await createMocaSelf(mocaData).unwrap();
       alert("Resultados simulados guardados exitosamente.");
+
+      try {
+        // Actualizar el campo mocaAssigned a false usando la mutación correcta
+        await updatePatient({ id: selectedPatient._id, mocaAssigned: false }).unwrap();
+        alert("Estado de MOCA actualizado correctamente.");
+      } catch (err) {
+        console.error(err);
+        alert("Error al actualizar el estado de MOCA.");
+      }
+
       navigate(`/moca-final/${savedRecord._id}`);
     } catch (err) {
       console.error("Error al guardar resultados simulados:", err);
@@ -1096,9 +1129,9 @@ const MocaStart = () => {
                         variant="success"
                         onClick={handleSaveResults}
                         size="lg"
-                        disabled={isSaving || !isAllAnswered}
+                        disabled={isSaving || isUpdatingPatient || !isAllAnswered}
                       >
-                        {isSaving ? (
+                        {isSaving || isUpdatingPatient ? (
                           <>
                             <Spinner
                               as="span"
@@ -1119,9 +1152,9 @@ const MocaStart = () => {
                         variant="secondary"
                         onClick={handleSimulateAndSaveResults}
                         size="lg"
-                        disabled={isSaving}
+                        disabled={isSaving || isUpdatingPatient}
                       >
-                        {isSaving ? (
+                        {isSaving || isUpdatingPatient ? (
                           <>
                             <Spinner
                               as="span"
@@ -1148,6 +1181,18 @@ const MocaStart = () => {
                     {isSaveError && (
                       <Alert variant="danger" className="mt-3 text-center">
                         {saveError?.data?.message || "Error al guardar resultados."}
+                      </Alert>
+                    )}
+
+                    {/* Mensajes de éxito/error al actualizar mocaAssigned */}
+                    {isUpdateSuccess && (
+                      <Alert variant="success" className="mt-3 text-center">
+                        Estado de MOCA actualizado correctamente.
+                      </Alert>
+                    )}
+                    {isUpdateError && (
+                      <Alert variant="danger" className="mt-3 text-center">
+                        {updateError?.data?.message || "Error al actualizar el estado de MOCA."}
                       </Alert>
                     )}
                   </div>
