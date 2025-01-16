@@ -237,7 +237,7 @@ const ActivityScreenLevel1 = ({ activity, treatmentId }) => { // Recibe 'activit
           {gameFinished && (
             <div className="results">
               <h2>¡Juego Terminado!</h2>
-              <p>Respuestas correctas: {correctAnswers} / 6</p>
+              <p>Respuestas correctas: {correctAnswers} / 5</p>
               <p>Tiempo total: {timer} segundos</p>
             </div>
           )}
