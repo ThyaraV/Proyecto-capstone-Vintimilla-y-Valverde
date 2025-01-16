@@ -82,7 +82,7 @@ const ActivityReportScreen = () => {
   // ESTADOS PARA GRÁFICAS
   const [activityTypes, setActivityTypes] = useState([]);
   const [colorMap, setColorMap] = useState({});
-  const [pieData, setPieData] = useState([]);
+  const [activitiesPieData, setActivitiesPieData] = useState([]); // Nuevo estado para múltiples gráficos de pastel
   const [barChartData, setBarChartData] = useState([]);
 
   // ESTADO PARA ACTIVIDADES PENDIENTES
@@ -101,6 +101,40 @@ const ActivityReportScreen = () => {
     "#bcbd22",
     "#17becf",
   ];
+
+  // DEFINIR PUNTOS TOTALES POR ACTIVIDAD
+  const TOTAL_POINTS_PER_ACTIVITY = {
+    "Búsqueda de Letras-Nivel 1": 5,
+    "Búsqueda de Letras-Nivel 2": 5,
+    "Búsqueda de Letras-Nivel 3": 5,
+    "Asociación de Fotos-Nivel 1": 25,
+    "Asociación de Fotos-Nivel 2": 5,
+    "Asociación de Fotos-Nivel 3": 5,
+    "Sumas y Restas-Nivel 1": 25,
+    "Sumas y Restas-Nivel 2": 40,
+    "Sumas y Restas-Nivel 3": 50,
+    "Encontrar Diferencias-Nivel 1": 35,
+    "Encontrar Diferencias-Nivel 2": 50,
+    "Encontrar Diferencias-Nivel 3": 50,
+    "Formar Refranes-Nivel 1": 5,
+    "Formar Refranes-Nivel 2": 5,
+    "Formar Refranes-Nivel 3": 5,
+    "Sopa de letras-Nivel 1	": 5,
+    "Sopa de letras-Nivel 2	": 10,
+    "Sopa de letras-Nivel 3	": 5,
+    "Clasificación de Palabras-Nivel 1": 5,
+    "Clasificación de Palabras-Nivel 2": 5,
+    "Clasificación de Palabras-Nivel 3": 5,
+    "Ejercicio de Memoria-Nivel 1": 50,
+    "Ejercicio de Memoria-Nivel 2": 50,
+    "Ejercicio de Memoria-Nivel 3": 50,
+    "Lectura y Preguntas-Nivel 1": 5,
+    "Lectura y Preguntas-Nivel 2": 5,
+    "Lectura y Preguntas-Nivel 3": 5,
+    "Cumplir Instrucciones-Nivel 1": 30,
+    "Cumplir Instrucciones-Nivel 2": 30,
+    "Cumplir Instrucciones-Nivel 3": 30,
+  };
 
   // REFERENCIA PARA GENERAR PDF
   const reportRef = useRef();
@@ -178,20 +212,31 @@ const ActivityReportScreen = () => {
       const transformedData = Object.values(groupedByDate);
       setBarChartData(transformedData);
 
-      // 5. DATOS PARA EL GRÁFICO DE PASTEL
-      const totalScores = types.map((type) => ({
-        name: type,
-        value: completedActivities
+      // 5. PREPARAR DATOS PARA MÚLTIPLES GRÁFICOS DE PASTEL
+      const activitiesData = types.map((type) => {
+        const obtainedPoints = completedActivities
           .filter((a) => a.activity.name === type)
-          .reduce((sum, a) => sum + Math.max(Number(a.scoreObtained), 0), 0),
-        color: colors[type],
-      }));
-      setPieData(totalScores);
+          .reduce((sum, a) => sum + Math.max(Number(a.scoreObtained), 0), 0);
+
+        const totalPoints = TOTAL_POINTS_PER_ACTIVITY[type] || 100; // Valor por defecto si no se especifica
+
+        return {
+          name: type,
+          data: [
+            { name: "Obtenidos", value: obtainedPoints },
+            { name: "Restantes", value: Math.max(totalPoints - obtainedPoints, 0) },
+          ],
+          color: colors[type],
+          totalPoints, // Para mostrar en la etiqueta o tooltip si es necesario
+        };
+      });
+
+      setActivitiesPieData(activitiesData);
     } else {
       // Si no hay actividades completadas o no hay tratamiento seleccionado
       setActivityTypes([]);
       setColorMap({});
-      setPieData([]);
+      setActivitiesPieData([]);
       setBarChartData([]);
     }
   }, [completedActivities, selectedTreatment]);
@@ -376,34 +421,54 @@ const ActivityReportScreen = () => {
                   </ResponsiveContainer>
                 </div>
 
-                {/* GRÁFICO DE PASTEL */}
-                <div className="pie-chart-container">
+                {/* NUEVA SECCIÓN DE MÚLTIPLOS GRÁFICOS DE PASTEL */}
+                <div className="multiple-pie-charts-container">
                   <h3>
-                    <FaChartPie /> Distribución de Actividades
+                    <FaChartPie /> Distribución de Actividades Individuales
                   </h3>
-                  <ResponsiveContainer width="100%" height="90%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={150}
-                        label
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend
-                        layout="horizontal"
-                        verticalAlign="bottom"
-                        align="center"
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="individual-pie-charts">
+                    {activitiesPieData.map((activity, index) => (
+                      <div key={index} className="individual-pie-chart">
+                        <h4>{activity.name}</h4>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={activity.data}
+                              dataKey="value"
+                              nameKey="name"
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={100}
+                              label={({ name, percent }) =>
+                                `${name}: ${(percent * 100).toFixed(0)}%`
+                              }
+                            >
+                              {activity.data.map((entry, idx) => (
+                                <Cell
+                                  key={`cell-${idx}`}
+                                  fill={
+                                    entry.name === "Obtenidos"
+                                      ? colorMap[activity.name]
+                                      : "#d3d3d3" // Color para los restantes
+                                  }
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                            <Legend
+                              layout="horizontal"
+                              verticalAlign="bottom"
+                              align="center"
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <p>
+                          Puntos Obtenidos: {activity.data[0].value} /{" "}
+                          {activity.totalPoints}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (
