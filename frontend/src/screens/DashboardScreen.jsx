@@ -25,7 +25,6 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useSnackbar } from 'notistack';
 
-// Slices y Hooks necesarios (ajusta los imports a tu proyecto)
 import { useGetDoctorWithPatientsQuery } from '../slices/doctorApiSlice';
 import {
   useGetTreatmentsByMultiplePatientsMutation,
@@ -34,11 +33,21 @@ import {
 import { useGetMoodsByDateQuery } from '../slices/moodApiSlice';
 import { useGetAllMocaSelfsQuery } from '../slices/mocaSelfApiSlice';
 
-// Componentes auxiliares
 import KPICard from '../components/KPICard';
-import ChartsSection from '../components/ChartsSection';
+import {
+  PieChart,
+  Pie,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
 
-// Íconos
 import {
   FaSmile,
   FaAngry,
@@ -79,9 +88,9 @@ const moodIcons = {
 const DashboardScreen = () => {
   const { enqueueSnackbar } = useSnackbar();
 
-  // ======================================================
-  // 1. OBTENER LISTA DE PACIENTES (Doctor con Pacientes)
-  // ======================================================
+  // ============================
+  // 1. OBTENER PACIENTES
+  // ============================
   const {
     data: doctorPatients,
     isLoading: isLoadingPatients,
@@ -89,7 +98,7 @@ const DashboardScreen = () => {
     error: errorPatients,
   } = useGetDoctorWithPatientsQuery();
 
-  // Convertir doctorPatients a un array usable
+  // Convertir a array usable
   const patients = useMemo(() => {
     if (!doctorPatients) return [];
     return doctorPatients.map((patient) => ({
@@ -98,37 +107,32 @@ const DashboardScreen = () => {
     }));
   }, [doctorPatients]);
 
-  // ======================================================
-  // 2. FILTROS: Pacientes, Estado del Tratamiento, Fechas MoCA
-  // ======================================================
-  const [selectedPatients, setSelectedPatients] = useState(['ALL']); // Por defecto: "ALL"
+  // ============================
+  // 2. FILTROS
+  // ============================
+  const [selectedPatients, setSelectedPatients] = useState(['ALL']); // "ALL" por defecto
   const [treatmentStatus, setTreatmentStatus] = useState('all');
   const [mocaStartDate, setMocaStartDate] = useState('');
   const [mocaEndDate, setMocaEndDate] = useState('');
 
-  // Manejo del cambio en la lista de pacientes seleccionados
+  // Manejo de selección de pacientes
   const handlePatientChange = (event) => {
-    const {
-      target: { value },
-    } = event;
-
-    // Si el usuario elige "ALL", mantenemos "ALL" como único valor
+    const { value } = event.target;
     if (value.includes('ALL')) {
       setSelectedPatients(['ALL']);
     } else {
-      // Si se deselecciona "ALL", filtrarlo
       setSelectedPatients(value.filter((v) => v !== 'ALL'));
     }
   };
 
-  // Manejo del filtro de estado de tratamiento
+  // Manejo de estado de tratamiento
   const handleStatusChange = (event) => {
     setTreatmentStatus(event.target.value);
   };
 
-  // ======================================================
-  // 3. OBTENER TRATAMIENTOS POR MÚLTIPLES PACIENTES
-  // ======================================================
+  // ============================
+  // 3. OBTENER TRATAMIENTOS
+  // ============================
   const [
     fetchTreatments,
     {
@@ -139,30 +143,30 @@ const DashboardScreen = () => {
     },
   ] = useGetTreatmentsByMultiplePatientsMutation();
 
-  // Cada vez que cambien los filtros (selectedPatients), recargamos tratamientos
+  // Efecto para recargar tratamientos al cambiar filtros
   useEffect(() => {
-    // Si "ALL" está seleccionado, obtener todos los IDs de pacientes
+    if (!doctorPatients) return;
     if (selectedPatients.includes('ALL') && patients.length > 0) {
       const allIds = patients.map((p) => p._id.toString());
       fetchTreatments({ patientIds: allIds })
         .unwrap()
-        .catch((error) => {
+        .catch((error) =>
           enqueueSnackbar(`Error: ${error.data?.message || error.error}`, {
             variant: 'error',
-          });
-        });
+          }),
+        );
     } else if (selectedPatients.length > 0 && !selectedPatients.includes('ALL')) {
       fetchTreatments({ patientIds: selectedPatients })
         .unwrap()
-        .catch((error) => {
+        .catch((error) =>
           enqueueSnackbar(`Error: ${error.data?.message || error.error}`, {
             variant: 'error',
-          });
-        });
+          }),
+        );
     }
   }, [selectedPatients, patients, fetchTreatments, enqueueSnackbar]);
 
-  // Filtrar por estado (activo / inactivo)
+  // Filtrar tratamientos por estado
   const filteredTreatments = useMemo(() => {
     if (!treatmentsData) return [];
     let filtered = treatmentsData;
@@ -174,9 +178,9 @@ const DashboardScreen = () => {
     return filtered;
   }, [treatmentsData, treatmentStatus]);
 
-  // ======================================================
-  // 4. MÉTRICAS: Pacientes y Tratamientos
-  // ======================================================
+  // ============================
+  // 4. KPIs de Pacientes y Tratamientos
+  // ============================
   const totalPatients = patients.length;
   const isAllSelected = selectedPatients.includes('ALL');
   const selectedPatientsCount = isAllSelected ? totalPatients : selectedPatients.length;
@@ -185,12 +189,12 @@ const DashboardScreen = () => {
   const activeTreatments = filteredTreatments.filter((t) => t.active).length;
   const inactiveTreatments = filteredTreatments.filter((t) => !t.active).length;
 
-  // ======================================================
+  // ============================
   // 5. ESTADOS DE ÁNIMO
-  // ======================================================
+  // ============================
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
-    return today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    return today.toISOString().split('T')[0];
   });
 
   const {
@@ -202,16 +206,15 @@ const DashboardScreen = () => {
     skip: !selectedDate,
   });
 
-  // Resumir cuántos pacientes hay en cada estado de ánimo
   const moodSummary = useMemo(() => {
     if (!moodsData) return {};
-    return moodsData.reduce((acc, moodEntry) => {
-      acc[moodEntry.mood] = (acc[moodEntry.mood] || 0) + 1;
+    return moodsData.reduce((acc, m) => {
+      acc[m.mood] = (acc[m.mood] || 0) + 1;
       return acc;
     }, {});
   }, [moodsData]);
 
-  // Modal para ver quiénes tienen cierto estado de ánimo
+  // Modal para mostrar pacientes por Mood
   const [openMoodModal, setOpenMoodModal] = useState(false);
   const [currentMood, setCurrentMood] = useState('');
   const [patientsWithMood, setPatientsWithMood] = useState([]);
@@ -229,9 +232,9 @@ const DashboardScreen = () => {
     setPatientsWithMood([]);
   };
 
-  // ======================================================
-  // 6. MoCA: Obtener y Filtrar Resultados
-  // ======================================================
+  // ============================
+  // 6. MoCA
+  // ============================
   const {
     data: allMocaRecords,
     isLoading: isLoadingMoca,
@@ -239,19 +242,15 @@ const DashboardScreen = () => {
     error: errorMoca,
   } = useGetAllMocaSelfsQuery();
 
-  // Filtrar MoCA de acuerdo a pacientes y fechas
+  // Filtrar MoCA
   const filteredMocaRecords = useMemo(() => {
     if (!allMocaRecords) return [];
     let records = [...allMocaRecords];
-
-    // Si "ALL" está seleccionado, no filtramos por ID de paciente
     if (!isAllSelected && selectedPatients.length > 0) {
       records = records.filter((rec) =>
         selectedPatients.includes(rec.patient?._id?.toString()),
       );
     }
-
-    // Rango de fechas
     if (mocaStartDate) {
       const start = new Date(mocaStartDate);
       records = records.filter((rec) => new Date(rec.testDate) >= start);
@@ -261,11 +260,9 @@ const DashboardScreen = () => {
       end.setHours(23, 59, 59, 999);
       records = records.filter((rec) => new Date(rec.testDate) <= end);
     }
-
     return records;
   }, [allMocaRecords, selectedPatients, isAllSelected, mocaStartDate, mocaEndDate]);
 
-  // Puntaje promedio MoCA
   const averageMocaScore = useMemo(() => {
     if (filteredMocaRecords.length === 0) return 0;
     const totalScore = filteredMocaRecords.reduce(
@@ -275,25 +272,23 @@ const DashboardScreen = () => {
     return (totalScore / filteredMocaRecords.length).toFixed(1);
   }, [filteredMocaRecords]);
 
-  // Distribución de puntajes MoCA
+  // Distribución MoCA
   const mocaDistributionData = useMemo(() => {
     if (filteredMocaRecords.length === 0) return [];
     const distribution = { '0-10': 0, '11-20': 0, '21-30': 0 };
-
     filteredMocaRecords.forEach((rec) => {
       const score = rec.totalScore || 0;
       if (score >= 0 && score <= 10) distribution['0-10'] += 1;
       else if (score >= 11 && score <= 20) distribution['11-20'] += 1;
       else if (score >= 21 && score <= 30) distribution['21-30'] += 1;
     });
-
     return Object.keys(distribution).map((range) => ({
       range,
       count: distribution[range],
     }));
   }, [filteredMocaRecords]);
 
-  // Tendencia de puntajes MoCA
+  // Tendencia MoCA
   const mocaTrendData = useMemo(() => {
     if (filteredMocaRecords.length === 0) return [];
     const sorted = [...filteredMocaRecords].sort(
@@ -308,9 +303,9 @@ const DashboardScreen = () => {
     }));
   }, [filteredMocaRecords]);
 
-  // ======================================================
-  // 7. Adherencia a Medicamentos (Ejemplo)
-  // ======================================================
+  // ============================
+  // 7. Medicamentos (Adherencia)
+  // ============================
   const [takeMedication] = useTakeMedicationMutation();
 
   const totalMedications = useMemo(() => {
@@ -337,51 +332,51 @@ const DashboardScreen = () => {
     ? ((medicationsTaken / totalMedications) * 100).toFixed(1)
     : 0;
 
-  // ======================================================
-  // 8. Preparar Datos para los Gráficos Adicionales
-  // ======================================================
-
-  // Distribución de Tratamientos
-  const distributionTreatmentsDataComputed = useMemo(() => {
+  // ============================
+  // 8. Gráficos de Resumen (Vista General)
+  // ============================
+  // Ejemplo: PieChart simple con los estados de tratamiento (activo vs. inactivo)
+  const treatmentStatesDistribution = useMemo(() => {
     if (filteredTreatments.length === 0) return [];
-    const distribution = {};
-    filteredTreatments.forEach((t) => {
-      const type = t.treatmentType || 'Desconocido';
-      distribution[type] = (distribution[type] || 0) + 1;
-    });
-    return Object.keys(distribution).map((type) => ({
-      name: type,
-      value: distribution[type],
-    }));
+    const activeCount = filteredTreatments.filter((t) => t.active).length;
+    const inactiveCount = filteredTreatments.filter((t) => !t.active).length;
+    return [
+      { name: 'Activos', value: activeCount },
+      { name: 'Inactivos', value: inactiveCount },
+    ];
   }, [filteredTreatments]);
 
-  // Tratamientos por Paciente
-  const treatmentsPerPatientDataComputed = useMemo(() => {
+  // Ejemplo: BarChart simple con número de tratamientos por paciente
+  const treatmentsByPatientSummary = useMemo(() => {
     if (filteredTreatments.length === 0) return [];
     const treatmentCounts = {};
     filteredTreatments.forEach((t) => {
-      const patientName = t.patient?.user
-        ? `${t.patient.user.name} ${t.patient.user.lastName}`
-        : 'Desconocido';
-      treatmentCounts[patientName] = (treatmentCounts[patientName] || 0) + 1;
+      // Se asume que t.patients es un array; si tienes 1 solo patient por treatment, ajusta
+      t.patients.forEach((pId) => {
+        treatmentCounts[pId] = (treatmentCounts[pId] || 0) + 1;
+      });
     });
-    return Object.keys(treatmentCounts).map((name) => ({
-      patientName: name,
-      treatmentCount: treatmentCounts[name],
-    }));
-  }, [filteredTreatments]);
+    // Mapear IDs a nombres
+    return Object.entries(treatmentCounts).map(([patientId, count]) => {
+      const p = patients.find((p) => p._id === patientId);
+      const name = p
+        ? `${p.user.name} ${p.user.lastName}`
+        : `Paciente ID: ${patientId}`;
+      return { patient: name, count };
+    });
+  }, [filteredTreatments, patients]);
 
-  // ======================================================
-  // 9. Acordeones para secciones de datos
-  // ======================================================
+  // ============================
+  // 9. Acordeones
+  // ============================
   const [expanded, setExpanded] = useState(false);
   const handleAccordionChange = (panel) => (event, isExpanded) => {
     setExpanded(isExpanded ? panel : false);
   };
 
-  // ======================================================
-  // Manejo de carga y errores
-  // ======================================================
+  // ============================
+  // Manejo de Carga/Errores
+  // ============================
   const isLoadingDashboard =
     isLoadingPatients || isLoadingTreatments || isLoadingMoods || isLoadingMoca;
   const isErrorDashboard =
@@ -414,7 +409,7 @@ const DashboardScreen = () => {
   }
 
   // ======================================================
-  // Render Final del Dashboard
+  // RENDER
   // ======================================================
   return (
     <Container>
@@ -422,10 +417,10 @@ const DashboardScreen = () => {
         Dashboard General
       </Typography>
 
-      {/* Filtros */}
+      {/* Sección de Filtros */}
       <Box mb={3}>
         <Grid container spacing={2}>
-          {/* Filtro: Pacientes */}
+          {/* Filtro Pacientes */}
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
               <InputLabel id="patient-select-label">Filtrar Pacientes</InputLabel>
@@ -436,9 +431,7 @@ const DashboardScreen = () => {
                 onChange={handlePatientChange}
                 input={<OutlinedInput label="Filtrar Pacientes" />}
                 renderValue={(selected) => {
-                  if (selected.includes('ALL')) {
-                    return 'Todos los Pacientes';
-                  }
+                  if (selected.includes('ALL')) return 'Todos los Pacientes';
                   return selected
                     .map((id) => {
                       const p = patients.find((pp) => pp._id === id);
@@ -452,7 +445,6 @@ const DashboardScreen = () => {
                   <Checkbox checked={selectedPatients.includes('ALL')} />
                   <ListItemText primary="Todos los Pacientes" />
                 </MenuItem>
-
                 {patients.map((p) => (
                   <MenuItem
                     key={p._id}
@@ -467,7 +459,7 @@ const DashboardScreen = () => {
             </FormControl>
           </Grid>
 
-          {/* Filtro: Estado del Tratamiento */}
+          {/* Filtro Estado Tratamiento */}
           <Grid item xs={12} md={4}>
             <FormControl fullWidth>
               <InputLabel id="status-select-label">Estado Tratamiento</InputLabel>
@@ -484,7 +476,7 @@ const DashboardScreen = () => {
             </FormControl>
           </Grid>
 
-          {/* Fechas para Filtrar MoCA */}
+          {/* Fechas MoCA */}
           <Grid item xs={12} md={2}>
             <TextField
               label="MoCA Inicio"
@@ -521,7 +513,7 @@ const DashboardScreen = () => {
           <KPICard
             title="Pacientes Seleccionados"
             value={selectedPatientsCount}
-            subtitle={isAllSelected ? 'Todos' : 'Aplicando filtro'}
+            subtitle={isAllSelected ? 'Todos' : 'Filtrados'}
           />
         </Grid>
         <Grid item xs={12} md={3}>
@@ -564,7 +556,7 @@ const DashboardScreen = () => {
           <KPICard
             title="Registros MoCA"
             value={filteredMocaRecords.length}
-            subtitle="Filtrados por fecha y paciente"
+            subtitle="Pacientes/Fechas"
             icon={<MdEventNote />}
           />
         </Grid>
@@ -578,7 +570,73 @@ const DashboardScreen = () => {
         </Grid>
       </Grid>
 
-      {/* Sección Expansible: Tratamientos */}
+      {/* VISTA GENERAL DE TRATAMIENTOS (EJEMPLO) */}
+      <Box mb={4}>
+        <Typography variant="h5" gutterBottom>
+          Vista General de Tratamientos
+        </Typography>
+        <Grid container spacing={2}>
+          {/* PieChart: Estados de Tratamiento */}
+          <Grid item xs={12} md={6}>
+            <Card sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Distribución de Estados de Tratamiento
+              </Typography>
+              {treatmentStatesDistribution.length === 0 ? (
+                <Typography>No hay datos de Tratamientos.</Typography>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={treatmentStatesDistribution}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label
+                    >
+                      {treatmentStatesDistribution.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={index === 0 ? '#82ca9d' : '#d62728'}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </Card>
+          </Grid>
+
+          {/* BarChart: Número de Tratamientos por Paciente */}
+          <Grid item xs={12} md={6}>
+            <Card sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Tratamientos por Paciente (Resumen)
+              </Typography>
+              {treatmentsByPatientSummary.length === 0 ? (
+                <Typography>No hay datos para este gráfico.</Typography>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={treatmentsByPatientSummary}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="patient" interval={0} angle={-45} textAnchor="end" height={60}/>
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="count" fill="#8884d8" name="Tratamientos" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* Acordeón de Tratamientos */}
       <Accordion
         expanded={expanded === 'treatmentsPanel'}
         onChange={handleAccordionChange('treatmentsPanel')}
@@ -610,28 +668,22 @@ const DashboardScreen = () => {
                   Observaciones
                 </Typography>
                 <Typography variant="body2">
-                  Aquí se pueden incluir notas generales sobre los tratamientos
-                  (p.ej., si se observa baja adherencia, proponer seguimiento
-                  adicional, etc.).
+                  Aquí se pueden incluir notas generales sobre los tratamientos,
+                  adherencia a medicación, etc.
                 </Typography>
               </Card>
             </Grid>
           </Grid>
 
-          {/* Gráficos de Tratamientos */}
-          <ChartsSection
-            treatments={filteredTreatments}
-            completedActivities={[]} // Si no tienes datos de actividades aquí, puedes dejarlo vacío o pasar datos relevantes
-            medications={[]} // Similar al anterior
-            distributionTreatmentsData={distributionTreatmentsDataComputed}
-            treatmentsPerPatientData={treatmentsPerPatientDataComputed}
-            mocaDistributionData={[]} // No es necesario aquí, lo incluirás en otra sección
-            mocaTrendData={[]} // Similar
-          />
+          {/* Aquí podrías incluir GRÁFICOS ESPECÍFICOS de Tratamientos 
+              o Medicamentos, en caso de que no quieras mostrarlos en la vista general. */}
+          <Typography variant="body1" sx={{ mt: 2 }}>
+            Más detalles o gráficos específicos de tratamientos...
+          </Typography>
         </AccordionDetails>
       </Accordion>
 
-      {/* Sección Expansible: MoCA */}
+      {/* Acordeón de MoCA */}
       <Accordion
         expanded={expanded === 'mocaPanel'}
         onChange={handleAccordionChange('mocaPanel')}
@@ -663,27 +715,67 @@ const DashboardScreen = () => {
                   Sugerencias
                 </Typography>
                 <Typography variant="body2">
-                  En base a los resultados MoCA, el doctor puede sugerir nuevas
-                  actividades cognitivas, incrementar visitas, etc.
+                  Se pueden proponer actividades cognitivas extras o plan de
+                  seguimiento basado en los resultados MoCA.
                 </Typography>
               </Card>
             </Grid>
           </Grid>
 
-          {/* Gráficos de MoCA */}
-          <ChartsSection
-            treatments={[]} // No es necesario aquí, puedes pasar datos relevantes si los tienes
-            completedActivities={[]} // Similar
-            medications={[]} // Similar
-            distributionTreatmentsData={[]} // No necesario aquí
-            treatmentsPerPatientData={[]} // Similar
-            mocaDistributionData={mocaDistributionData}
-            mocaTrendData={mocaTrendData}
-          />
+          {/* Gráfico de Distribución de Puntajes MoCA */}
+          <Box mb={3}>
+            <Typography variant="h6" gutterBottom>
+              Distribución de Puntajes MoCA
+            </Typography>
+            {mocaDistributionData.length === 0 ? (
+              <Typography>No hay datos de MoCA para graficar.</Typography>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={mocaDistributionData}
+                    dataKey="count"
+                    nameKey="range"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    label
+                  >
+                    {mocaDistributionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#82ca9d' : '#8884d8'} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </Box>
+
+          {/* Gráfico de Tendencia de Puntajes MoCA */}
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Tendencia de Puntajes MoCA
+            </Typography>
+            {mocaTrendData.length === 0 ? (
+              <Typography>No hay datos de tendencia MoCA para graficar.</Typography>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={mocaTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="score" fill="#82ca9d" name="Puntaje MoCA" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </Box>
         </AccordionDetails>
       </Accordion>
 
-      {/* Sección Expansible: Estado de Ánimo */}
+      {/* Acordeón Estado de Ánimo */}
       <Accordion
         expanded={expanded === 'moodPanel'}
         onChange={handleAccordionChange('moodPanel')}
@@ -720,9 +812,7 @@ const DashboardScreen = () => {
                       borderRadius: '8px',
                       cursor: 'pointer',
                       transition: 'background-color 0.3s',
-                      '&:hover': {
-                        backgroundColor: '#e0e0e0',
-                      },
+                      '&:hover': { backgroundColor: '#e0e0e0' },
                     }}
                   >
                     <Box sx={{ fontSize: '24px', mr: 2 }}>
@@ -746,7 +836,7 @@ const DashboardScreen = () => {
         </AccordionDetails>
       </Accordion>
 
-      {/* Modal para Mostrar Pacientes por Estado de Ánimo */}
+      {/* Modal Pacientes por Estado de Ánimo */}
       <Modal
         open={openMoodModal}
         onClose={handleCloseModal}
