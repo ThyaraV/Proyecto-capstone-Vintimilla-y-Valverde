@@ -1,3 +1,5 @@
+// components/UserActivity.jsx
+
 import React, { useEffect, useState } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import {
@@ -50,15 +52,16 @@ const UserActivity = () => {
     isLoading: isCompletedActivitiesLoading,
     error: completedActivitiesError,
     refetch: refetchCompletedActivities,
-  } = useGetCompletedActivitiesQuery(undefined, {
+  } = useGetCompletedActivitiesQuery(activeTreatment?._id, { // Asegúrate de pasar el argumento correcto
     skip: !userId || !activeTreatment, // Omitir la consulta si no hay userId o tratamiento activo
+    refetchOnMountOrArgChange: true,    // Refetchar al montar o cambiar argumentos
   });
 
   const [uniqueActivities, setUniqueActivities] = useState([]);
   const [completedActivityIds, setCompletedActivityIds] = useState(new Set());
   const [groupedActivities, setGroupedActivities] = useState({});
 
-  //useeffect para agrupar las actividades por dificulta 
+  // useEffect para agrupar las actividades por dificultad 
   useEffect(() => {
     if (uniqueActivities) {
       // Agrupa actividades por nivel de dificultad
@@ -72,8 +75,6 @@ const UserActivity = () => {
       setGroupedActivities(grouped); // Actualiza el estado con las actividades agrupadas
     }
   }, [uniqueActivities]);
-  
-
 
   // Filtrar y eliminar duplicados al cargar las actividades
   useEffect(() => {
@@ -142,6 +143,13 @@ const UserActivity = () => {
     };
   }, [userInfo, userId, activeTreatment, refetchAssignedActivities, refetchCompletedActivities]);
 
+  // Agregar useEffect para refetchear las actividades completadas al montar el componente
+  useEffect(() => {
+    if (userId && activeTreatment) {
+      refetchCompletedActivities();
+    }
+  }, [userId, activeTreatment, refetchCompletedActivities]);
+
   // Verificar si los datos están cargando o hay errores
   if (
     isTreatmentLoading ||
@@ -186,12 +194,12 @@ const UserActivity = () => {
             <Row className="activity-levels">
               {groupedActivities[level].map((activity) => {
                 const isCompleted = completedActivityIds.has(activity._id);
-  
+
                 // Determinar el estilo según si la actividad está completada
                 const activityStyle = isCompleted
                   ? { pointerEvents: 'none', opacity: 0.5 }
                   : {};
-  
+
                 return (
                   <Col key={activity._id} xs={12} md={6} lg={4} className="mb-4">
                     <div style={{ position: 'relative', ...activityStyle }}>
@@ -252,7 +260,6 @@ const UserActivity = () => {
       <ToastContainer />
     </div>
   );
-  
 };
 
 export default UserActivity;

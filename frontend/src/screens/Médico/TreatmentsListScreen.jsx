@@ -32,6 +32,11 @@ const TreatmentsListScreen = () => {
         treatmentId: selectedTreatment._id,
         updatedData: { active: newActiveStatus },
       }).unwrap();
+
+      setSelectedTreatment((prevTreatment) => ({
+        ...prevTreatment,
+        active: newActiveStatus,
+      }));
       // Refetch the treatments list
       refetch();
     } catch (error) {
