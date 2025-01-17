@@ -438,4 +438,19 @@
     left: auto;
   }
 }
-/* Otros estilos existentes permanecen intactos */
+
+/* src/assets/styles/Header.css */
+
+/* Estilo para el logo clicable */
+.clickable-logo {
+  cursor: pointer; /* Cambia el cursor a una mano cuando se pasa sobre el logo */
+  transition: transform 0.2s ease-in-out; /* Añade una transición suave */
+}
+
+.clickable-logo:hover {
+  transform: scale(1.05); /* Aumenta ligeramente el tamaño del logo al pasar el mouse */
+}
+
+.clickable-logo:active {
+  transform: scale(0.95); /* Reduce ligeramente el tamaño del logo al hacer clic */
+}

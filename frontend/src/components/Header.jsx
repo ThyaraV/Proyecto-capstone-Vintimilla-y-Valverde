@@ -1,8 +1,21 @@
 // src/components/Header.js
+
 import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
-import { FaUser, FaComments, FaBrain, FaBars, FaBell, FaTachometerAlt, FaRegChartBar, FaSignOutAlt, FaCogs, FaUsers, FaQuestionCircle } from "react-icons/fa"; // Importar íconos adicionales
+import { 
+  FaUser, 
+  FaComments, 
+  FaBrain, 
+  FaBars, 
+  FaBell, 
+  FaTachometerAlt, 
+  FaRegChartBar, 
+  FaSignOutAlt, 
+  FaCogs, 
+  FaUsers, 
+  FaQuestionCircle 
+} from "react-icons/fa"; // Importar íconos adicionales
 import logo from "../assets/logoHigeasinfondo.png";
 import { LinkContainer } from "react-router-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
@@ -49,12 +62,16 @@ const Header = () => {
       <Navbar variant="dark" expand="lg" collapseOnSelect>
         <Container>
           {/* Botón para abrir el menú lateral */}
-          <button className="menu-toggle-btn" onClick={handleMenuToggle}>
-            <FaBars size={24} />
-          </button>
-
-          {/* Marca y logo */}
-          <Navbar.Brand className="d-flex align-items-center" onClick={() => navigateTo('/')}>
+          {userInfo && userInfo.isAdmin && (
+            <button className="menu-toggle-btn" onClick={handleMenuToggle}>
+              <FaBars size={24} />
+            </button>
+          )}
+          {/* Marca y logo con clase personalizada */}
+          <Navbar.Brand 
+            className="d-flex align-items-center clickable-logo" 
+            onClick={() => navigateTo('/')}
+          >
             <img src={logo} alt="Seguimiento" height="70" />
           </Navbar.Brand>
 
@@ -92,7 +109,7 @@ const Header = () => {
                 </LinkContainer>
               )}
 
-              {/* Opciones del administrador */}
+              {/* Opciones del administrador en la Navbar principal */}
               {userInfo && userInfo.isAdmin && (
                 <NavDropdown title="Admin" id="adminmenu" className="custom-dropdown">
                   <NavDropdown.Item onClick={() => navigateTo('/admin/orderlist', 'orderlist')}>
@@ -114,31 +131,51 @@ const Header = () => {
         </Container>
       </Navbar>
 
-      {/* Menú lateral */}
-      <div className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
-        <button className="close-btn" onClick={handleMenuToggle}>×</button>
-        <div className="menu-title">Menu</div>
-        <nav className="sidebar-menu">
-          <button className={selectedOption === 'profile' ? 'active' : ''} onClick={() => navigateTo('/profile', 'profile')}>
-            <FaUser /> Perfil Público
-          </button>
-          <button className={selectedOption === 'config' ? 'active' : ''} onClick={() => navigateTo('/admin/configuration', 'config')}>
-            <FaRegChartBar /> Configuración
-          </button>
-          <button className={selectedOption === 'reports' ? 'active' : ''} onClick={() => navigateTo('/reports', 'reports')}>
-            <FaRegChartBar /> Reportes
-          </button>
-          <button className={selectedOption === 'activities' ? 'active' : ''} onClick={() => navigateTo('/activities', 'activities')}>
-            <FaBrain /> Actividades
-          </button>
-          <button className={selectedOption === 'dashboard' ? 'active' : ''} onClick={() => navigateTo('/dashboard', 'dashboard')}>
-            <FaTachometerAlt /> Dashboard
-          </button>
-          <button className={selectedOption === 'notifications' ? 'active' : ''} onClick={() => navigateTo('/notifications', 'notifications')}>
-            <FaBell /> Notificaciones
-          </button>
-        </nav>
-      </div>
+      {/* Menú lateral solo para administradores */}
+      {userInfo && userInfo.isAdmin && (
+        <div className={`sidebar ${isMenuOpen ? 'open' : ''}`}>
+          <button className="close-btn" onClick={handleMenuToggle}>×</button>
+          <div className="menu-title">Menu</div>
+          <nav className="sidebar-menu">
+            <button 
+              className={selectedOption === 'profile' ? 'active' : ''} 
+              onClick={() => navigateTo('/profile', 'profile')}
+            >
+              <FaUser /> Perfil Público
+            </button>
+            <button 
+              className={selectedOption === 'config' ? 'active' : ''} 
+              onClick={() => navigateTo('/admin/configuration', 'config')}
+            >
+              <FaRegChartBar /> Configuración
+            </button>
+            <button 
+              className={selectedOption === 'reports' ? 'active' : ''} 
+              onClick={() => navigateTo('/reports', 'reports')}
+            >
+              <FaRegChartBar /> Reportes
+            </button>
+            <button 
+              className={selectedOption === 'activities' ? 'active' : ''} 
+              onClick={() => navigateTo('/activities', 'activities')}
+            >
+              <FaBrain /> Actividades
+            </button>
+            <button 
+              className={selectedOption === 'dashboard' ? 'active' : ''} 
+              onClick={() => navigateTo('/dashboard', 'dashboard')}
+            >
+              <FaTachometerAlt /> Dashboard
+            </button>
+            <button 
+              className={selectedOption === 'notifications' ? 'active' : ''} 
+              onClick={() => navigateTo('/notifications', 'notifications')}
+            >
+              <FaBell /> Notificaciones
+            </button>
+          </nav>
+        </div>
+      )}
     </header>
   );
 };
