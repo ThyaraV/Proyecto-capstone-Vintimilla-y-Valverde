@@ -158,6 +158,7 @@ const HomeScreenPaciente = () => {
   // Estados para el Popup de Estado de Ánimo
   const [isMoodPopupOpen, setIsMoodPopupOpen] = useState(false);
   const [selectedMood, setSelectedMood] = useState(null);
+  const [hasMoodToday, setHasMoodToday] = useState(false); // Nuevo estado para rastrear si el mood ya fue registrado hoy
 
   // Definir los estados de ánimo disponibles
   const moods = [
@@ -200,10 +201,11 @@ const HomeScreenPaciente = () => {
   // Verificar si ya ha registrado mood hoy
   useEffect(() => {
     if (!isLoadingMoodsToday && !isErrorMoodsToday && currentPatient && Array.isArray(moodsTodayData)) {
-      const hasMoodToday = moodsTodayData.some(
+      const hasMood = moodsTodayData.some(
         (moodEntry) => moodEntry.patient && moodEntry.patient.toString() === currentPatient._id.toString()
       );
-      if (!hasMoodToday) {
+      setHasMoodToday(hasMood);
+      if (!hasMood) {
         setIsMoodPopupOpen(true);
         console.log('Mood Popup abierto porque no hay registro hoy.');
       }
@@ -215,6 +217,7 @@ const HomeScreenPaciente = () => {
     console.log('Estado de ánimo seleccionado:', mood);
     setSelectedMood(mood);
     setIsMoodPopupOpen(false);
+    setHasMoodToday(true); // Actualizar el estado para indicar que el mood ya fue registrado hoy
 
     // Enviar el estado de ánimo al servidor usando la mutación de Redux
     saveMood(mood.emoji)
@@ -465,7 +468,24 @@ const HomeScreenPaciente = () => {
             <strong>{activeTreatment.treatmentName}</strong>
           </div>
           <div>{activeTreatment.description}</div>
-          {/* Puedes agregar más detalles según tus necesidades */}
+          {/* Botón para registrar estado de ánimo */}
+          <button
+            className="register-mood-button"
+            onClick={() => setIsMoodPopupOpen(true)}
+            disabled={hasMoodToday || isLoadingMoodsToday}
+            title={hasMoodToday ? "Ya has registrado tu estado de ánimo hoy." : "Registrar tu estado de ánimo"}
+            style={{
+              marginTop: '10px',
+              padding: '10px 20px',
+              backgroundColor: hasMoodToday ? '#ccc' : '#4CAF50',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: hasMoodToday ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Registrar Estado de Ánimo
+          </button>
         </div>
       )}
 
