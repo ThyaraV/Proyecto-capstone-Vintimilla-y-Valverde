@@ -27,6 +27,9 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'moment/locale/es'; // Importa el idioma español
 import backgroundImage from '../assets/cerebro.png';
 
+// Importar el hook para obtener moods por fecha
+import { useGetMoodsByDateQuery } from '../slices/moodApiSlice.js';
+
 moment.locale('es');
 const localizer = momentLocalizer(moment);
 
@@ -53,7 +56,7 @@ const HomeScreenPaciente = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
 
   const { userInfo } = useSelector((state) => state.auth);
-  const userId = userInfo?._id;
+  const userId = userInfo?._id || null;
 
   console.log('userInfo:', userInfo);
   console.log('userId:', userId);
@@ -168,19 +171,6 @@ const HomeScreenPaciente = () => {
     { emoji: '🤩', color: '#FFD700' }, // Muy Feliz
   ];
 
-  // Mostrar el Popup de estado de ánimo al iniciar
-  useEffect(() => {
-    setIsMoodPopupOpen(true);
-    console.log('Mood Popup abierto (temporal)');
-  }, []);
-
-  // Añadir log para verificar treatmentId
-  useEffect(() => {
-    if (activeTreatment) {
-      console.log('Treatment ID en ParentComponent:', activeTreatment._id);
-    }
-  }, [activeTreatment]);
-
   // ** Redirección a MoCA **
   // Redirigir al paciente a la prueba MoCA si mocaAssigned es true y no hay tratamiento activo
   useEffect(() => {
@@ -192,6 +182,52 @@ const HomeScreenPaciente = () => {
       }
     }
   }, [currentPatient, activeTreatment, navigate]);
+
+  // ** MOOD: Mostrar Popup Solo si No ha Registrado Hoy **
+  // Obtener la fecha de hoy en formato YYYY-MM-DD
+  const todayString = moment().format('YYYY-MM-DD');
+  
+  // Llamar a la query para obtener moods de hoy
+  const {
+    data: moodsTodayData,
+    isLoading: isLoadingMoodsToday,
+    isError: isErrorMoodsToday,
+    error: errorMoodsToday,
+  } = useGetMoodsByDateQuery(todayString, {
+    skip: !currentPatient, // Solo ejecutar si hay un paciente actual
+  });
+
+  // Verificar si ya ha registrado mood hoy
+  useEffect(() => {
+    if (!isLoadingMoodsToday && !isErrorMoodsToday && currentPatient && Array.isArray(moodsTodayData)) {
+      const hasMoodToday = moodsTodayData.some(
+        (moodEntry) => moodEntry.patient && moodEntry.patient.toString() === currentPatient._id.toString()
+      );
+      if (!hasMoodToday) {
+        setIsMoodPopupOpen(true);
+        console.log('Mood Popup abierto porque no hay registro hoy.');
+      }
+    }
+  }, [moodsTodayData, isLoadingMoodsToday, isErrorMoodsToday, currentPatient]);
+
+  // Cuando se selecciona un mood en el popup
+  const handleSelectMood = (mood) => {
+    console.log('Estado de ánimo seleccionado:', mood);
+    setSelectedMood(mood);
+    setIsMoodPopupOpen(false);
+
+    // Enviar el estado de ánimo al servidor usando la mutación de Redux
+    saveMood(mood.emoji)
+      .unwrap()
+      .then((response) => {
+        console.log('Estado de ánimo guardado:', response);
+        // Opcional: mostrar una notificación de éxito
+      })
+      .catch((error) => {
+        console.error('Error al guardar el estado de ánimo:', error);
+        // Opcional: mostrar una notificación de error
+      });
+  };
 
   // ** Cambiar la fecha seleccionada del calendario **
   useEffect(() => {
@@ -220,7 +256,8 @@ const HomeScreenPaciente = () => {
     isAssignedActivitiesLoading ||
     isMedLoading ||
     isCompletedActivitiesLoading ||
-    isPatientsLoading;
+    isPatientsLoading ||
+    isLoadingMoodsToday;
 
   // ** Procesar medicamentos y actividades para el calendario **
   useEffect(() => {
@@ -417,23 +454,7 @@ const HomeScreenPaciente = () => {
       {isMoodPopupOpen && (
         <Popup
           moods={moods}
-          setSelectedMood={(mood) => {
-            console.log('Estado de ánimo seleccionado:', mood);
-            setSelectedMood(mood);
-            setIsMoodPopupOpen(false);
-
-            // Enviar el estado de ánimo al servidor usando la mutación de Redux
-            saveMood(mood.emoji)
-              .unwrap()
-              .then((response) => {
-                console.log('Estado de ánimo guardado:', response);
-                // Opcional: mostrar una notificación de éxito
-              })
-              .catch((error) => {
-                console.error('Error al guardar el estado de ánimo:', error);
-                // Opcional: mostrar una notificación de error
-              });
-          }}
+          setSelectedMood={handleSelectMood}
         />
       )}
       {/* Mostrar Tratamiento Activo */}
@@ -447,15 +468,6 @@ const HomeScreenPaciente = () => {
           {/* Puedes agregar más detalles según tus necesidades */}
         </div>
       )}
-
-      {/* Mostrar información del paciente para MoCA (Depuración) 
-      {currentPatient && (
-        <div style={{ backgroundColor: '#f8d7da', padding: '10px', marginBottom: '10px' }}>
-          <strong>Depuración Paciente:</strong>
-          <p>ID Paciente: {currentPatient._id}</p>
-          <p>mocaAssigned: {currentPatient.mocaAssigned.toString()}</p>
-        </div>
-      )}*/}
 
       {/* Redirigir a MoCA si mocaAssigned es true y no hay tratamiento activo */}
       {currentPatient && currentPatient.mocaAssigned && !activeTreatment && (
@@ -537,7 +549,7 @@ const HomeScreenPaciente = () => {
         </li>
       </ul>
 
-      {/* Mostrar Tratamiento Activo */}
+      {/* Mostrar Videos */}
       {activeTreatment && (
         <div className="active-treatment-container">
           <hr className="custom-separator" />
@@ -566,8 +578,14 @@ const HomeScreenPaciente = () => {
         </div>
       )}
 
-
-
+      {/* Popup de Evento Seleccionado (opcional) */}
+      {isEventPopupOpen && selectedEvent && (
+        <div className="event-popup">
+          <h3>{selectedEvent.title}</h3>
+          <p>{format(selectedEvent.start, 'PPP')}</p>
+          <button onClick={() => setIsEventPopupOpen(false)}>Cerrar</button>
+        </div>
+      )}
     </div> 
        
   );
