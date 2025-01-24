@@ -1003,7 +1003,7 @@ const getCompletedActivitiesByTreatment = asyncHandler(async (req, res) => {
 
 // @desc    Obtener tratamientos para uno o varios pacientes específicos
 // @route   POST /api/treatments/patients/treatments
-// @access  Privado/Admin (Doctor)
+// @access  Privado/Admin (Doctor) - Se ajusta para permitir acceso total a admins o doctores
 const getTreatmentsByMultiplePatients = asyncHandler(async (req, res) => {
   const { patientIds } = req.body;
 
@@ -1015,19 +1015,27 @@ const getTreatmentsByMultiplePatients = asyncHandler(async (req, res) => {
     throw new Error('patientIds debe ser un arreglo de IDs de pacientes válidos');
   }
 
-  // Verificar que el usuario autenticado es un doctor
-  const doctorId = req.user._id;
-  const doctor = await Doctor.findOne({ user: doctorId });
-  if (!doctor) {
+  // Verificar que el usuario autenticado es un doctor o admin
+  // 1) Buscar si es doctor
+  const doctor = await Doctor.findOne({ user: req.user._id });
+
+  // 2) Verificar si es Admin (según tu lógica, isAdmin en el user)
+  const isAdminUser = req.user.isAdmin || false; 
+
+  if (!doctor && !isAdminUser) {
     res.status(401);
-    throw new Error('No autorizado: Usuario no es un doctor');
+    throw new Error('No autorizado: Usuario no es doctor ni admin');
   }
 
-  // Verificar que todos los pacientes están asignados a este doctor
-  const patients = await Patient.find({ _id: { $in: patientIds }, doctor: doctor._id });
-  if (patients.length !== patientIds.length) {
-    res.status(403);
-    throw new Error('No autorizado: Uno o más pacientes no están asignados a este doctor');
+  // Si NO es admin, entonces chequeamos que todos los pacientes estén asignados a este doctor
+  if (!isAdminUser && doctor) {
+    const patients = await Patient.find({ _id: { $in: patientIds }, doctor: doctor._id });
+    if (patients.length !== patientIds.length) {
+      // Antes se arrojaba error, ahora lo removemos para permitir acceso total si es Admin.
+      console.log('Se ha detectado un paciente no asignado al doctor actual, pero es doctor. Bloqueando acceso.');
+      res.status(403);
+      throw new Error('No autorizado: Uno o más pacientes no están asignados a este doctor');
+    }
   }
 
   // Buscar tratamientos que incluyan a cualquiera de los pacientes y poblar los campos necesarios
@@ -1038,15 +1046,15 @@ const getTreatmentsByMultiplePatients = asyncHandler(async (req, res) => {
     })
     .populate({
       path: 'completedActivities.activity',
-      select: 'name description', // Selecciona solo los campos necesarios
+      select: 'name description',
     })
     .populate({
       path: 'assignedActivities',
-      select: 'name description', // Ajusta los campos según tus necesidades
+      select: 'name description',
     })
     .populate({
       path: 'doctor',
-      populate: { path: 'user', select: 'name lastName email' }, // Si deseas poblar el doctor
+      populate: { path: 'user', select: 'name lastName email' },
     });
 
   console.log(`Tratamientos para los pacientes ${patientIds}:`, treatments);
