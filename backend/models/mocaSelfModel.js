@@ -1,10 +1,5 @@
 import mongoose from "mongoose";
 
-/*
-     Este modelo guarda los resultados de la prueba MoCA Self para un paciente específico,
-     incluyendo los puntajes y respuestas detalladas de cada módulo.
-   */
-
 const mocaSelfSchema = new mongoose.Schema(
   {
     // Referencia al paciente que realizó la prueba
