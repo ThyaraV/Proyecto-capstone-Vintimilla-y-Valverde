@@ -105,6 +105,7 @@ import ActivityPlay from "./components/ActivityPlay.jsx";
 import MedicalHistory from "./screens/Médico/medicalHistory.jsx";
 import MedicalHistoryReport from "./screens/Reports/MedicalHistoryReport.jsx";
 import Assignedactivities from "./screens/Médico/Assignedactivities.jsx";
+import HelpScreen from "./screens/HelpScreen.jsx";
 
 // Función para seleccionar la pantalla de inicio basada en el rol del usuario
 const HomeScreenSelector = () => {
@@ -133,6 +134,9 @@ const router = createBrowserRouter(
         <Route path="/chat" element={<ChatScreen />} />
         <Route path="/reports" element={<ReportsScreen />} />
         <Route path="/estado-animo" element={<MoodScreen />} />
+        <Route path="/admin/help" element={<HelpScreen />} />
+
+        
         <Route
           path="/reports/activities"
           element={<ActivitiesReportScreen />}
