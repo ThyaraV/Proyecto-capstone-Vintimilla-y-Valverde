@@ -24,15 +24,14 @@ Asegúrate de tener instalados los siguientes programas en tu máquina:
 ### 1. Clonar el Repositorio
 ```bash
 # Usar HTTPS
-[git clone https://github.com/tu-usuario/tu-repositorio.git
-](https://github.com/ThyaraV/Proyecto-capstone-Vintimilla-y-Valverde.git)
+[git clone https://github.com/ThyaraV/Proyecto-capstone-Vintimilla-y-Valverde.git]
 # O usar SSH
 git@github.com:ThyaraV/Proyecto-capstone-Vintimilla-y-Valverde.git
 ```
 
 ### 2. Navegar al Directorio del Proyecto
 ```bash
-cd \Documents\GitHub\Proyecto-capstone-Vintimilla-y-Valverde\
+cd \Documents\GitHub\Proyecto-capstone-Vintimilla-y-Valverde
 ```
 
 ### 3. Instalar las Dependencias
