@@ -1,0 +1,51 @@
+/* frontend/src/assets/styles/DashboardScreen.css */
+
+.chart-container {
+  margin-top: 20px;
+  padding: 16px;
+}
+
+.mood-box {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-bottom: 12px;
+}
+
+.mood-box:hover {
+  background-color: #e0e0e0;
+}
+
+.mood-box-icon {
+  font-size: 24px;
+  margin-right: 10px;
+}
+
+.modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 400px;
+  background-color: #fff;
+  border: 2px solid #000;
+  box-shadow: 24;
+  padding: 16px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 600px) {
+  .mood-box {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .mood-box-icon {
+    margin-bottom: 6px;
+  }
+}
