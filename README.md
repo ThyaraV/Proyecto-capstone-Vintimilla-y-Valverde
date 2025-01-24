@@ -1,141 +1,80 @@
-Aplicación Web para el Seguimiento de Pacientes Neurodegenerativos
+# Aplicativo Web para el Seguimiento de Pacientes con Problemas Neurodegenerativos
 
-Introducción
+Este repositorio contiene el código fuente del proyecto de titulación **"Aplicativo Web para el Seguimiento de Pacientes con Problemas Neurodegenerativos"**, desarrollado con el stack MERN (MongoDB, Express, React, Node.js). Este sistema está diseñado para digitalizar y optimizar el diagnóstico y tratamiento de pacientes, incluyendo funcionalidades avanzadas como la evaluación cognitiva MoCA y la asignación de actividades personalizadas.
 
-Esta aplicación web, desarrollada con el stack MERN (MongoDB, Express, React, Node.js), tiene como objetivo optimizar el seguimiento de pacientes con problemas neurodegenerativos mediante la digitalización de procesos y el uso de herramientas modernas como inteligencia artificial y autenticación facial.
+## Funcionalidades Principales
+- Manejo de perfiles de pacientes y médicos.
+- Evaluación cognitiva mediante la prueba MoCA con inteligencia artificial.
+- Creación, Asignación de tratamientos y actividades personalizadas.
+- Recordatorios de medicamentos.
+- Dashboard para monitorear el progreso.
+- Registro y monitoreo de estados emocionales.
+- Visualización de reportes.
+- Seguridad robusta con autenticación basada en roles y cifrado de datos.
 
-Requisitos Previos
+## Requisitos Previos
 
-Antes de ejecutar la aplicación, asegúrese de tener instalados los siguientes componentes:
+Asegúrate de tener instalados los siguientes programas en tu máquina:
+- [Node.js](https://nodejs.org) (versión 16.x o superior).
+- [MongoDB](https://www.mongodb.com) para la base de datos.
+- [Git](https://git-scm.com/) para clonar el repositorio.
 
-Node.js (v16 o superior)
+## Pasos para Configurar el Proyecto
 
-MongoDB (v5 o superior, puede ser local o en la nube a través de MongoDB Atlas)
+### 1. Clonar el Repositorio
+```bash
+# Usar HTTPS
+[git clone https://github.com/tu-usuario/tu-repositorio.git
+](https://github.com/ThyaraV/Proyecto-capstone-Vintimilla-y-Valverde.git)
+# O usar SSH
+git@github.com:ThyaraV/Proyecto-capstone-Vintimilla-y-Valverde.git
+```
 
-Navegador web moderno (Google Chrome o equivalente)
+### 2. Navegar al Directorio del Proyecto
+```bash
+cd \Documents\GitHub\Proyecto-capstone-Vintimilla-y-Valverde\
+```
 
-Git (opcional, para clonar el repositorio)
+### 3. Instalar las Dependencias
 
-Instalación
+Ejecuta el siguiente comando en la raíz del proyecto para instalar las dependencias tanto del cliente (frontend) como del servidor (backend):
+```bash
+npm install
+```
 
-Clonar el repositorio:
-
-git clone https://github.com/usuario/app-seguimiento-pacientes.git
-cd app-seguimiento-pacientes
-
-Configurar las variables de entorno:
-Cree un archivo .env en el directorio principal con las siguientes variables:
-
-PORT=5000
-MONGO_URI=mongodb+srv://usuario:contraseña@cluster.mongodb.net/higea
-JWT_SECRET=su_llave_secreta
-CLIENT_URL=http://localhost:3000
-
-Instalar dependencias:
-
-Backend:
-
+Si tienes directorios separados para frontend y backend, asegúrate de instalar las dependencias en cada uno:
+```bash
+# Instalar dependencias del backend
 cd backend
 npm install
 
-Frontend:
-
+# Instalar dependencias del frontend
 cd ../frontend
 npm install
+```
 
-Iniciar la aplicación:
+### 4. Configurar las Variables de Entorno
+Crea un archivo `.env` en las carpetas del frontend y backend basándote en los archivos `.env.example` proporcionados. Configura las variables necesarias, como la URL de la base de datos y las claves secretas.
 
-Backend:
+Ejemplo para el backend:
+```
+MONGO_URI=mongodb+srv://usuario:contraseña@cluster.mongodb.net/miBaseDeDatos
+JWT_SECRET=tu_clave_secreta
+```
 
-cd backend
-npm start
+### 5. Levantar el Proyecto
 
-Frontend:
+#### Backend y frontend
+Asegúrate de estar en la carpeta principal y ejecuta:
+```bash
+npm run dev
+```
 
-cd ../frontend
-npm start
+### 6. Acceso a la Aplicación
 
-Abra la aplicación en su navegador:
+Una vez que ambos servidores estén corriendo:
+- Backend: Disponible en `http://localhost:5000`
+- Frontend: Disponible en `http://localhost:3000`
 
-Frontend: http://localhost:3000
-
-Backend: http://localhost:5000
-
-Estructura del Proyecto
-
-app-seguimiento-pacientes/
-├── backend/
-│   ├── controllers/    # Lógica de negocio
-│   ├── models/         # Modelos de datos MongoDB
-│   ├── routes/         # Rutas de la API
-│   ├── server.js       # Punto de entrada del servidor
-│   └── config/         # Configuración (conexión a la BD, etc.)
-├── frontend/
-│   ├── src/
-│   │   ├── components/ # Componentes de React
-│   │   ├── screens/    # Pantallas principales
-│   │   ├── App.js      # Componente principal
-│   │   └── index.js    # Punto de entrada del frontend
-├── .env.example         # Ejemplo de variables de entorno
-├── README.md            # Documentación
-└── package.json         # Configuración de dependencias
-
-Funciones Principales
-
-Para Médicos
-
-Gestor de pacientes: Crear, editar y monitorear perfiles de pacientes.
-
-Asignación de actividades: Seleccionar actividades cognitivas para los pacientes.
-
-Evaluaciones cognitivas: Uso del test MoCA digitalizado.
-
-Panel de reportes: Visualización de progreso y gráficos.
-
-Para Pacientes
-
-Actividades interactivas: Juegos y tareas cognitivas asignadas.
-
-Registro emocional: "Velocímetro emocional" diario.
-
-Notificaciones: Recordatorios automáticos de actividades y citas.
-
-Pruebas
-
-Pruebas de la API:
-
-Use herramientas como Postman o cURL para probar los endpoints disponibles.
-
-Ejemplo de petición:
-
-curl -X POST http://localhost:5000/api/patients -H "Content-Type: application/json" -d '{"name": "Juan Perez", "age": 65}'
-
-Pruebas del Frontend:
-
-Navegue por las diferentes pantallas y verifique la funcionalidad.
-
-Consideraciones de Seguridad
-
-Mantenga la clave JWT y las credenciales de la base de datos en secreto.
-
-Habilite HTTPS en entornos de producción.
-
-Realice auditorías periódicas al código y la base de datos.
-
-Despliegue
-
-Frontend:
-
-Construya el proyecto:
-
-cd frontend
-npm run build
-
-Aloje los archivos estáticos en servicios como Vercel o Netlify.
-
-Backend:
-
-Use servicios como Heroku, AWS o DigitalOcean para desplegar el servidor.
-
-Configure las variables de entorno en el entorno de producción.
+---
 
