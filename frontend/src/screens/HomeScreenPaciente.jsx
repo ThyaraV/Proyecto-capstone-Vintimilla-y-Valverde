@@ -29,6 +29,9 @@ import backgroundImage from '../assets/cerebro.png';
 
 // Importar el hook para obtener moods por fecha
 import { useGetMoodsByDateQuery } from '../slices/moodApiSlice.js';
+import { Carousel } from 'react-bootstrap'; // Importación del componente Carousel
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 moment.locale('es');
 const localizer = momentLocalizer(moment);
@@ -187,7 +190,7 @@ const HomeScreenPaciente = () => {
   // ** MOOD: Mostrar Popup Solo si No ha Registrado Hoy **
   // Obtener la fecha de hoy en formato YYYY-MM-DD
   const todayString = moment().format('YYYY-MM-DD');
-  
+
   // Llamar a la query para obtener moods de hoy
   const {
     data: moodsTodayData,
@@ -451,164 +454,243 @@ const HomeScreenPaciente = () => {
   });
 
   // ** Retorno principal del componente **
-  return (   
-    <div className="home-screen-container">
-      {/* Popup de Estado de Ánimo */}
-      {isMoodPopupOpen && (
-        <Popup
-          moods={moods}
-          setSelectedMood={handleSelectMood}
-        />
-      )}
-      {/* Mostrar Tratamiento Activo */}
-      {activeTreatment && (
-        <div className="active-treatment-container">
-          <h2>Tratamiento Activo</h2>
-          <div>
-            <strong>{activeTreatment.treatmentName}</strong>
-          </div>
-          <div>{activeTreatment.description}</div>
-          {/* Botón para registrar estado de ánimo */}
-          <button
-            className="register-mood-button"
-            onClick={() => setIsMoodPopupOpen(true)}
-            disabled={hasMoodToday || isLoadingMoodsToday}
-            title={hasMoodToday ? "Ya has registrado tu estado de ánimo hoy." : "Registrar tu estado de ánimo"}
-            style={{
-              marginTop: '10px',
-              padding: '10px 20px',
-              backgroundColor: hasMoodToday ? '#ccc' : '#4CAF50',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '5px',
-              cursor: hasMoodToday ? 'not-allowed' : 'pointer',
-            }}
-          >
-            Registrar Estado de Ánimo
-          </button>
-        </div>
-      )}
+  return (
+    <>
+      <div className="home-screen">
+        {/* Carrusel de videos e imágenes */}
+        <Carousel className="carousel-container" interval={5000} pause="hover">
+          <Carousel.Item>
+            <img className="d-block w-100" src="/images/brain2.jpg" alt="Primera imagen" />
+            <Carousel.Caption>
+              <h3>Bienvenido</h3>
+              <p>Gestión de tu tratamiento en un solo lugar</p>
+            </Carousel.Caption>
+          </Carousel.Item>
+          <Carousel.Item>
+            <img className="d-block w-100" src="/images/clinicahi.jpg" alt="Segunda imagen" />
+            <Carousel.Caption>
+              <h3>Monitoreo Continuo</h3>
+              <p>Revisa tus actividades y avances.</p>
+            </Carousel.Caption>
+          </Carousel.Item>
+          <Carousel.Item>
+            <video className="d-block w-100" autoPlay muted loop>
+              <source src="/images/cerebro2.mp4" type="video/mp4" />
+              Tu navegador no soporta la reproducción de videos.
+            </video>
+            <Carousel.Caption>
+              <h3>Facilidad de uso</h3>
+              <p>Interfaz intuitiva para mejorar tu experiencia.</p>
+            </Carousel.Caption>
+          </Carousel.Item>
+        </Carousel>
+      </div>
 
-      {/* Redirigir a MoCA si mocaAssigned es true y no hay tratamiento activo */}
-      {currentPatient && currentPatient.mocaAssigned && !activeTreatment && (
-        <div className="home-screen-container">
-          <p>Redirigiendo a la prueba MoCA...</p>
-        </div>
-      )}
-      <hr className="custom-separator" />
-
-      <h2>Calendario de Actividades</h2>
-      <BigCalendar
-        localizer={localizer}
-        events={events} // Garantizar que siempre sea un array
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: 500 }}
-        messages={messages}
-        eventPropGetter={(event) => {
-          const bg =
-            event.type === 'medication'
-              ? '#FFD700'
-              : event.type === 'completed'
-                ? '#32CD32'
-                : '#FF6347';
-          return {
-            style: {
-              backgroundColor: bg,
-              color: '#ffffff',
-              borderRadius: '5px',
-              padding: '5px',
-            },
-          };
-        }}
-        onSelectEvent={(event) => {
-          console.log('-> Evento seleccionado:', event);
-          setSelectedEvent(event);
-          setIsEventPopupOpen(true);
-        }}
-        popup
-        showAllEvents={false}
-      />
-
-      {/* Mostrar el mensaje de recordatorio si el popup de estado de ánimo está cerrado y hay medicamentos pendientes */}
-      {!isMoodPopupOpen &&
-        isMedDueSuccess &&
-        pendingMedications.length > 0 && (
-          <MedicationReminder
-            count={pendingMedications.length} // Usa pendingMedications.length
-            onClick={handleMedicationReminderClick}
-          />
-        )}
-
-      {/* Pop-up de Medicamentos */}
-      <MedicationPopup
-        isOpen={isPopupOpen}
-        onRequestClose={() => setIsPopupOpen(false)}
-        medications={medicationsForPopup}
-        treatmentId={activeTreatment._id}
-        onUpdate={refetchDueMedications} // Pasa la función de refetch
-      />
-
-      {/* Mostrar indicadores de carga y errores para guardar el estado de ánimo */}
-      {isSavingMood && <p>Guardando tu estado de ánimo...</p>}
-      {saveMoodError && (
-        <p>
-          Error al guardar tu estado de ánimo:{' '}
-          {saveMoodError.data?.message || saveMoodError.error}
-        </p>
-      )}
-
-      {/* Icono de mensajes */}
-      <ul className="message-icon-container">
-        <li
-          style={{ '--i': '#56CCF2', '--j': '#2F80ED' }}
-          onClick={() => navigate('/chat')}
-        >
-          <span className="icon">💬</span>
-          <span className="title">Mensajes</span>
-        </li>
-      </ul>
-
-      {/* Mostrar Videos */}
-      {activeTreatment && (
-        <div className="active-treatment-container">
-          <hr className="custom-separator" />
-          <h2>Videos de apoyo</h2>
-
-          {/* Mostrar Videos de Ejercicio */}
-          {activeTreatment.exerciseVideos && activeTreatment.exerciseVideos.length > 0 && (
-            <div className="video-grid">
-              {activeTreatment.exerciseVideos.map((video) => (
-                <div className="video-card" key={video.url}>
-                  <h4>{video.title}</h4>
-                  <p>{video.description}</p>
-                  <iframe
-                    width="100%" // Esto asegura que el video se ajuste al tamaño de la tarjeta
-                    height="250" // Altura ajustada para mantener proporción
-                    src={video.url.replace('watch?v=', 'embed/')}
-                    title={video.title}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  ></iframe>
-                </div>
-              ))}
+      <div className="active-section">
+        <div className="active-container">
+          {/* Mostrar Tratamiento Activo */}
+          {activeTreatment && (
+            <div className="active-treatment-container">
+              <h2 className="title-with-icon">
+                <img
+                  src="/images/tratamientogif.gif"
+                  alt="Icono Tratamiento"
+                  className="treatment-icon"
+                />
+                Tratamiento Actual
+              </h2>
+              <div>
+                <strong>{activeTreatment.treatmentName}</strong>
+              </div>
+              <div>{activeTreatment.description}</div>
             </div>
           )}
         </div>
-      )}
 
-      {/* Popup de Evento Seleccionado (opcional) */}
-      {isEventPopupOpen && selectedEvent && (
-        <div className="event-popup">
-          <h3>{selectedEvent.title}</h3>
-          <p>{format(selectedEvent.start, 'PPP')}</p>
-          <button onClick={() => setIsEventPopupOpen(false)}>Cerrar</button>
+        {/* Contenedor del botón Registrar Estado de Ánimo */}
+        <div className="mood-container">
+          <h2 className="title-with-icon">
+            <img
+              src="/images/pencil.gif"
+              alt="Icono Estado de Ánimo"
+              className="treatment-icon"
+            />
+            Estado de Ánimo
+          </h2>
+          <div className="register-mood-container">
+            <button
+              className="register-mood-button animated"
+              onClick={() => setIsMoodPopupOpen(true)}
+              disabled={hasMoodToday || isLoadingMoodsToday}
+              title={
+                hasMoodToday
+                  ? 'Ya has registrado tu estado de ánimo hoy.'
+                  : 'Registrar tu estado de ánimo'
+              }
+            >
+              Registrar
+            </button>
+          </div>
+        </div>
+
+
+        {/* Contenedor de Observaciones */}
+        <div className="mood-container">
+          <h2 className="title-with-icon">
+            <img
+              src="/images/eyegif.gif"
+              alt="Icono Observaciones"
+              className="treatment-icon"
+            />
+            Observaciones
+          </h2>
+          <div className="observations-container">
+            {activeTreatment?.observations ? (
+              <p>{activeTreatment.observations}</p>
+            ) : (
+              <p>No hay observaciones disponibles.</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+
+
+      {/* Pantalla principal */}
+      <div className="home-screen-container">
+        {/* Popup de Estado de Ánimo */}
+        {isMoodPopupOpen && (
+          <Popup moods={moods} setSelectedMood={handleSelectMood} />
+        )}
+
+        {/* Redirigir a MoCA si mocaAssigned es true y no hay tratamiento activo */}
+        {currentPatient && currentPatient.mocaAssigned && !activeTreatment && (
+          <div className="home-screen-container">
+            <p>Redirigiendo a la prueba MoCA...</p>
+          </div>
+        )}
+
+        <h2 className="calendar-title">Calendario de Actividades</h2>
+        <BigCalendar
+          localizer={localizer}
+          events={events} // Garantizar que siempre sea un array
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: 500 }}
+          messages={messages}
+          eventPropGetter={(event) => {
+            const bg =
+              event.type === 'medication'
+                ? '#FFD700'
+                : event.type === 'completed'
+                  ? '#32CD32'
+                  : '#FF6347';
+            return {
+              style: {
+                backgroundColor: bg,
+                color: '#ffffff',
+                borderRadius: '5px',
+                padding: '5px',
+              },
+            };
+          }}
+          onSelectEvent={(event) => {
+            console.log('-> Evento seleccionado:', event);
+            setSelectedEvent(event);
+            setIsEventPopupOpen(true);
+          }}
+          popup
+          showAllEvents={false}
+        />
+
+        {/* Mostrar el mensaje de recordatorio si el popup de estado de ánimo está cerrado y hay medicamentos pendientes */}
+        {!isMoodPopupOpen &&
+          isMedDueSuccess &&
+          pendingMedications.length > 0 && (
+            <MedicationReminder
+              count={pendingMedications.length} // Usa pendingMedications.length
+              onClick={handleMedicationReminderClick}
+            />
+          )}
+
+        {/* Pop-up de Medicamentos */}
+        <MedicationPopup
+          isOpen={isPopupOpen}
+          onRequestClose={() => setIsPopupOpen(false)}
+          medications={medicationsForPopup}
+          treatmentId={activeTreatment._id}
+          onUpdate={refetchDueMedications} // Pasa la función de refetch
+        />
+
+        {/* Mostrar indicadores de carga y errores para guardar el estado de ánimo */}
+        {isSavingMood && <p>Guardando tu estado de ánimo...</p>}
+        {saveMoodError && (
+          <p>
+            Error al guardar tu estado de ánimo:{' '}
+            {saveMoodError.data?.message || saveMoodError.error}
+          </p>
+        )}
+
+        {/* Icono de mensajes */}
+        <ul className="message-icon-container">
+          <li
+            style={{ '--i': '#56CCF2', '--j': '#2F80ED' }}
+            onClick={() => navigate('/chat')}
+            title="Chatea con un profesional" /* Agrega el tooltip */
+          >
+            <img
+              src="/images/chatgif.gif"
+              alt="Chat Icono"
+              className="chat-icon"
+            />
+
+          </li>
+        </ul>
+
+
+        {/* Popup de Evento Seleccionado (opcional) */}
+        {isEventPopupOpen && selectedEvent && (
+          <div className="event-popup">
+            <h3>{selectedEvent.title}</h3>
+            <p>{format(selectedEvent.start, 'PPP')}</p>
+            <button onClick={() => setIsEventPopupOpen(false)}>Cerrar</button>
+          </div>
+        )}
+      </div>
+
+      {/* Mostrar Videos */}
+      {activeTreatment && (
+        <div className="videos-section">
+          <hr className="custom-separator" />
+          <h2 className="calendar-title">Videos de apoyo</h2>
+
+          {/* Mostrar Videos de Ejercicio */}
+          {activeTreatment.exerciseVideos &&
+            activeTreatment.exerciseVideos.length > 0 && (
+              <div className="video-grid">
+                {activeTreatment.exerciseVideos.map((video) => (
+                  <div className="video-card" key={video.url}>
+                    <h4>{video.title}</h4>
+                    <p>{video.description}</p>
+                    <iframe
+                      width="100%"
+                      height="250"
+                      src={video.url.replace('watch?v=', 'embed/')}
+                      title={video.title}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                ))}
+              </div>
+            )}
         </div>
       )}
-    </div> 
-       
+    </>
+
   );
+
 };
 
 export default HomeScreenPaciente;
