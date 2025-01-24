@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import dev1Pic from '../assets/Thyara.jpg';
-import dev2Pic from '../assets/Thyara.jpg';
+import dev2Pic from '../assets/Sebas.jpg';
 import '../assets/styles/HelpScreen.css';
 
 const HelpScreen = () => {
