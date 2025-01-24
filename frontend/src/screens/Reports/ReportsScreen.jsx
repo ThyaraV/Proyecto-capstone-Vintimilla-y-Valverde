@@ -27,10 +27,10 @@ const ReportsScreen = () => {
   const reportOptions = [
     { title: 'Historial Médico', img: historialMedicoImg, route: '/historial-medico' },
     { title: 'Resultados MOCA', img: resultadosMocaImg, route: '/moca' },
-    { title: 'Progreso del Paciente', img: progresoPacienteImg, route: '/progreso-paciente' },
+    /*{ title: 'Progreso del Paciente', img: progresoPacienteImg, route: '/progreso-paciente' },*/
     { title: 'Resultados de Actividades', img: resultadosActividadesImg, route: '/reports/activities' },
     { title: 'Resultados de Estado de Ánimo', img: estadoAnimoImg, route: '/estado-animo' },
-    { title: 'Dashboard', img: dashboardImg, route: '/dashboard' },
+    { title: 'Dashboard', img: progresoPacienteImg, route: '/dashboard' },
   ];
 
   return (
