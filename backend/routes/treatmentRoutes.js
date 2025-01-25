@@ -1,5 +1,3 @@
-// src/routes/treatmentRoutes.js
-
 import express from 'express';
 import {
   createTreatment,
@@ -12,7 +10,7 @@ import {
   recordActivity,
   getCompletedActivities,
   getAssignedActivities,
-  getActivitiesByUser, // Asegúrate de que esta función exista en el controlador
+  getActivitiesByUser,
   getActiveTreatment,
   toggleActivateTreatment,
   getCompletedActivitiesByTreatment,
@@ -54,10 +52,10 @@ router.route('/:treatmentId/completedActivities').get(protect, getCompletedActiv
 router.route('/:treatmentId/assignedActivities').get(protect, getAssignedActivities);
 router.route('/:treatmentId/assignedActivities2').get(protect, getAssignedActivities2);
 
-// Ruta para obtener tratamientos activos
+// Ruta para obtener tratamiento activo de un paciente
 router.route('/:patientId/active-treatment2').get(protect, getActiveTreatment2);
 
-// Ruta para obtener actividades asignadas con tratamientoId y patientId
+// Ruta para obtener actividades asignadas con treatmentId y patientId
 router.get('/:treatmentId/assignedActivities/:patientId', protect, getAssignedActivities2);
 router.route('/:treatmentId/assignedActivities2/:patientId').get(protect, getAssignedActivities2);
 
@@ -69,6 +67,9 @@ router.route('/:treatmentId/activate').patch(protect, toggleActivateTreatment);
 
 // Ruta para obtener tratamiento activo de un usuario
 router.route('/:userId/active-treatment').get(protect, getActiveTreatment);
+
+// se restaura el parámetro :treatmentId en la ruta de medicamentos pendientes
+router.route('/:treatmentId/medications/due').get(protect, getDueMedications);
 
 // Ruta para marcar medicamento como tomado
 router.patch('/:treatmentId/medications/:medicationId/take', updateMedicationTakenToday);

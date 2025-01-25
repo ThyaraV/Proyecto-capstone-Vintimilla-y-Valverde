@@ -1,10 +1,12 @@
 /* frontend/src/assets/styles/DashboardScreen.css */
 
+/* Contenedor principal de gráficas */
 .chart-container {
   margin-top: 20px;
   padding: 16px;
 }
 
+/* Estilo base para los cuadros (box) donde se muestran estados, KPIs, etc. */
 .mood-box {
   display: flex;
   align-items: center;
@@ -25,6 +27,7 @@
   margin-right: 10px;
 }
 
+/* Para modales y contenido emergente */
 .modal-content {
   position: absolute;
   top: 50%;
@@ -40,6 +43,7 @@
   overflow-y: auto;
 }
 
+/* Ajustes responsivos */
 @media (max-width: 600px) {
   .mood-box {
     flex-direction: column;
@@ -48,4 +52,21 @@
   .mood-box-icon {
     margin-bottom: 6px;
   }
+}
+
+/* Tarjetas: bordes, sombras y pequeños efectos */
+.MuiCard-root {
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.MuiCard-root:hover {
+  transform: translateY(-3px);
+}
+
+/* Título de sección dentro de cada tarjeta */
+.MuiCardContent-root > .MuiTypography-h6 {
+  color: #444;
+  margin-bottom: 12px;
 }

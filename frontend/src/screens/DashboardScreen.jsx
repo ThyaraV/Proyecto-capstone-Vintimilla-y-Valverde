@@ -1,5 +1,3 @@
-// frontend/src/screens/DashboardScreen.jsx
-
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Container,
@@ -28,6 +26,13 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  LineChart,
+  Line,
 } from 'recharts';
 import { useGetDoctorsQuery } from '../slices/doctorApiSlice';
 import { useGetPatientsQuery } from '../slices/patientApiSlice';
@@ -55,7 +60,9 @@ const COLORS = [
 const DashboardScreen = () => {
   const { enqueueSnackbar } = useSnackbar();
 
-  // Consultas de Doctores, Pacientes, Usuarios y MoCA
+  // ------------------------------
+  // 1. CONSULTAS PRINCIPALES (DOCTORES, PACIENTES, USUARIOS, MOCA)
+  // ------------------------------
   const {
     data: doctors = [],
     isLoading: isLoadingDoctors,
@@ -84,12 +91,16 @@ const DashboardScreen = () => {
     error: errorMoca,
   } = useGetAllMocaSelfsQuery();
 
-  // Estados de Filtro
+  // ------------------------------
+  // 2. ESTADOS DE FILTRO
+  // ------------------------------
   const [selectedDoctor, setSelectedDoctor] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedTreatmentStatus, setSelectedTreatmentStatus] = useState('all');
 
-  // Unir datos de pacientes con el estado isActive de la lista de usuarios
+  // ------------------------------
+  // 3. MAPEAR PACIENTES PARA AÑADIR isActive DESDE allUsers
+  // ------------------------------
   const allPatients = useMemo(() => {
     return rawPatients.map((patient) => {
       const matchedUser = allUsers.find((u) => u._id === patient.user?._id);
@@ -106,7 +117,9 @@ const DashboardScreen = () => {
     });
   }, [rawPatients, allUsers]);
 
-  // Manejo de cambios en los filtros
+  // ------------------------------
+  // 4. HANDLERS DE CAMBIO EN SELECT/FILTROS
+  // ------------------------------
   const handleDoctorChange = (event) => {
     setSelectedDoctor(event.target.value);
   };
@@ -119,7 +132,9 @@ const DashboardScreen = () => {
     setSelectedTreatmentStatus(event.target.value);
   };
 
-  // Filtrar pacientes por doctor y estado (activo/inactivo)
+  // ------------------------------
+  // 5. FILTRAR PACIENTES POR DOCTOR Y ESTADO (ACTIVO/INACTIVO)
+  // ------------------------------
   const filteredPatients = useMemo(() => {
     let patients = [...allPatients];
 
@@ -143,12 +158,13 @@ const DashboardScreen = () => {
     return patients;
   }, [allPatients, selectedDoctor, selectedStatus]);
 
-  // Preparar IDs de Pacientes para obtener los tratamientos de varios pacientes
+  // ------------------------------
+  // 6. OBTENER TREATMENTS PARA TODOS LOS PACIENTES FILTRADOS
+  // ------------------------------
   const patientIdsForTreatments = useMemo(() => {
     return filteredPatients.map((p) => p._id);
   }, [filteredPatients]);
 
-  // Obtener los tratamientos con base en los pacientes filtrados
   const [
     fetchTreatments,
     {
@@ -172,7 +188,9 @@ const DashboardScreen = () => {
     }
   }, [patientIdsForTreatments, fetchTreatments, enqueueSnackbar]);
 
-  // Filtrar tratamientos por estado (selectedTreatmentStatus)
+  // ------------------------------
+  // 7. FILTRAR TRATAMIENTOS POR ESTADO (ACTIVE/INACTIVE/ALL)
+  // ------------------------------
   const filteredTreatments = useMemo(() => {
     if (!treatmentsData) return [];
     let filtered = treatmentsData;
@@ -186,7 +204,9 @@ const DashboardScreen = () => {
     return filtered;
   }, [treatmentsData, selectedTreatmentStatus]);
 
-  // Calcular Actividades y Medicamentos filtrados (Sujeto a los filtros)
+  // ------------------------------
+  // 8. CALCULAR ACTIVIDADES Y MEDICAMENTOS FILTRADOS
+  // ------------------------------
   const filteredActivities = useMemo(() => {
     if (!filteredTreatments) return [];
     let activities = [];
@@ -201,7 +221,6 @@ const DashboardScreen = () => {
     return activities;
   }, [filteredTreatments]);
 
-  // Calcular Medicamentos Filtrados y Determinar 'takenToday'
   const filteredMedications = useMemo(() => {
     if (!filteredTreatments) return [];
     let meds = [];
@@ -221,7 +240,9 @@ const DashboardScreen = () => {
     return meds;
   }, [filteredTreatments]);
 
-  // KPIs según los tratamientos filtrados
+  // ------------------------------
+  // 9. KPI PRINCIPALES
+  // ------------------------------
   const totalTreatments = filteredTreatments.length;
   const completedTreatments = filteredTreatments.filter(
     (t) => t.progress === 'empeorando' || t.progress === 'mejorando'
@@ -244,7 +265,9 @@ const DashboardScreen = () => {
       ? ((medicationsTaken / totalMedications) * 100).toFixed(2)
       : '0.00';
 
-  // Datos para gráfico "Progreso de Tratamientos" (Todos los tratamientos)
+  // ------------------------------
+  // 10. GRÁFICO (NUEVO): PROGRESO DE TRATAMIENTOS (RadarChart)
+  // ------------------------------
   const progressAllData = useMemo(() => {
     if (!treatmentsData) return [];
     const map = {};
@@ -256,7 +279,9 @@ const DashboardScreen = () => {
     return Object.keys(map).map((p) => ({ progress: p, count: map[p] }));
   }, [treatmentsData]);
 
-  // Datos para gráfico "Actividades Completadas"
+  // ------------------------------
+  // 11. GRÁFICO: ACTIVIDADES COMPLETADAS
+  // ------------------------------
   const activityCompletionData = useMemo(() => {
     if (!filteredActivities) return [];
     const map = {};
@@ -268,7 +293,9 @@ const DashboardScreen = () => {
     return Object.keys(map).map((n) => ({ name: n, value: map[n] }));
   }, [filteredActivities]);
 
-  // Datos para gráfico "Cumplimiento de Medicamentos"
+  // ------------------------------
+  // 12. GRÁFICO: CUMPLIMIENTO DE MEDICAMENTOS
+  // ------------------------------
   const medicationComplianceData = useMemo(() => {
     const taken = filteredMedications.filter((m) => m.takenToday).length;
     const notTaken = filteredMedications.length - taken;
@@ -278,7 +305,9 @@ const DashboardScreen = () => {
     ];
   }, [filteredMedications]);
 
-  // Datos para gráfico "Activos vs Inactivos" (Pacientes)
+  // ------------------------------
+  // 13. GRÁFICO: PACIENTES ACTIVOS VS INACTIVOS
+  // ------------------------------
   const activeCount = useMemo(() => {
     return filteredPatients.filter((p) => p.user?.isActive).length;
   }, [filteredPatients]);
@@ -292,7 +321,9 @@ const DashboardScreen = () => {
     { name: 'Inactivos', value: inactiveCount },
   ];
 
-  // Datos para gráfico "Distribución de Pacientes por Doctor"
+  // ------------------------------
+  // 14. GRÁFICO: DISTRIBUCIÓN DE PACIENTES POR DOCTOR
+  // ------------------------------
   const patientsByDoctor = useMemo(() => {
     return doctors
       .map((doc) => {
@@ -307,7 +338,9 @@ const DashboardScreen = () => {
       .filter((doc) => doc.value > 0);
   }, [doctors, filteredPatients]);
 
-  // Datos para gráficos de MoCA
+  // ------------------------------
+  // 15. MOCA: KPIs Y GRÁFICOS
+  // ------------------------------
   const mocaAverageScore = useMemo(() => {
     if (!mocaRecords || mocaRecords.length === 0) return '0.00';
     const totalScore = mocaRecords.reduce(
@@ -339,18 +372,39 @@ const DashboardScreen = () => {
     return Object.keys(map).map((range) => ({ range, count: map[range] }));
   }, [mocaRecords]);
 
+  // (NUEVO) Usamos LineChart en vez de BarChart para la tendencia
   const mocaScoreTrend = useMemo(() => {
     if (!mocaRecords) return [];
     const trend = mocaRecords
       .map((record) => ({
+        // convertimos la fecha a algo legible
         date: new Date(record.testDate).toLocaleDateString(),
         score: record.totalScore,
       }))
+      // ordenamos por fecha ascendente
       .sort((a, b) => new Date(a.date) - new Date(b.date));
     return trend;
   }, [mocaRecords]);
 
-  // Manejo de estados de carga y error
+  // Distribución MOCA (Asignado vs Completado vs Pendiente)
+  const completedMocaIds = new Set(mocaRecords.map((r) => r.patient?.toString()));
+  const mocaAssignedCount = allPatients.filter((p) => p.mocaAssigned).length;
+  const mocaCompletedCount = allPatients.filter(
+    (p) => p.mocaAssigned && completedMocaIds.has(p._id.toString())
+  ).length;
+  const mocaPendingCount = mocaAssignedCount - mocaCompletedCount;
+  const totalPatients = allPatients.length;
+  const mocaNotRequiredCount = totalPatients - mocaAssignedCount;
+
+  const mocaDistributionData = [
+    { name: 'Completado', value: mocaCompletedCount },
+    { name: 'Pendiente', value: mocaPendingCount },
+    { name: 'No Requerido', value: mocaNotRequiredCount },
+  ];
+
+  // ------------------------------
+  // 16. MANEJO DE ESTADOS DE CARGA Y ERROR
+  // ------------------------------
   if (
     isLoadingDoctors ||
     isLoadingPatients ||
@@ -418,9 +472,12 @@ const DashboardScreen = () => {
     );
   }
 
+  // ------------------------------
+  // 17. RENDER PRINCIPAL DEL DASHBOARD
+  // ------------------------------
   return (
     <Container maxWidth="xl" style={{ padding: '2rem 0' }}>
-      {/* Filtros y Título */}
+      {/* FILTROS Y TÍTULO */}
       <Grid container alignItems="center" spacing={2}>
         <Grid item xs={12} md={3}>
           <Typography variant="h4" gutterBottom>
@@ -465,7 +522,9 @@ const DashboardScreen = () => {
 
         <Grid item xs={12} md={3}>
           <FormControl fullWidth>
-            <InputLabel id="treatment-status-select-label">Tratamientos</InputLabel>
+            <InputLabel id="treatment-status-select-label">
+              Tratamientos
+            </InputLabel>
             <Select
               labelId="treatment-status-select-label"
               value={selectedTreatmentStatus}
@@ -480,7 +539,7 @@ const DashboardScreen = () => {
         </Grid>
       </Grid>
 
-      {/* Sección Principal: Pacientes Asignados + KPIs (Izquierda), Gráficos (Derecha) */}
+      {/* SECCIÓN PRINCIPAL: LISTA DE PACIENTES Y KPI (IZQ) + GRÁFICOS (DER) */}
       <Grid container spacing={3} style={{ marginTop: '20px' }}>
         {/* Columna Izquierda */}
         <Grid item xs={12} md={4}>
@@ -547,12 +606,12 @@ const DashboardScreen = () => {
                 subtitle="Tras filtros"
               />
             </Grid>
-            {/* KPIs de MoCA */}
+            {/* KPI de MoCA Promedio */}
             <Grid item xs={12}>
               <KPICard
                 title="Puntaje Promedio MoCA"
                 value={`${mocaAverageScore}`}
-                subtitle="Promedio de puntajes MoCA"
+                subtitle="Promedio de todos los registros"
               />
             </Grid>
           </Grid>
@@ -623,7 +682,7 @@ const DashboardScreen = () => {
               </Card>
             </Grid>
 
-            {/* Gráfico de Actividades Completadas */}
+            {/* Actividades Completadas */}
             <Grid item xs={12} md={6}>
               <Card>
                 <CardContent>
@@ -649,7 +708,7 @@ const DashboardScreen = () => {
               </Card>
             </Grid>
 
-            {/* Gráfico de Cumplimiento de Medicamentos */}
+            {/* Cumplimiento de Medicamentos */}
             <Grid item xs={12} md={6}>
               <Card>
                 <CardContent>
@@ -678,7 +737,7 @@ const DashboardScreen = () => {
               </Card>
             </Grid>
 
-            {/* Gráfico de Progreso de Tratamientos (Todos) */}
+            {/* NUEVO: RadarChart para el Progreso de Tratamientos (Todos) */}
             <Grid item xs={12}>
               <Card>
                 <CardContent>
@@ -686,25 +745,26 @@ const DashboardScreen = () => {
                     Progreso de Tratamientos (Todos)
                   </Typography>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={progressAllData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="progress" />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar
+                    <RadarChart data={progressAllData}>
+                      <PolarGrid />
+                      <PolarAngleAxis dataKey="progress" />
+                      <PolarRadiusAxis />
+                      <Radar
+                        name="Progreso"
                         dataKey="count"
+                        stroke="#8884d8"
                         fill="#8884d8"
-                        name="Nro. de Tratamientos"
-                        barSize={40}
+                        fillOpacity={0.6}
                       />
-                    </BarChart>
+                      <Legend />
+                      <Tooltip />
+                    </RadarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
             </Grid>
 
-            {/* Gráficos de MoCA */}
+            {/* Distribución de Puntajes MoCA */}
             <Grid item xs={12} md={6}>
               <Card>
                 <CardContent>
@@ -723,7 +783,10 @@ const DashboardScreen = () => {
                         label
                       >
                         {mocaScoreDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -734,6 +797,7 @@ const DashboardScreen = () => {
               </Card>
             </Grid>
 
+            {/* Tendencia de Puntajes MoCA (LineChart en lugar de BarChart) */}
             <Grid item xs={12} md={6}>
               <Card>
                 <CardContent>
@@ -741,19 +805,53 @@ const DashboardScreen = () => {
                     Tendencia de Puntajes MoCA
                   </Typography>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={mocaScoreTrend}>
+                    <LineChart data={mocaScoreTrend}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="date" />
                       <YAxis allowDecimals={false} />
                       <Tooltip />
                       <Legend />
-                      <Bar
+                      <Line
+                        type="monotone"
                         dataKey="score"
-                        fill="#82ca9d"
+                        stroke="#82ca9d"
                         name="Puntaje MoCA"
-                        barSize={40}
+                        strokeWidth={2}
                       />
-                    </BarChart>
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Distribución MOCA (Asignado, Pendiente, No Requerido) */}
+            <Grid item xs={12} md={6}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Estado MOCA en Pacientes
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={mocaDistributionData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={90}
+                        label
+                      >
+                        {mocaDistributionData.map((entry, index) => (
+                          <Cell
+                            key={`moca-dist-cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend verticalAlign="bottom" height={36} />
+                    </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
