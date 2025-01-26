@@ -145,10 +145,16 @@ const Header = () => {
                       <FaBrain className="dropdown-icon" /> Actividades (Admin)
                     </NavDropdown.Item>
                   )}
+                  {userInfo && userInfo.isAdmin==false && (
+                  <NavDropdown.Item onClick={() => navigateTo('/profile', '´profile')}>
+                      <FaUsers className="dropdown-icon" /> Perfil de usuario
+                    </NavDropdown.Item>
+                  )}
                   <NavDropdown.Item onClick={logoutHandler}>
                     <FaSignOutAlt className="dropdown-icon" /> Cerrar Sesión
                   </NavDropdown.Item>
                 </NavDropdown>
+    
               ) : (
                 <LinkContainer to="/login">
                   <Nav.Link>
