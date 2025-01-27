@@ -140,11 +140,11 @@ const Header = () => {
                       <FaUsers className="dropdown-icon" /> Usuarios
                     </NavDropdown.Item>
                   )}
-                  {userInfo && userInfo.isAdmin && (
+                  {/*{userInfo && userInfo.isAdmin && (
                     <NavDropdown.Item onClick={() => navigateTo('/admin/activities', 'adminActivities')}>
                       <FaBrain className="dropdown-icon" /> Actividades (Admin)
                     </NavDropdown.Item>
-                  )}
+                  )}*/}
                   {userInfo && userInfo.isAdmin==false && (
                   <NavDropdown.Item onClick={() => navigateTo('/profile', '´profile')}>
                       <FaUsers className="dropdown-icon" /> Perfil de usuario
