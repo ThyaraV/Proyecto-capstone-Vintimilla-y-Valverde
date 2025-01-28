@@ -1,6 +1,6 @@
 // src/screens/MOCAmodules/MocaStartSelf.jsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Button,
@@ -8,14 +8,14 @@ import {
   ProgressBar,
   Row,
   Col,
-  ListGroup,
   Alert,
   Spinner,
   Form,
+  Card,
 } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import { useGetPatientsQuery, useUpdatePatientMutation } from "../slices/patientApiSlice";
-import { useCreateMocaSelfMutation } from "../slices/mocaSelfApiSlice"; // Importar hook para enviar datos
+import { useCreateMocaSelfMutation } from "../slices/mocaSelfApiSlice";
 import Visuoespacial from "./MOCAmodules/Visuoespacial";
 import Identificacion from "./MOCAmodules/Identificacion";
 import Memoria from "./MOCAmodules/Memoria";
@@ -24,7 +24,7 @@ import Lenguaje from "./MOCAmodules/Lenguaje";
 import Abstraccion from "./MOCAmodules/Abstraccion";
 import RecuerdoDiferido from "./MOCAmodules/RecuerdoDiferido";
 import Orientacion from "./MOCAmodules/Orientacion";
-import { FaPlay, FaStop, FaMicrophone, FaCheck, FaTimes, FaSpinner } from "react-icons/fa"; // Importar iconos adicionales
+import { FaPlay, FaStop, FaMicrophone, FaExpand, FaCompress, FaSpinner, FaEye, FaEyeSlash } from "react-icons/fa";
 import "../assets/styles/MocaTest.css";
 
 const MODULES = [
@@ -55,18 +55,19 @@ const MocaStartSelf = () => {
   const [individualScores, setIndividualScores] = useState({});
   const [moduleScores, setModuleScores] = useState({});
   const [selectedModuleIndex, setSelectedModuleIndex] = useState(null);
-  const [testCompleted, setTestCompleted] = useState(false); // Nuevo estado para detectar la finalización del test
-  const [hasLessThan12YearsOfEducation, setHasLessThan12YearsOfEducation] = useState(false); // Nuevo estado para checkbox
-  const [audioVerified, setAudioVerified] = useState(false); // Nuevo estado para verificación de audio
+  const [testCompleted, setTestCompleted] = useState(false);
+  const [hasLessThan12YearsOfEducation, setHasLessThan12YearsOfEducation] = useState(false);
+  const [audioVerified, setAudioVerified] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
+  const [showAdminDetails, setShowAdminDetails] = useState(true);
 
-  // Inicializar el hook para actualizar el paciente
+  const moduleRef = useRef(null);
+
   const [
     updatePatient,
     { isLoading: isUpdatingPatient, isSuccess: isUpdateSuccess, isError: isUpdateError, error: updateError },
   ] = useUpdatePatientMutation();
 
-  // Hooks para las mutaciones
   const [
     createMocaSelf,
     { isLoading: isSaving, isSuccess, isError: isSaveError, error: saveError },
@@ -96,13 +97,11 @@ const MocaStartSelf = () => {
   };
 
   const handleCompleteModule = (moduleId, moduleScore, activityScores) => {
-    // Guardar puntaje del módulo
     setModuleScores((prevModuleScores) => ({
       ...prevModuleScores,
       [MODULES[moduleId].name]: moduleScore,
     }));
 
-    // Calcular puntaje actual
     const newCurrentScore = Object.values({
       ...moduleScores,
       [MODULES[moduleId].name]: moduleScore,
@@ -110,17 +109,14 @@ const MocaStartSelf = () => {
 
     setCurrentScore(newCurrentScore);
 
-    // Guardar respuestas del módulo actual
     setIndividualScores((prevScores) => ({
       ...prevScores,
       [MODULES[moduleId].name]: { ...activityScores, total: moduleScore },
     }));
 
     if (selectedModuleIndex !== null) {
-      // Si se seleccionó un módulo manualmente, no avanzar automáticamente
       setSelectedModuleIndex(null);
     } else {
-      // Si no, avanzar al siguiente módulo automáticamente
       if (currentModuleIndex < MODULES.length - 1) {
         setCurrentModuleIndex(currentModuleIndex + 1);
       } else {
@@ -147,14 +143,12 @@ const MocaStartSelf = () => {
 
   const CurrentModuleComponent = MODULES[currentModuleIndex].component;
 
-  // Función para manejar el envío de resultados reales
   const handleSaveResults = async () => {
     if (!selectedPatient) {
       alert("Paciente no seleccionado.");
       return;
     }
 
-    // Añadir un punto si tiene 12 años o menos de estudios y MoCA < 30
     let finalScore = currentScore;
     if (hasLessThan12YearsOfEducation && currentScore < 30) {
       finalScore += 1;
@@ -169,12 +163,10 @@ const MocaStartSelf = () => {
     };
 
     try {
-      // Guardar los resultados de MoCA
       const savedRecord = await createMocaSelf(mocaData).unwrap();
       alert("Resultados guardados exitosamente.");
 
       try {
-        // Actualizar el campo mocaAssigned a false usando la mutación correcta
         await updatePatient({ id: selectedPatient._id, mocaAssigned: false }).unwrap();
         alert("Estado de MOCA actualizado correctamente.");
       } catch (err) {
@@ -182,7 +174,6 @@ const MocaStartSelf = () => {
         alert("Error al actualizar el estado de MOCA.");
       }
 
-      // Redirigir a la pantalla final de MoCA
       navigate(`/moca-final/${savedRecord._id}`);
     } catch (err) {
       console.error("Error al guardar resultados:", err);
@@ -190,14 +181,12 @@ const MocaStartSelf = () => {
     }
   };
 
-  // Función para manejar el envío de resultados simulados
   const handleSimulateAndSaveResults = async () => {
     if (!selectedPatient) {
       alert("Paciente no seleccionado.");
       return;
     }
 
-    // Datos simulados de prueba
     const simulatedScores = {
       Visuoespacial: { alternancia: 0, cube: 2, clock: 1, total: 1 },
       Identificación: { "1": "Un camello.", "2": "León.", "3": "Reina serán.", total: 0 },
@@ -245,15 +234,12 @@ const MocaStartSelf = () => {
       0
     );
 
-    // Añadir un punto si tiene 12 años o menos de estudios y MoCA < 30
     let finalScore = totalScore;
     if (hasLessThan12YearsOfEducation && totalScore < 30) {
       finalScore += 1;
     }
 
-    // Enviar datos simulados al backend
     try {
-      // Guardar los resultados simulados de MoCA
       const savedRecord = await createMocaSelf({
         patientId: selectedPatient._id,
         patientName: selectedPatient.user?.name || "Paciente Desconocido",
@@ -265,7 +251,6 @@ const MocaStartSelf = () => {
       alert("Resultados simulados guardados exitosamente.");
 
       try {
-        // Actualizar el campo mocaAssigned a false usando la mutación correcta
         await updatePatient({ id: selectedPatient._id, mocaAssigned: false }).unwrap();
         alert("Estado de MOCA actualizado correctamente.");
       } catch (err) {
@@ -273,7 +258,6 @@ const MocaStartSelf = () => {
         alert("Error al actualizar el estado de MOCA.");
       }
 
-      // Redirigir a la pantalla final de MoCA
       navigate(`/moca-final/${savedRecord._id}`);
     } catch (err) {
       console.error("Error al guardar resultados simulados:", err);
@@ -281,7 +265,6 @@ const MocaStartSelf = () => {
     }
   };
 
-  // Función para hablar instrucciones
   const speakInstructions = (text) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
@@ -294,14 +277,12 @@ const MocaStartSelf = () => {
     }
   };
 
-  // Funciones para manejar el micrófono
   const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [showButtons, setShowButtons] = useState(false);
   const [isSpeakingInstructions, setIsSpeakingInstructions] = useState(false);
 
   useEffect(() => {
-    // Cleanup on unmount
     return () => {
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -309,9 +290,8 @@ const MocaStartSelf = () => {
     };
   }, []);
 
-  // Función para limpiar el texto de reconocimiento de voz
   const cleanSpeechResult = (text) => {
-    return text.trim().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"");
+    return text.trim().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "");
   };
 
   const handleStartListening = () => {
@@ -386,13 +366,34 @@ const MocaStartSelf = () => {
     speakInstructions(description);
   };
 
-  // Nueva función para verificar audio
   const [expectedColor, setExpectedColor] = useState("");
   const handleVerifyAudio = () => {
     const colors = ["Rojo", "Verde", "Azul", "Amarillo"];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     setExpectedColor(randomColor);
     speakInstructions(`Por favor, escucha el color: ${randomColor}`);
+  };
+
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      if (moduleRef.current.requestFullscreen) {
+        moduleRef.current.requestFullscreen();
+      } else if (moduleRef.current.mozRequestFullScreen) { /* Firefox */
+        moduleRef.current.mozRequestFullScreen();
+      } else if (moduleRef.current.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+        moduleRef.current.webkitRequestFullscreen();
+      } else if (moduleRef.current.msRequestFullscreen) { /* IE/Edge */
+        moduleRef.current.msRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  const toggleAdminDetails = () => {
+    setShowAdminDetails(!showAdminDetails);
   };
 
   return (
@@ -541,70 +542,92 @@ const MocaStartSelf = () => {
         </div>
       ) : (
         <>
-          <h3 className="module-title text-center mb-4">
-            {MODULES[currentModuleIndex].icon} {MODULES[currentModuleIndex].name}
+          <div ref={moduleRef} className="module-view">
+            <h3 className="module-title">
+              {MODULES[currentModuleIndex].icon} {MODULES[currentModuleIndex].name}
+            </h3>
+            <Button
+              variant="link"
+              onClick={toggleFullScreen}
+              className="fullscreen-button"
+            >
+              {document.fullscreenElement ? <FaCompress /> : <FaExpand />} Pantalla Completa
+            </Button>
+
             {isAdmin && (
               <Button
-                variant="link"
-                onClick={() =>
-                  handleSpeakModuleInstructions(MODULES[currentModuleIndex].name)
-                }
-                disabled={isSpeakingInstructions}
-                className="ms-3 text-decoration-none listen-instructions-button"
+                variant="outline-secondary"
+                onClick={toggleAdminDetails}
+                className="toggle-admin-button"
               >
-                {isSpeakingInstructions ? <FaStop /> : <FaPlay />} Escuchar Instrucciones (Opciones no visibles para el paciente)
+                {showAdminDetails ? <FaEyeSlash /> : <FaEye />} {showAdminDetails ? "Ocultar" : "Mostrar"} Detalles Admin
               </Button>
             )}
-          </h3>
 
-          <div className="module-container border p-4 mb-4">
-            <Row>
-              <Col>
-                <CurrentModuleComponent
-                  onComplete={(score, activityScores) =>
-                    handleCompleteModule(
-                      currentModuleIndex,
-                      score,
-                      activityScores
-                    )
-                  }
-                  onPrevious={handlePreviousModule}
-                  isFirstModule={currentModuleIndex === 0}
-                />
-              </Col>
-            </Row>
+            <div className="module-container border p-4 mb-4">
+              <Row>
+                <Col>
+                  <CurrentModuleComponent
+                    onComplete={(score, activityScores) =>
+                      handleCompleteModule(
+                        currentModuleIndex,
+                        score,
+                        activityScores
+                      )
+                    }
+                    onPrevious={handlePreviousModule}
+                    isFirstModule={currentModuleIndex === 0}
+                  />
+                </Col>
+              </Row>
+            </div>
           </div>
 
           <hr className="my-4" />
 
-          {isAdmin && (
+          {isAdmin && showAdminDetails && (
             <div className="progress-container mb-4">
-              <h5>Tiempo transcurrido: {formatTime(timeElapsed)} (Opciones no visibles para el paciente)</h5>
-              <h5>Puntaje Actual: {currentScore} (Opciones no visibles para el paciente)</h5>
-              <ProgressBar
-                now={((selectedModuleIndex !== null ? 1 : currentModuleIndex + 1) / MODULES.length) * 100}
-                label={`${selectedModuleIndex !== null ? 1 : currentModuleIndex + 1} / ${MODULES.length}`}
-                className="mb-3"
-              />
-              <div className="module-status">
-                {MODULES.map((module, index) => (
-                  <span
-                    key={module.id}
-                    className={`module-dot ${
-                      index < currentModuleIndex ||
-                      index === selectedModuleIndex
-                        ? "completed"
-                        : "pending"
-                    }`}
-                  ></span>
-                ))}
-              </div>
+              <Row className="align-items-center">
+                <Col md={6}>
+                  <div className="progress-bar-container">
+                    <ProgressBar now={(currentModuleIndex + 1) / MODULES.length * 100} label={`${currentModuleIndex + 1} / ${MODULES.length}`} />
+                  </div>
+                </Col>
+                <Col md={3}>
+                  <div className="score-container">
+                    <span>Puntaje Actual:</span>
+                    <span className="score">{currentScore}</span>
+                  </div>
+                </Col>
+                <Col md={3}>
+                  <div className="time-container">
+                    <span>Tiempo Transcurrido:</span>
+                    <span className="time">{formatTime(timeElapsed)}</span>
+                  </div>
+                </Col>
+              </Row>
             </div>
           )}
 
-          {isAdmin && (
+          {isAdmin && showAdminDetails && (
+            <div className="module-status">
+              {MODULES.map((module, index) => (
+                <span
+                  key={module.id}
+                  className={`module-dot ${
+                    index < currentModuleIndex ||
+                    index === selectedModuleIndex
+                      ? "completed"
+                      : "pending"
+                  }`}
+                ></span>
+              ))}
+            </div>
+          )}
+
+          {isAdmin && showAdminDetails && (
             <pre className="mt-4">
-              <strong>Puntajes por Módulo y Respuestas (Opciones no visibles para el paciente):</strong>
+              <strong>Puntajes por Módulo y Respuestas:</strong>
               {Object.entries(individualScores).map(([moduleName, scores]) => (
                 <div key={moduleName}>
                   <strong>{moduleName}:</strong> {JSON.stringify(scores)}
@@ -613,31 +636,60 @@ const MocaStartSelf = () => {
             </pre>
           )}
 
-          {isAdmin && (
+          {isAdmin && showAdminDetails && (
             <div className="mt-5">
-              <h4 className="text-center">Selecciona un Módulo para Probar (Opciones no visibles para el paciente):</h4>
-              <ListGroup horizontal className="flex-wrap justify-content-center">
+              <h4 className="text-center">Selecciona un Módulo para Probar:</h4>
+              <Row className="flex-wrap justify-content-center">
                 {MODULES.map((module, index) => (
-                  <ListGroup.Item key={module.id} className="m-2">
-                    <Button
-                      variant={
-                        index === currentModuleIndex ||
-                        index === selectedModuleIndex
-                          ? "primary"
-                          : "outline-primary"
-                      }
+                  <Col key={module.id} xs={12} sm={6} md={4} lg={3} className="mb-3">
+                    <Card
+                      className={`module-card ${
+                        index === currentModuleIndex || index === selectedModuleIndex
+                          ? "active"
+                          : ""
+                      }`}
                       onClick={() => handleSelectModule(index)}
-                      className="module-select-button"
+                      style={{ cursor: "pointer" }}
                     >
-                      {module.icon} {module.name}
-                    </Button>
-                  </ListGroup.Item>
+                      <Card.Body className="text-center">
+                        <Card.Title>{module.icon} {module.name}</Card.Title>
+                      </Card.Body>
+                    </Card>
+                  </Col>
                 ))}
-              </ListGroup>
+              </Row>
             </div>
           )}
 
-          {testCompleted && isAdmin && (
+          {isAdmin && showAdminDetails && (
+            <div className="d-flex justify-content-center mt-4">
+              <Button
+                variant="secondary"
+                onClick={handleSimulateAndSaveResults}
+                disabled={isSaving || testCompleted || isUpdatingPatient}
+                size="lg"
+                className="simulate-button"
+              >
+                {isSaving || isUpdatingPatient ? (
+                  <>
+                    <Spinner
+                      as="span"
+                      animation="border"
+                      size="sm"
+                      role="status"
+                      aria-hidden="true"
+                      className="me-2"
+                    />
+                    Simulando...
+                  </>
+                ) : (
+                  "Simular y Guardar Resultados"
+                )}
+              </Button>
+            </div>
+          )}
+
+          {testCompleted && isAdmin && showAdminDetails && (
             <Row className="mt-4">
               <Col className="d-flex justify-content-end">
                 <Button
@@ -666,51 +718,22 @@ const MocaStartSelf = () => {
             </Row>
           )}
 
-          {isAdmin && (
-            <Row className="mt-4">
-              <Col className="d-flex justify-content-end">
-                <Button
-                  variant="secondary"
-                  onClick={handleSimulateAndSaveResults}
-                  disabled={isSaving || testCompleted || isUpdatingPatient}
-                  size="lg"
-                >
-                  {isSaving || isUpdatingPatient ? (
-                    <>
-                      <Spinner
-                        as="span"
-                        animation="border"
-                        size="sm"
-                        role="status"
-                        aria-hidden="true"
-                        className="me-2"
-                      />
-                      Simulando...
-                    </>
-                  ) : (
-                    "Simular y Guardar Resultados"
-                  )}
-                </Button>
-              </Col>
-            </Row>
-          )}
-
-          {isSuccess && isAdmin && (
+          {isSuccess && isAdmin && showAdminDetails && (
             <Alert variant="success" className="mt-3 text-center">
               Resultados guardados exitosamente.
             </Alert>
           )}
-          {isSaveError && isAdmin && (
+          {isSaveError && isAdmin && showAdminDetails && (
             <Alert variant="danger" className="mt-3 text-center">
               {saveError?.data?.error || "Hubo un error al guardar los resultados."}
             </Alert>
           )}
-          {isUpdateSuccess && isAdmin && (
+          {isUpdateSuccess && isAdmin && showAdminDetails && (
             <Alert variant="success" className="mt-3 text-center">
               Estado de MOCA actualizado correctamente.
             </Alert>
           )}
-          {isUpdateError && isAdmin && (
+          {isUpdateError && isAdmin && showAdminDetails && (
             <Alert variant="danger" className="mt-3 text-center">
               {updateError?.data?.error || "Hubo un error al actualizar el estado de MOCA."}
             </Alert>
