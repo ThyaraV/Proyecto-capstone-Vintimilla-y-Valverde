@@ -2,213 +2,366 @@
 
 /* Estilo para el título de la sección con fondo */
 .section-title {
-  background-color: #f0f0f0;
-  padding: 10px;
-  width: 100%;
-  text-align: left;
-  font-weight: bold;
-  font-size: 1.1rem;
-  color: #333;
-  margin-top: 20px;
-  border-bottom: 1px solid #ddd;
+  background-color: #f0f0f0 !important;
+  padding: 10px !important;
+  width: 100% !important;
+  text-align: left !important;
+  font-weight: bold !important;
+  font-size: 1.1rem !important;
+  color: #333 !important;
+  margin-top: 20px !important;
+  border-bottom: 1px solid #ddd !important;
 }
 
 /* Estilo para las instrucciones con separadores */
 .instructions-text {
-  color: #555;
-  font-size: 1rem;
-  text-align: justify;
-  margin-bottom: 20px;
+  color: #555 !important;
+  font-size: 1rem !important;
+  text-align: justify !important;
+  margin-bottom: 20px !important;
 }
 
 /* Estilo para el botón activo */
 .toggle-button.active {
-  background-color: #007bff;
-  color: white;
+  background-color: #007bff !important;
+  color: white !important;
 }
 
 .toggle-button.active.success {
-  background-color: #28a745;
+  background-color: #28a745 !important;
 }
 
 .toggle-button.active.danger {
-  background-color: #dc3545;
+  background-color: #dc3545 !important;
 }
 
 /* Botones en stack con ancho completo */
 .toggle-button {
-  width: 100%;
-  text-align: center;
+  width: 100% !important;
+  text-align: center !important;
 }
 
 .moca-container {
-  max-width: 1200px;
-  margin: auto;
+  max-width: 1200px !important;
+  margin: auto !important;
 }
 
 .instructions-container {
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  margin-bottom: 30px;
+  padding: 20px !important;
+  background-color: #f8f9fa !important;
+  border-radius: 16px !important;
+  margin-bottom: 30px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05) !important;
 }
 
 .instructions-container h2 {
-  color: #2c3e50;
-  margin-bottom: 10px;
+  color: #2c3e50 !important;
+  margin-bottom: 15px !important;
+  font-size: 1.8rem !important;
 }
 
 .instructions-container p {
-  color: #555;
-  font-size: 1rem;
-  margin-bottom: 20px;
+  color: #555 !important;
+  font-size: 1.1rem !important;
+  margin-bottom: 20px !important;
+  line-height: 1.6 !important;
 }
 
 /* Botones de instrucciones y prueba de micrófono */
 .instructions-container .instruction-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 20px;
-  margin: 5px 0;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  min-width: 180px;
-  text-decoration: none;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 12px 25px !important;
+  margin: 8px 0 !important;
+  background-color: #007bff !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 25px !important;
+  cursor: pointer !important;
+  transition: background-color 0.3s ease, transform 0.2s !important;
+  min-width: 200px !important;
+  text-decoration: none !important;
+  font-size: 1rem !important;
 }
 
 .instructions-container .instruction-button:hover {
-  background-color: #0056b3;
+  background-color: #0056b3 !important;
+  transform: translateY(-2px) !important;
 }
 
 .instructions-container .instruction-button.disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
+  background-color: #6c757d !important;
+  cursor: not-allowed !important;
 }
 
 /* Botón grande y verde suave para iniciar la prueba */
 .instructions-container .start-button {
-  display: block;
-  margin: 20px auto 0 auto;
-  width: 100%;
-  max-width: 300px;
-  padding: 15px;
-  font-size: 1.2rem;
-  background-color: #6cbf6c; /* Verde más suave */
-  border: none;
-  text-align: center;
+  display: block !important;
+  margin: 25px auto 0 auto !important;
+  width: 100% !important;
+  max-width: 350px !important;
+  padding: 15px !important;
+  font-size: 1.3rem !important;
+  background-color: #6cbf6c !important; /* Verde más suave */
+  border: none !important;
+  border-radius: 30px !important;
+  text-align: center !important;
+  transition: background-color 0.3s ease, transform 0.2s !important;
 }
 
 .instructions-container .start-button:hover {
-  background-color: #5aa75a;
+  background-color: #5aa75a !important;
+  transform: translateY(-2px) !important;
 }
 
 /* Estilos para las alertas */
 .instructions-container .alert {
-  margin-top: 15px;
+  margin-top: 20px !important;
 }
 
 /* Microphone Test Section */
 .microphone-test {
-  text-align: center;
-  margin-top: 30px;
+  text-align: center !important;
+  margin-top: 30px !important;
 }
 
 .microphone-test button {
-  margin: 10px 0;
+  margin: 12px 0 !important;
 }
 
 /* Instrucciones y descripción en columna izquierda */
 .instructions-text {
-  text-align: justify;
+  text-align: justify !important;
 }
 
 /* Estilos para los botones grandes y centrados */
 .instructions-container .start-button {
-  display: block;
-  margin: 20px auto 0 auto;
+  display: block !important;
+  margin: 25px auto 0 auto !important;
 }
 
 /* Estilos para los botones de reproducción y grabación */
 .microphone-test .instruction-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 15px;
-  font-size: 1rem;
-  min-width: 180px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 12px 25px !important;
+  font-size: 1rem !important;
+  min-width: 200px !important;
+  border-radius: 25px !important;
+  transition: background-color 0.3s ease, transform 0.2s !important;
 }
 
-/* Animación de audio reproducido */
-.microphone-test .audio-playing {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 10px;
+.microphone-test .instruction-button:hover {
+  background-color: #0056b3 !important;
+  transform: translateY(-2px) !important;
 }
 
-.microphone-test .audio-playing span {
-  margin-left: 10px;
-  font-size: 0.9rem;
+/* Agrupación de botones para centrar */
+.button-group {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 20px !important;
+}
+
+/* Estilo para botones específicos */
+.listen-button,
+.verify-audio-button,
+.listen-audio-button,
+.speak-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.listen-button {
+  margin-bottom: 20px !important;
+}
+
+.listen-audio-button {
+  margin-bottom: 10px !important;
+}
+
+.speak-button {
+  margin-bottom: 10px !important;
+}
+
+/* Indicador de escucha */
+.listening-indicator {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  margin-top: 15px !important;
+}
+
+/* Estilos para mensajes de verificación */
+.verification-section {
+  margin-top: 20px !important;
+}
+
+.verification-section h4 {
+  margin-bottom: 10px !important;
+}
+
+.verification-section p {
+  margin-bottom: 10px !important;
+}
+
+.additional-help {
+  margin-top: 20px !important;
+}
+
+.confirmation-buttons {
+  margin-top: 20px !important;
+}
+
+/* Estilos para mensajes de audio reproduciéndose */
+.audio-playing {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-top: 15px !important;
+}
+
+.audio-playing span {
+  margin-left: 10px !important;
+  font-size: 0.95rem !important;
+}
+
+/* Mejora del estilo del contenedor de módulos */
+.module-container {
+  background-color: #ffffff !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 16px !important;
+  padding: 25px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05) !important;
+  margin-bottom: 25px !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.module-container:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1) !important;
+}
+
+.module-title {
+  font-weight: 600 !important;
+  color: #2c3e50 !important;
+}
+
+/* Estilos para los puntos de estado del módulo */
+.module-status {
+  display: flex !important;
+  justify-content: center !important;
+  margin-top: 10px !important;
+}
+
+.module-dot {
+  width: 12px !important;
+  height: 12px !important;
+  margin: 0 5px !important;
+  border-radius: 50% !important;
+  background-color: #e0e0e0 !important;
+  transition: background-color 0.3s ease !important;
+}
+
+.module-dot.completed {
+  background-color: #6cbf6c !important;
+}
+
+.module-dot.pending {
+  background-color: #e0e0e0 !important;
+}
+
+/* Estilos para botones de selección de módulo */
+.module-select-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+/* Clase para animación de spinner */
+.spin {
+  animation: spin 2s linear infinite;
+}
+
+/* Keyframes para la animación de spin */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Responsividad */
 
 @media (max-width: 1200px) {
   .moca-container {
-    max-width: 1000px;
+    max-width: 1000px !important;
   }
 }
 
 @media (max-width: 992px) {
   .moca-options-container {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
   }
 
   .instructions-container .instruction-button {
-    width: 100%;
-    justify-content: center;
+    width: 100% !important;
+    justify-content: center !important;
   }
 }
 
 @media (max-width: 768px) {
   .module-container {
-    padding: 15px;
+    padding: 20px !important;
   }
 
   .module-title {
-    font-size: 1.2rem;
+    font-size: 1.5rem !important;
   }
 
   .moca-options-container {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
   }
 
   .instructions-container .instruction-button {
-    width: 100%;
-    justify-content: center;
+    width: 100% !important;
+    justify-content: center !important;
   }
 }
 
 @media (max-width: 576px) {
   .moca-options-container {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 
   .instructions-container .instruction-button {
-    width: 100%;
-    justify-content: center;
+    width: 100% !important;
+    justify-content: center !important;
   }
 
   .module-title {
-    font-size: 1rem;
+    font-size: 1.3rem !important;
   }
 
   .module-container {
-    padding: 10px;
+    padding: 15px !important;
   }
+}
+
+/* Estilos adicionales para centrar botones de escuchar y hablar */
+.listen-button,
+.speak-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Estilos para los botones de selección de módulo */
+.module-select-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
 }

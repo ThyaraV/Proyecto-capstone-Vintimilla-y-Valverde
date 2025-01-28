@@ -24,7 +24,7 @@ import Lenguaje from "./MOCAmodules/Lenguaje";
 import Abstraccion from "./MOCAmodules/Abstraccion";
 import RecuerdoDiferido from "./MOCAmodules/RecuerdoDiferido";
 import Orientacion from "./MOCAmodules/Orientacion";
-import { FaPlay, FaStop, FaMicrophone } from "react-icons/fa"; // Importar iconos
+import { FaPlay, FaStop, FaMicrophone, FaCheck, FaTimes, FaSpinner } from "react-icons/fa"; // Importar iconos adicionales
 import "../assets/styles/MocaTest.css";
 
 const MODULES = [
@@ -57,6 +57,8 @@ const MocaStartSelf = () => {
   const [selectedModuleIndex, setSelectedModuleIndex] = useState(null);
   const [testCompleted, setTestCompleted] = useState(false); // Nuevo estado para detectar la finalización del test
   const [hasLessThan12YearsOfEducation, setHasLessThan12YearsOfEducation] = useState(false); // Nuevo estado para checkbox
+  const [audioVerified, setAudioVerified] = useState(false); // Nuevo estado para verificación de audio
+  const [verificationMessage, setVerificationMessage] = useState("");
 
   // Inicializar el hook para actualizar el paciente
   const [
@@ -85,6 +87,10 @@ const MocaStartSelf = () => {
   };
 
   const handleStartTest = () => {
+    if (!audioVerified) {
+      setVerificationMessage("Por favor, verifica que tu audio y micrófono funcionen correctamente antes de iniciar la prueba.");
+      return;
+    }
     setTestStarted(true);
     setStartTime(new Date().toLocaleString());
   };
@@ -303,9 +309,19 @@ const MocaStartSelf = () => {
     };
   }, []);
 
+  // Función para limpiar el texto de reconocimiento de voz
+  const cleanSpeechResult = (text) => {
+    return text.trim().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"");
+  };
+
   const handleStartListening = () => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
       alert("Tu navegador no soporta reconocimiento de voz.");
+      return;
+    }
+
+    if (!expectedColor) {
+      alert("Por favor, verifica el audio primero.");
       return;
     }
 
@@ -320,14 +336,23 @@ const MocaStartSelf = () => {
     setListening(true);
 
     recognition.onresult = (event) => {
-      const speechResult = event.results[0][0].transcript;
+      let speechResult = event.results[0][0].transcript.toLowerCase();
+      speechResult = cleanSpeechResult(speechResult);
       setTranscript(speechResult);
       setShowButtons(true);
+      if (speechResult === expectedColor.toLowerCase()) {
+        setAudioVerified(true);
+        setVerificationMessage("Audio y micrófono verificados correctamente.");
+      } else {
+        setAudioVerified(false);
+        setVerificationMessage("No se pudo verificar correctamente. Por favor, inténtalo de nuevo.");
+      }
     };
 
     recognition.onerror = (event) => {
       console.error("Error en reconocimiento de voz:", event.error);
       setListening(false);
+      setVerificationMessage("Error en reconocimiento de voz. Por favor, inténtalo de nuevo.");
     };
 
     recognition.onend = () => {
@@ -341,7 +366,6 @@ const MocaStartSelf = () => {
   };
 
   const handleConfirmWord = () => {
-    // Aquí puedes manejar la confirmación de la palabra
     setShowButtons(false);
   };
 
@@ -362,31 +386,37 @@ const MocaStartSelf = () => {
     speakInstructions(description);
   };
 
+  // Nueva función para verificar audio
+  const [expectedColor, setExpectedColor] = useState("");
+  const handleVerifyAudio = () => {
+    const colors = ["Rojo", "Verde", "Azul", "Amarillo"];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    setExpectedColor(randomColor);
+    speakInstructions(`Por favor, escucha el color: ${randomColor}`);
+  };
+
   return (
     <Container className="moca-container my-5">
       {!testStarted ? (
         <div className="instructions-container">
           <Row>
-            {/* Columna izquierda: Instrucciones y descripción */}
             <Col md={6} className="instructions-text">
               <h2>Instrucciones para la Prueba MoCA</h2>
               <Button
                 variant="link"
                 onClick={handleTestDescription}
                 disabled={isSpeakingInstructions}
-                className="mb-3 text-decoration-none"
-                style={{ whiteSpace: "nowrap", minWidth: "180px" }}
+                className="mb-3 text-decoration-none listen-button"
               >
                 {isSpeakingInstructions ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
               </Button>
-              <p style={{ textAlign: "justify" }}>
+              <p>
                 Bienvenido a la Evaluación Cognitiva Montreal (MoCA). Esta prueba está dividida en
                 varios módulos, y cada módulo consta de diferentes actividades. Por favor, sigue las
                 instrucciones de cada actividad cuidadosamente. En ciertas actividades, tendrás
                 que dar respuestas habladas o escritas. Asegúrate de tener tu micrófono funcionando
                 correctamente antes de iniciar la prueba.
               </p>
-              {/* Checkbox para años de educación */}
               <Form.Group controlId="educationCheckbox" className="mb-3">
                 <Form.Check
                   type="checkbox"
@@ -405,55 +435,66 @@ const MocaStartSelf = () => {
                   </p>
                 </>
               )}
+              <div className="verification-section">
+                <h4>Verificación de Audio y Micrófono</h4>
+                <p>Por favor, verifica que tu audio y micrófono funcionan correctamente.</p>
+                <Button
+                  variant="info"
+                  onClick={handleVerifyAudio}
+                  disabled={isSpeakingInstructions || listening}
+                  className="verify-audio-button"
+                >
+                  {isSpeakingInstructions ? <FaSpinner className="spin" /> : "Verificar Audio"}
+                </Button>
+                {verificationMessage && (
+                  <Alert
+                    variant={audioVerified ? "success" : "danger"}
+                    className="mt-3"
+                  >
+                    {verificationMessage}
+                  </Alert>
+                )}
+              </div>
             </Col>
 
-            {/* Columna derecha: Audio y micrófono */}
             <Col md={6} className="microphone-test">
               <h4>Prueba de Audio y Micrófono</h4>
               <p>Utiliza estos botones para asegurarte de que tu audio y micrófono funcionan correctamente.</p>
-              {/* Botón Escuchar */}
-              <Button
-                variant="link"
-                onClick={() => speakInstructions("Esta es una prueba de audio.")}
-                disabled={isSpeakingInstructions}
-                className="instruction-button mb-3 text-decoration-none"
-                style={{ whiteSpace: "nowrap", minWidth: "180px" }}
-              >
-                {isSpeakingInstructions ? <FaStop /> : <FaPlay />} Escuchar
-              </Button>
-              {/* Botón Hablar */}
-              <div className="d-flex flex-column align-items-center">
-                {listening ? (
-                  <div className="d-flex flex-column align-items-center mb-3">
-                    <Spinner animation="grow" variant="primary" className="mb-2" />
-                    <p>Escuchando...</p>
-                  </div>
-                ) : (
-                  <Button
-                    variant="primary"
-                    onClick={handleStartListening}
-                    className="instruction-button mb-3"
-                    style={{ minWidth: "180px" }}
-                  >
-                    <FaMicrophone className="me-2" />
-                    Hablar
-                  </Button>
-                )}
+              <div className="button-group">
+                <Button
+                  variant="link"
+                  onClick={() => speakInstructions("Esta es una prueba de audio.")}
+                  disabled={isSpeakingInstructions}
+                  className="instruction-button listen-audio-button"
+                >
+                  {isSpeakingInstructions ? <FaStop /> : <FaPlay />} Escuchar
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleStartListening}
+                  className="instruction-button speak-button"
+                >
+                  <FaMicrophone className="me-2" />
+                  Hablar
+                </Button>
               </div>
-              {/* Mostrar botones de confirmación si hay transcript */}
+              {listening && (
+                <div className="listening-indicator">
+                  <Spinner animation="grow" variant="primary" className="mb-2" />
+                  <p>Escuchando...</p>
+                </div>
+              )}
               {showButtons && (
-                <div className="mt-3">
+                <div className="confirmation-buttons">
                   <Alert variant="secondary">
                     <p>¿Es correcta su palabra?</p>
                     <strong>{transcript}</strong>
                   </Alert>
                   <Row>
-                    <Col className="d-flex justify-content-start">
-                      <Button variant="warning" onClick={handleRetry}>
+                    <Col className="d-flex justify-content-center">
+                      <Button variant="warning" onClick={handleRetry} className="me-2">
                         Reintentar
                       </Button>
-                    </Col>
-                    <Col className="d-flex justify-content-end">
                       <Button variant="success" onClick={handleConfirmWord}>
                         Sí
                       </Button>
@@ -461,30 +502,39 @@ const MocaStartSelf = () => {
                   </Row>
                 </div>
               )}
-              {/* Animación de audio reproducido */}
               {isSpeakingInstructions && (
-                <div className="d-flex align-items-center mt-3">
+                <div className="audio-playing">
                   <Spinner animation="border" variant="info" className="me-2" />
                   <span>Reproduciendo audio...</span>
+                </div>
+              )}
+              {verificationMessage && !audioVerified && (
+                <div className="additional-help">
+                  <Alert variant="warning" className="mt-3">
+                    <p>No has verificado tu audio correctamente.</p>
+                    <Button variant="link" onClick={() => navigate("/chat")}>
+                      Necesito ayuda adicional
+                    </Button>
+                    <p>O visita la sección de <strong>chat</strong> para conversar con el doctor.</p>
+                  </Alert>
                 </div>
               )}
             </Col>
           </Row>
 
-          {/* Botón "Iniciar Prueba" centrado y verde suave */}
           <div className="text-center mt-4">
             <Button
               variant="success"
               size="lg"
               onClick={handleStartTest}
-              disabled={!selectedPatient}
+              disabled={!selectedPatient || !audioVerified}
               className="start-button"
             >
               Iniciar Prueba
             </Button>
-            {!selectedPatient && (
+            {verificationMessage && !audioVerified && (
               <Alert variant="warning" className="mt-3">
-                Por favor, selecciona un paciente para iniciar la prueba.
+                Por favor, verifica que tu audio y micrófono funcionen correctamente antes de iniciar la prueba.
               </Alert>
             )}
           </div>
@@ -500,8 +550,7 @@ const MocaStartSelf = () => {
                   handleSpeakModuleInstructions(MODULES[currentModuleIndex].name)
                 }
                 disabled={isSpeakingInstructions}
-                className="ms-3 text-decoration-none"
-                style={{ whiteSpace: "nowrap", minWidth: "180px" }}
+                className="ms-3 text-decoration-none listen-instructions-button"
               >
                 {isSpeakingInstructions ? <FaStop /> : <FaPlay />} Escuchar Instrucciones (Opciones no visibles para el paciente)
               </Button>
@@ -533,18 +582,8 @@ const MocaStartSelf = () => {
               <h5>Tiempo transcurrido: {formatTime(timeElapsed)} (Opciones no visibles para el paciente)</h5>
               <h5>Puntaje Actual: {currentScore} (Opciones no visibles para el paciente)</h5>
               <ProgressBar
-                now={
-                  ((selectedModuleIndex !== null
-                    ? 1
-                    : currentModuleIndex + 1) /
-                    MODULES.length) *
-                  100
-                }
-                label={`${
-                  selectedModuleIndex !== null
-                    ? 1
-                    : currentModuleIndex + 1
-                } / ${MODULES.length}`}
+                now={((selectedModuleIndex !== null ? 1 : currentModuleIndex + 1) / MODULES.length) * 100}
+                label={`${selectedModuleIndex !== null ? 1 : currentModuleIndex + 1} / ${MODULES.length}`}
                 className="mb-3"
               />
               <div className="module-status">
@@ -588,6 +627,7 @@ const MocaStartSelf = () => {
                           : "outline-primary"
                       }
                       onClick={() => handleSelectModule(index)}
+                      className="module-select-button"
                     >
                       {module.icon} {module.name}
                     </Button>
@@ -597,7 +637,6 @@ const MocaStartSelf = () => {
             </div>
           )}
 
-          {/* Botón para guardar resultados reales, visible solo cuando el test está completado y es admin */}
           {testCompleted && isAdmin && (
             <Row className="mt-4">
               <Col className="d-flex justify-content-end">
@@ -627,7 +666,6 @@ const MocaStartSelf = () => {
             </Row>
           )}
 
-          {/* Botón adicional para simular y guardar resultados, visible solo para admin */}
           {isAdmin && (
             <Row className="mt-4">
               <Col className="d-flex justify-content-end">
@@ -657,7 +695,6 @@ const MocaStartSelf = () => {
             </Row>
           )}
 
-          {/* Mensajes de éxito o error al guardar */}
           {isSuccess && isAdmin && (
             <Alert variant="success" className="mt-3 text-center">
               Resultados guardados exitosamente.
