@@ -167,6 +167,41 @@ const registerUser = asyncHandler(async (req, res) => {
   const user = await User.create(userData);
 
   if (user) {
+    if (!user.isAdmin) {
+      // Asignar al usuario como paciente
+      const defaultDoctor = await Doctor.findOne();
+      if (!defaultDoctor) {
+        // Si no hay ningún doctor, crear uno por defecto
+        const createdDoctor = await Doctor.create({
+          user: null, // Asigna un usuario si tienes uno por defecto
+          especialidad: "General",
+        });
+        userData.doctor = createdDoctor._id;
+      } else {
+        userData.doctor = defaultDoctor._id;
+      }
+
+      const patient = await Patient.create({
+        user: user._id,
+        school: "N/A",
+        birthdate: new Date(),
+        gender: "N/A",
+        educationalLevel: "N/A",
+        familyRepresentative: "N/A",
+        address: "N/A",
+        maritalStatus: "N/A",
+        profession: "N/A",
+        cognitiveStage: "N/A",
+        referredTo: "N/A",
+        doctor: userData.doctor,
+      });
+
+      if (defaultDoctor) {
+        defaultDoctor.patients.push(patient._id);
+        await defaultDoctor.save();
+      }
+    }
+
     generateToken(res, user._id);
     res.status(201).json({
       _id: user._id,
@@ -184,7 +219,7 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 // @desc    Logout user - clear cookie
-// @route   GET /api/users/logout
+// @route   POST /api/users/logout
 // @access  Private
 const logoutUser = asyncHandler(async (req, res) => {
   res.cookie("jwt", "", {
