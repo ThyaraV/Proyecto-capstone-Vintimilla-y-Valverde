@@ -57,7 +57,7 @@ const MedicationPopup = ({ isOpen, onRequestClose, medications = [], treatmentId
       className="medication-modal"
       overlayClassName="medication-overlay"
     >
-      <div className="modal-header">
+      <div className="medical-header">
         <h2>🩺 Medicamentos de hoy</h2>
         <button className="close-icon" onClick={onRequestClose}>✖</button>
       </div>
