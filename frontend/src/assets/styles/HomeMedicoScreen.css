@@ -4,6 +4,7 @@
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  /*background-color: #eeeeee;*/
 }
 
 .home-medico-container h1 {
@@ -56,6 +57,16 @@
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  /*background-color: #9ecceb;*/
+}
+
+.medico-section {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  margin-bottom:30px ;
+ /* background-color: #9ecceb;*/
 }
 
 .patients-section h2 {

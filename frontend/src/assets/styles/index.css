@@ -226,7 +226,7 @@ table th {
 
 header {
    /*background: #2c3474; /* Azul translúcido */
-  height: 90px;
+  /*height: 90px;*/
   background: linear-gradient(to right, #fcb64c, #1986f3);
   backdrop-filter: blur(10px); /* Efecto de desenfoque */
   padding: 0px 0; /* Espaciado arriba y abajo */
