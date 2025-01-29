@@ -31,8 +31,9 @@ const HomeScreenMedico = () => {
 
   return (
     <div className="home-medico-container">
+       <div className="medico-section">
       <h1>Bienvenido, Dr. {userInfo?.name || 'Médico'}</h1>
-      
+      </div>
       <div className="shortcut-cards">
         <Link to="/admin/userlist" className="shortcut-card">
           <div className="card-icon">
