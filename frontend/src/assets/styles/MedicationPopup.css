@@ -25,7 +25,7 @@
   max-height: 80vh;
 }
 
-.modal-header {
+.medical-header{
   display: flex;
   justify-content: space-between;
   align-items: center;

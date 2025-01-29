@@ -41,7 +41,11 @@ const CreateTreatmentScreen = () => {
 
   useEffect(() => {
     if (!isLoading && patientsData) {
-      setLocalPatients(patientsData);
+      // Filtramos solo los pacientes activos
+      const activePatients = patientsData.filter(
+        (patient) => patient.user?.isActive
+      );
+      setLocalPatients(activePatients);
       setIsFetchingData(false);
     }
   }, [isLoading, patientsData]);
