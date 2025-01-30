@@ -1,0 +1,94 @@
+/* Ejemplo de estilos unificados en mocamodules.css */
+
+/* BOTÓN "ESCUCHAR" */
+.listen-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e2ecff; /* Color suave */
+    color: #333;
+    border: 1px solid #ced4da;
+    padding: 6px 14px; 
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.2s;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+  
+  .listen-button:hover {
+    background-color: #d1e2ff;
+    transform: translateY(-1px);
+  }
+  
+  .listen-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  /* Iconos dentro del botón "Escuchar" */
+  .listen-button svg {
+    margin-right: 6px;
+  }
+  
+  /* BOTONES INFERIORES (REGRESAR - CONTINUAR) */
+  .bottom-buttons {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    padding: 0 20px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 999;
+  }
+  
+  /* Botón "Continuar" (verde) */
+  .bottom-buttons .btn-continue {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: #fff;
+    transition: background-color 0.3s ease, transform 0.2s;
+  }
+  
+  .bottom-buttons .btn-continue:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+  }
+  
+  /* BOTONES DE SELECCIÓN DE ACTIVIDAD */
+  .activity-switch-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 30px;
+  }
+  
+  .activity-switch-buttons .btn-activity {
+    background-color: #f8f9fa;
+    border: 1px solid #ced4da;
+    color: #333;
+    border-radius: 4px;
+    padding: 6px 14px;
+    transition: background-color 0.3s ease, transform 0.2s;
+  }
+  
+  .activity-switch-buttons .btn-activity:hover {
+    background-color: #e2e6ea;
+    transform: translateY(-1px);
+  }
+  
+  /* CONTENEDOR DE CADA MÓDULO */
+  .module-container {
+    position: relative;
+    padding-bottom: 100px; /* Espacio para los botones fijos */
+  }
+  
+  .module-container h4 {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+  }
+  

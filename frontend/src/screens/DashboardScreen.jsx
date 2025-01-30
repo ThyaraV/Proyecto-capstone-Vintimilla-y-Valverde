@@ -32,7 +32,7 @@ import {
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
-  PolarRadiusAxis,
+  PolarRadiusAxis, // Asegúrate de importar PolarRadiusAxis
   Radar,
   LineChart,
   Line,
@@ -46,7 +46,6 @@ import { useSnackbar } from 'notistack';
 import { isSameDay } from 'date-fns';
 
 import KPICard from '../components/KPICard';
-
 import '../assets/styles/DashboardScreen.css';
 
 /** Paleta de colores para los gráficos */
@@ -179,9 +178,9 @@ const DashboardScreen = () => {
     },
   ] = useGetTreatmentsByMultiplePatientsMutation();
 
-  // Solo se hace la llamada si hay pacientes filtrados
+  // Evitamos llamadas innecesarias y carga infinita
   useEffect(() => {
-    if (patientIdsForTreatments.length === 0) return;
+    if (!patientIdsForTreatments || patientIdsForTreatments.length === 0) return;
     fetchTreatments({ patientIds: patientIdsForTreatments })
       .unwrap()
       .catch((err) => {
@@ -209,7 +208,7 @@ const DashboardScreen = () => {
   }, [treatmentsData, selectedTreatmentStatus]);
 
   // ----------------------------------------------------------------
-  // 8. CALCULAR ACTIVIDADES Y MEDICAMENTOS FILTRADOS
+  // 8. CALCULAR ACTIVIDADES
   // ----------------------------------------------------------------
   const filteredActivities = useMemo(() => {
     if (!filteredTreatments) return [];
@@ -225,51 +224,14 @@ const DashboardScreen = () => {
     return activities;
   }, [filteredTreatments]);
 
-  /** 
-   * filteredMedications: contiene todos los medicamentos de los tratamientos filtrados,
-   * con una propiedad booleana `takenToday` para ver si se tomaron hoy.
-   */
-  const filteredMedications = useMemo(() => {
-    if (!filteredTreatments) return [];
-    let meds = [];
-    filteredTreatments.forEach((treatment) => {
-      if (treatment.medications && treatment.medications.length > 0) {
-        meds = meds.concat(
-          treatment.medications.map((med) => ({
-            ...med,
-            treatmentId: treatment._id.toString(),
-            takenToday: med.lastTaken
-              ? isSameDay(new Date(med.lastTaken), new Date())
-              : false,
-          }))
-        );
-      }
-    });
-    return meds;
-  }, [filteredTreatments]);
-
-  // ----------------------------------------------------------------
-  // 9. KPI PRINCIPALES (VIEJA LÓGICA Y LÓGICA NUEVA)
-  // ----------------------------------------------------------------
-
-  // 9.1 Actividades
   const totalActivities = filteredActivities.length;
   const uniqueActivities = [
     ...new Set(filteredActivities.map((a) => a.activity?.name || 'Sin Nombre')),
   ].length;
 
-  // 9.2 Medicamentos TOMADOS HOY (Nueva lógica con takenToday)
-  const totalMedicationsToday = filteredMedications.length;
-  const medicationsTakenToday = useMemo(() => {
-    return filteredMedications.filter((m) => m.takenToday).length;
-  }, [filteredMedications]);
-  const medicationsComplianceRateToday = useMemo(() => {
-    return totalMedicationsToday
-      ? ((medicationsTakenToday / totalMedicationsToday) * 100).toFixed(1)
-      : '0.0';
-  }, [medicationsTakenToday, totalMedicationsToday]);
-
-  // 9.3 Medicamentos TOTALES (Vieja lógica: contarlos, sin importar día)
+  // ----------------------------------------------------------------
+  // 9. ADHERENCIA GLOBAL (Medicamentos) - Lógica Antigua
+  // ----------------------------------------------------------------
   const totalMedicationsOverall = useMemo(() => {
     if (!filteredTreatments) return 0;
     return filteredTreatments.reduce((count, t) => {
@@ -277,7 +239,6 @@ const DashboardScreen = () => {
     }, 0);
   }, [filteredTreatments]);
 
-  // 9.4 Medicamentos ALGUNA VEZ tomados (Vieja lógica: si lastTaken != null)
   const medicationsEverTaken = useMemo(() => {
     if (!filteredTreatments) return 0;
     let taken = 0;
@@ -293,106 +254,18 @@ const DashboardScreen = () => {
     return taken;
   }, [filteredTreatments]);
 
-  // 9.5 Adherencia general (Vieja lógica)
   const medicationOverallRate = useMemo(() => {
-    return totalMedicationsOverall
-      ? ((medicationsEverTaken / totalMedicationsOverall) * 100).toFixed(1)
-      : '0.0';
+    if (!totalMedicationsOverall) return '0.0';
+    return ((medicationsEverTaken / totalMedicationsOverall) * 100).toFixed(1);
   }, [medicationsEverTaken, totalMedicationsOverall]);
 
-  // 9.6 Tratamientos totales (filtrados)
+  // ----------------------------------------------------------------
+  // 10. TRATAMIENTOS
+  // ----------------------------------------------------------------
   const totalTreatments = filteredTreatments.length;
 
   // ----------------------------------------------------------------
-  // 10. GRÁFICO: PROGRESO DE TRATAMIENTOS (RadarChart)
-  // ----------------------------------------------------------------
-  const progressAllData = useMemo(() => {
-    if (!treatmentsData) return [];
-    const map = {};
-    treatmentsData.forEach((t) => {
-      const key = t.progress || 'desconocido';
-      if (!map[key]) map[key] = 0;
-      map[key]++;
-    });
-    return Object.keys(map).map((p) => ({ progress: p, count: map[p] }));
-  }, [treatmentsData]);
-
-  // ----------------------------------------------------------------
-  // 11. GRÁFICO: ACTIVIDADES COMPLETADAS
-  // ----------------------------------------------------------------
-  const activityCompletionData = useMemo(() => {
-    if (!filteredActivities) return [];
-    const map = {};
-    filteredActivities.forEach((act) => {
-      const name = act.activity?.name || 'Sin Nombre';
-      if (!map[name]) map[name] = 0;
-      map[name]++;
-    });
-    return Object.keys(map).map((n) => ({ name: n, value: map[n] }));
-  }, [filteredActivities]);
-
-  // ----------------------------------------------------------------
-  // 12. GRÁFICO: CUMPLIMIENTO DE MEDICAMENTOS HOY (Tomados vs. No Tomados)
-  // ----------------------------------------------------------------
-  const medicationComplianceDataToday = useMemo(() => {
-    const taken = medicationsTakenToday; // ya calculado
-    const notTaken = totalMedicationsToday - taken;
-    return [
-      { name: 'Tomados Hoy', value: taken },
-      { name: 'No Tomados Hoy', value: notTaken },
-    ];
-  }, [medicationsTakenToday, totalMedicationsToday]);
-
-  // ----------------------------------------------------------------
-  // 13. FRECUENCIA DE MEDICAMENTOS (Diaria, Semanal, Mensual, Otro)
-  // ----------------------------------------------------------------
-  const medicationFrequencyData = useMemo(() => {
-    const freqMap = { Diaria: 0, Semanal: 0, Mensual: 0, Otro: 0 };
-    filteredMedications.forEach((med) => {
-      const freq = med.frequency?.toLowerCase();
-      if (freq === 'diaria') freqMap.Diaria++;
-      else if (freq === 'semanal') freqMap.Semanal++;
-      else if (freq === 'mensual') freqMap.Mensual++;
-      else freqMap.Otro++;
-    });
-    return Object.keys(freqMap).map((key) => ({ name: key, value: freqMap[key] }));
-  }, [filteredMedications]);
-
-  // ----------------------------------------------------------------
-  // 14. GRÁFICO: PACIENTES ACTIVOS VS INACTIVOS
-  // ----------------------------------------------------------------
-  const activeCount = useMemo(() => {
-    return filteredPatients.filter((p) => p.user?.isActive).length;
-  }, [filteredPatients]);
-
-  const inactiveCount = useMemo(() => {
-    return filteredPatients.filter((p) => p.user && !p.user.isActive).length;
-  }, [filteredPatients]);
-
-  const pieData = [
-    { name: 'Activos', value: activeCount },
-    { name: 'Inactivos', value: inactiveCount },
-  ];
-
-  // ----------------------------------------------------------------
-  // 15. GRÁFICO: DISTRIBUCIÓN DE PACIENTES POR DOCTOR
-  // ----------------------------------------------------------------
-  const patientsByDoctor = useMemo(() => {
-    return doctors
-      .map((doc) => {
-        const count = filteredPatients.filter(
-          (patient) => patient.doctor && patient.doctor._id === doc._id
-        ).length;
-        return {
-          name: `${doc.user?.name || ''} ${doc.user?.lastName || ''}`.trim(),
-          value: count,
-        };
-      })
-      .filter((doc) => doc.value > 0);
-  }, [doctors, filteredPatients]);
-
-  // ----------------------------------------------------------------
-  // 16. MOCA: KPIs Y GRÁFICOS
+  // 11. MOCA: KPIs Y GRÁFICOS
   // ----------------------------------------------------------------
   const mocaAverageScore = useMemo(() => {
     if (!mocaRecords || mocaRecords.length === 0) return '0.00';
@@ -403,6 +276,7 @@ const DashboardScreen = () => {
     return (totalScore / mocaRecords.length).toFixed(2);
   }, [mocaRecords]);
 
+  // Distribución Puntajes
   const mocaScoreDistribution = useMemo(() => {
     if (!mocaRecords) return [];
     const map = {};
@@ -418,7 +292,6 @@ const DashboardScreen = () => {
       } else {
         range = 'Desconocido';
       }
-
       if (!map[range]) map[range] = 0;
       map[range]++;
     });
@@ -428,13 +301,12 @@ const DashboardScreen = () => {
   // Tendencia
   const mocaScoreTrend = useMemo(() => {
     if (!mocaRecords) return [];
-    const trend = mocaRecords
+    return mocaRecords
       .map((record) => ({
         date: new Date(record.testDate).toLocaleDateString(),
         score: record.totalScore,
       }))
       .sort((a, b) => new Date(a.date) - new Date(b.date));
-    return trend;
   }, [mocaRecords]);
 
   // Estado MOCA
@@ -475,98 +347,126 @@ const DashboardScreen = () => {
   ];
 
   // ----------------------------------------------------------------
-  // 17. MANEJO DE ESTADOS DE CARGA Y ERROR
+  // 12. Distribución Pacientes (Activos/Inactivos) y Pacientes por Doctor
   // ----------------------------------------------------------------
-  if (
+  const activeCount = useMemo(() => {
+    return filteredPatients.filter((p) => p.user?.isActive).length;
+  }, [filteredPatients]);
+
+  const inactiveCount = useMemo(() => {
+    return filteredPatients.filter((p) => p.user && !p.user.isActive).length;
+  }, [filteredPatients]);
+
+  const pieData = [
+    { name: 'Activos', value: activeCount },
+    { name: 'Inactivos', value: inactiveCount },
+  ];
+
+  const patientsByDoctor = useMemo(() => {
+    return doctors
+      .map((doc) => {
+        const count = filteredPatients.filter(
+          (patient) => patient.doctor && patient.doctor._id === doc._id
+        ).length;
+        return {
+          name: `${doc.user?.name || ''} ${doc.user?.lastName || ''}`.trim(),
+          value: count,
+        };
+      })
+      .filter((doc) => doc.value > 0);
+  }, [doctors, filteredPatients]);
+
+  // ----------------------------------------------------------------
+  // 13. Progreso de Tratamientos (RadarChart)
+  // ----------------------------------------------------------------
+  const progressAllData = useMemo(() => {
+    if (!treatmentsData) return [];
+    const map = {};
+    treatmentsData.forEach((t) => {
+      const key = t.progress || 'desconocido';
+      if (!map[key]) map[key] = 0;
+      map[key]++;
+    });
+    return Object.keys(map).map((p) => ({ progress: p, count: map[p] }));
+  }, [treatmentsData]);
+
+  // ----------------------------------------------------------------
+  // 14. ACTIVIDADES COMPLETADAS (BarChart)
+  // ----------------------------------------------------------------
+  const activityCompletionData = useMemo(() => {
+    if (!filteredActivities) return [];
+    const map = {};
+    filteredActivities.forEach((act) => {
+      const name = act.activity?.name || 'Sin Nombre';
+      if (!map[name]) map[name] = 0;
+      map[name]++;
+    });
+    return Object.keys(map).map((n) => ({ name: n, value: map[n] }));
+  }, [filteredActivities]);
+
+  // ----------------------------------------------------------------
+  // 15. MANEJO DE ESTADOS DE CARGA Y ERROR
+  // ----------------------------------------------------------------
+  const isLoadingDashboard =
     isLoadingDoctors ||
     isLoadingPatients ||
     isLoadingUsers ||
     isLoadingMoca ||
-    (patientIdsForTreatments.length > 0 && isLoadingTreatments)
-  ) {
+    (patientIdsForTreatments.length > 0 && isLoadingTreatments);
+
+  const isErrorDashboard =
+    isErrorDoctors ||
+    isErrorPatients ||
+    isErrorAllUsers ||
+    isErrorMoca ||
+    isErrorTreatments;
+
+  if (isLoadingDashboard) {
     return (
-      <Container style={{ textAlign: 'center', marginTop: '50px' }}>
+      <Container className="dashboard-loading-container">
         <CircularProgress />
-        <Typography variant="h6" style={{ marginTop: '20px' }}>
+        <Typography variant="h6" sx={{ mt: 2 }}>
           Cargando datos del Dashboard...
         </Typography>
       </Container>
     );
   }
 
-  if (isErrorDoctors) {
+  if (isErrorDashboard) {
     return (
-      <Container style={{ textAlign: 'center', marginTop: '50px' }}>
-        <Typography color="error">
-          {errorDoctors?.data?.message || 'Error al cargar la lista de doctores.'}
-        </Typography>
-      </Container>
-    );
-  }
-
-  if (isErrorPatients) {
-    return (
-      <Container style={{ textAlign: 'center', marginTop: '50px' }}>
-        <Typography color="error">
-          {errorPatients?.data?.message || 'Error al cargar la lista de pacientes.'}
-        </Typography>
-      </Container>
-    );
-  }
-
-  if (isErrorAllUsers) {
-    return (
-      <Container style={{ textAlign: 'center', marginTop: '50px' }}>
-        <Typography color="error">
-          {errorAllUsers?.data?.message || 'Error al cargar la lista de usuarios.'}
-        </Typography>
-      </Container>
-    );
-  }
-
-  if (isErrorTreatments) {
-    return (
-      <Container style={{ textAlign: 'center', marginTop: '50px' }}>
-        <Typography color="error">
-          {errorTreatments?.data?.message || 'Error al cargar los tratamientos.'}
-        </Typography>
-      </Container>
-    );
-  }
-
-  if (isErrorMoca) {
-    return (
-      <Container style={{ textAlign: 'center', marginTop: '50px' }}>
-        <Typography color="error">
-          {errorMoca?.data?.message || 'Error al cargar los registros de MoCA.'}
+      <Container className="dashboard-error-container">
+        <Typography variant="h6" color="error">
+          Error al cargar datos del Dashboard.
         </Typography>
       </Container>
     );
   }
 
   // ----------------------------------------------------------------
-  // 18. HANDLER PARA MOSTRAR INFO DE GRÁFICOS
+  // 16. HANDLER PARA MOSTRAR INFO DE GRÁFICOS
   // ----------------------------------------------------------------
   const handleChartInfo = (msg) => {
     alert(msg);
   };
 
   // ----------------------------------------------------------------
-  // 19. RENDER PRINCIPAL DEL DASHBOARD
+  // 17. RENDER PRINCIPAL DEL DASHBOARD
   // ----------------------------------------------------------------
   return (
-    <Container maxWidth="xl" style={{ padding: '2rem 0' }}>
+    <Container maxWidth="xl" className="dashboard-container">
       {/* FILTROS Y TÍTULO */}
-      <Grid container alignItems="center" spacing={2}>
+      <Grid container alignItems="center" spacing={2} className="filters-grid">
         <Grid item xs={12} md={3}>
-          <Typography variant="h4" gutterBottom>
+          <Typography variant="h3" gutterBottom className="dashboard-title">
             Dashboard General
           </Typography>
         </Grid>
 
         <Grid item xs={12} md={3}>
           <FormControl fullWidth>
-            <InputLabel id="doctor-select-label">Filtrar por Doctor</InputLabel>
+            <InputLabel id="doctor-select-label" className="filter-label">
+              Filtrar por Doctor
+            </InputLabel>
             <Select
               labelId="doctor-select-label"
               value={selectedDoctor}
@@ -585,7 +485,9 @@ const DashboardScreen = () => {
 
         <Grid item xs={12} md={3}>
           <FormControl fullWidth>
-            <InputLabel id="status-select-label">Pacientes</InputLabel>
+            <InputLabel id="status-select-label" className="filter-label">
+              Pacientes
+            </InputLabel>
             <Select
               labelId="status-select-label"
               value={selectedStatus}
@@ -601,7 +503,7 @@ const DashboardScreen = () => {
 
         <Grid item xs={12} md={3}>
           <FormControl fullWidth>
-            <InputLabel id="treatment-status-select-label">
+            <InputLabel id="treatment-status-select-label" className="filter-label">
               Tratamientos
             </InputLabel>
             <Select
@@ -619,23 +521,25 @@ const DashboardScreen = () => {
       </Grid>
 
       {/* SECCIÓN PRINCIPAL: LISTA DE PACIENTES Y KPI (IZQ) + GRÁFICOS (DER) */}
-      <Grid container spacing={3} style={{ marginTop: '20px' }}>
+      <Grid container spacing={3} className="dashboard-main-grid">
         {/* COLUMNA IZQUIERDA */}
         <Grid item xs={12} md={4}>
           {/* Pacientes Asignados */}
-          <Card className="dashboard-card">
+          <Card className="dashboard-card accent-hover">
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom className="section-title">
                 Pacientes Asignados
               </Typography>
               {selectedDoctor === 'all' ? (
-                <Typography variant="h4">{filteredPatients.length}</Typography>
+                <Typography variant="h3" className="big-number">
+                  {filteredPatients.length}
+                </Typography>
               ) : (
                 <>
                   {filteredPatients.length > 0 ? (
                     <List>
                       {filteredPatients.map((patient) => (
-                        <ListItem key={patient._id}>
+                        <ListItem key={patient._id} className="patient-list-item">
                           <ListItemText
                             primary={`${patient.user?.name} ${patient.user?.lastName}`}
                             secondary={`Estado: ${
@@ -655,22 +559,13 @@ const DashboardScreen = () => {
             </CardContent>
           </Card>
 
-          <Grid container spacing={2}>
+          <Grid container spacing={2} className="kpi-grid-container">
             {/* KPI Actividades Completadas */}
             <Grid item xs={12}>
               <KPICard
                 title="Actividades Complet."
                 value={`${totalActivities}`}
                 subtitle={`Distintas: ${uniqueActivities}`}
-              />
-            </Grid>
-
-            {/* KPI Medicamentos Tomados Hoy */}
-            <Grid item xs={12}>
-              <KPICard
-                title="Cumpl. Meds Hoy"
-                value={`${medicationsComplianceRateToday}%`}
-                subtitle={`${medicationsTakenToday}/${totalMedicationsToday} hoy`}
               />
             </Grid>
 
@@ -692,12 +587,12 @@ const DashboardScreen = () => {
               />
             </Grid>
 
-            {/* KPI Adherencia General */}
+            {/* KPI Adherencia Global (Vieja lógica) */}
             <Grid item xs={12}>
               <KPICard
                 title="Adherencia Global Meds"
                 value={`${medicationOverallRate}%`}
-                subtitle={`${medicationsEverTaken}/${totalMedicationsOverall} tomados alguna vez`}
+                subtitle={`${medicationsEverTaken}/${totalMedicationsOverall} tomados`}
               />
             </Grid>
           </Grid>
@@ -708,15 +603,16 @@ const DashboardScreen = () => {
           <Grid container spacing={3}>
             {/* Distribución Pacientes (Activos/Inactivos) */}
             <Grid item xs={12} md={6}>
-              <Card className="dashboard-card">
+              <Card className="dashboard-card accent-hover">
                 <CardContent>
                   <div className="chart-header">
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom className="section-title">
                       Pacientes (A/I)
                     </Typography>
                     <Button
                       variant="text"
                       size="small"
+                      className="info-button"
                       onClick={() =>
                         handleChartInfo(
                           'Muestra cuántos pacientes están activos o inactivos, filtrados por doctor/estado.'
@@ -750,15 +646,16 @@ const DashboardScreen = () => {
 
             {/* Distribución Pacientes por Doctor */}
             <Grid item xs={12} md={6}>
-              <Card className="dashboard-card">
+              <Card className="dashboard-card accent-hover">
                 <CardContent>
                   <div className="chart-header">
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom className="section-title">
                       Pacientes x Doctor
                     </Typography>
                     <Button
                       variant="text"
                       size="small"
+                      className="info-button"
                       onClick={() =>
                         handleChartInfo(
                           'Indica la cantidad de pacientes asignados a cada doctor.'
@@ -796,15 +693,16 @@ const DashboardScreen = () => {
 
             {/* Actividades Completadas */}
             <Grid item xs={12} md={6}>
-              <Card className="dashboard-card">
+              <Card className="dashboard-card accent-hover">
                 <CardContent>
                   <div className="chart-header">
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom className="section-title">
                       Actividades Completadas
                     </Typography>
                     <Button
                       variant="text"
                       size="small"
+                      className="info-button"
                       onClick={() =>
                         handleChartInfo(
                           'Representa las actividades finalizadas, según los tratamientos filtrados.'
@@ -833,98 +731,18 @@ const DashboardScreen = () => {
               </Card>
             </Grid>
 
-            {/* CUMPLIMIENTO DE MEDICAMENTOS HOY (Tomados vs No Tomados) */}
-            <Grid item xs={12} md={6}>
-              <Card className="dashboard-card">
-                <CardContent>
-                  <div className="chart-header">
-                    <Typography variant="h6" gutterBottom>
-                      Meds Hoy
-                    </Typography>
-                    <Button
-                      variant="text"
-                      size="small"
-                      onClick={() =>
-                        handleChartInfo(
-                          'Cuántos medicamentos se han tomado hoy vs. los que siguen pendientes.'
-                        )
-                      }
-                    >
-                      Ver Info
-                    </Button>
-                  </div>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={medicationComplianceDataToday}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={90}
-                        label
-                      >
-                        <Cell fill={COLORS[2]} />
-                        <Cell fill={COLORS[3]} />
-                      </Pie>
-                      <Tooltip />
-                      <Legend verticalAlign="bottom" height={36} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Frecuencia de Medicamentos (BarChart) */}
-            <Grid item xs={12} md={6}>
-              <Card className="dashboard-card">
-                <CardContent>
-                  <div className="chart-header">
-                    <Typography variant="h6" gutterBottom>
-                      Frec. de Medicamentos
-                    </Typography>
-                    <Button
-                      variant="text"
-                      size="small"
-                      onClick={() =>
-                        handleChartInfo(
-                          'Clasifica los medicamentos (diaria, semanal, mensual, otro) según tratamientos filtrados.'
-                        )
-                      }
-                    >
-                      Ver Info
-                    </Button>
-                  </div>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={medicationFrequencyData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar
-                        dataKey="value"
-                        fill="#8884d8"
-                        name="Cantidad"
-                        barSize={40}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </Grid>
-
             {/* RadarChart: Progreso de Tratamientos */}
             <Grid item xs={12} md={6}>
-              <Card className="dashboard-card">
+              <Card className="dashboard-card accent-hover">
                 <CardContent>
                   <div className="chart-header">
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom className="section-title">
                       Progreso Trat.
                     </Typography>
                     <Button
                       variant="text"
                       size="small"
+                      className="info-button"
                       onClick={() =>
                         handleChartInfo(
                           'Cuántos tratamientos están en cada estado (mejorando, estable, empeorando, etc.).'
@@ -956,15 +774,16 @@ const DashboardScreen = () => {
 
             {/* Distribución de Puntajes MoCA */}
             <Grid item xs={12} md={6}>
-              <Card className="dashboard-card">
+              <Card className="dashboard-card accent-hover">
                 <CardContent>
                   <div className="chart-header">
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom className="section-title">
                       Puntajes MoCA
                     </Typography>
                     <Button
                       variant="text"
                       size="small"
+                      className="info-button"
                       onClick={() =>
                         handleChartInfo(
                           'Agrupa los puntajes MoCA en rangos (0-10, 11-20, 21-30).'
@@ -1002,15 +821,16 @@ const DashboardScreen = () => {
 
             {/* Tendencia de Puntajes MoCA (LineChart) */}
             <Grid item xs={12} md={6}>
-              <Card className="dashboard-card">
+              <Card className="dashboard-card accent-hover">
                 <CardContent>
                   <div className="chart-header">
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom className="section-title">
                       Tendencia MoCA
                     </Typography>
                     <Button
                       variant="text"
                       size="small"
+                      className="info-button"
                       onClick={() =>
                         handleChartInfo(
                           'Muestra cómo evolucionan los puntajes MoCA a lo largo del tiempo.'
@@ -1042,15 +862,16 @@ const DashboardScreen = () => {
 
             {/* Distribución MOCA (Asignado, Pendiente, No Requerido) */}
             <Grid item xs={12} md={6}>
-              <Card className="dashboard-card">
+              <Card className="dashboard-card accent-hover">
                 <CardContent>
                   <div className="chart-header">
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" gutterBottom className="section-title">
                       Estado MOCA
                     </Typography>
                     <Button
                       variant="text"
                       size="small"
+                      className="info-button"
                       onClick={() =>
                         handleChartInfo(
                           'Cantidad de pacientes con MoCA asignado/pendiente, completado o no requerido.'
