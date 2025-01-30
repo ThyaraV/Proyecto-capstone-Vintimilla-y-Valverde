@@ -518,7 +518,7 @@ const MocaFinalScreen = () => {
                     <td><strong>Puntaje Total</strong></td>
                     <td>
                       <Badge bg={getTotalScoreColor(mocaRecord.totalScore || 0, 30)}>
-                        {mocaRecord.totalScore || 0} / 30
+                        {mocaRecord.totalScore || 0} / 32
                       </Badge>
                     </td>
                   </tr>
