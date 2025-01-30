@@ -731,46 +731,7 @@ const DashboardScreen = () => {
               </Card>
             </Grid>
 
-            {/* RadarChart: Progreso de Tratamientos */}
-            <Grid item xs={12} md={6}>
-              <Card className="dashboard-card accent-hover">
-                <CardContent>
-                  <div className="chart-header">
-                    <Typography variant="h6" gutterBottom className="section-title">
-                      Progreso Trat.
-                    </Typography>
-                    <Button
-                      variant="text"
-                      size="small"
-                      className="info-button"
-                      onClick={() =>
-                        handleChartInfo(
-                          'Cuántos tratamientos están en cada estado (mejorando, estable, empeorando, etc.).'
-                        )
-                      }
-                    >
-                      Ver Info
-                    </Button>
-                  </div>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <RadarChart data={progressAllData}>
-                      <PolarGrid />
-                      <PolarAngleAxis dataKey="progress" />
-                      <PolarRadiusAxis />
-                      <Radar
-                        name="Progreso"
-                        dataKey="count"
-                        stroke="#AA336A"
-                        fill="#AA336A"
-                        fillOpacity={0.6}
-                      />
-                      <Legend />
-                      <Tooltip />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </Grid>
+
 
             {/* Distribución de Puntajes MoCA */}
             <Grid item xs={12} md={6}>

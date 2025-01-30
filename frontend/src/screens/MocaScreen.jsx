@@ -134,7 +134,7 @@ const MocaScreen = () => {
               <img src={Image3a} alt="Iniciar" />
             </div>
             <div className="report-card-title">
-              <p>Iniciar Prueba MoCA (Médico)</p>
+              <p>Registrar resultados MOCA (Médico)</p>
             </div>
           </div>
 
