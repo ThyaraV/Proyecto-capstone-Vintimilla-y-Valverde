@@ -290,7 +290,7 @@ const DashboardScreen = () => {
       } else if (score >= 21 && score <= 30) {
         range = '21-30';
       } else {
-        range = 'Desconocido';
+        range = 'Mayor a 30';
       }
       if (!map[range]) map[range] = 0;
       map[range]++;
