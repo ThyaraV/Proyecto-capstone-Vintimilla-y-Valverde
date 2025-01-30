@@ -3,8 +3,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button, Row, Col, Alert, Form, Spinner } from "react-bootstrap";
 import { FaPlay, FaStop, FaMicrophone } from "react-icons/fa";
+import { useSelector } from "react-redux";
+import '../../assets/styles/mocamodules.css';
 
 const Abstraccion = ({ onComplete, onPrevious, isFirstModule }) => {
+  const isAdmin = useSelector((state) => state.auth.userInfo?.isAdmin) || false;
+
   // Definición de los pares de objetos y sus respuestas aceptadas
   const pairs = [
     {
@@ -237,10 +241,9 @@ const Abstraccion = ({ onComplete, onPrevious, isFirstModule }) => {
             speakInstructions("Le diré dos objetos y me dirá en qué se parecen.")
           }
           disabled={isSpeaking}
-          className="ms-3 text-decoration-none"
-          style={{ whiteSpace: "nowrap", minWidth: "220px" }}
+          className="listen-button ms-3 text-decoration-none"
         >
-          {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
+          <FaPlay /> Escuchar<br />Instrucciones
         </Button>
       </div>
 
@@ -256,11 +259,11 @@ const Abstraccion = ({ onComplete, onPrevious, isFirstModule }) => {
           <Button
             variant="primary"
             onClick={() => speakPair(pairs[currentPairIndex].objects)}
-            className="mb-3 d-block mx-auto"
+            className="activity-button mb-3 d-block mx-auto"
             disabled={isSpeakingLocal || hasHeardPair}
             style={{ minWidth: "220px" }}
           >
-            Escuchar objetos
+            <FaPlay /> Escuchar objetos
           </Button>
         </div>
       )}
@@ -354,22 +357,24 @@ const Abstraccion = ({ onComplete, onPrevious, isFirstModule }) => {
         </div>
       )}
 
-      {/* Botón de Regresar y sin los botones de debug de Actividad 1/2 */}
+      {/* Botón de Regresar y Continuar */}
       <div className="d-flex justify-content-between mt-4">
-        <Button
-          variant="secondary"
-          onClick={onPrevious}
-          disabled={isFirstModule}
-          style={{ minWidth: "150px" }}
-        >
-          Regresar
-        </Button>
-
-        {/* Botón Continuar sólo se habilita cuando las 2 actividades han terminado */}
+        {isAdmin && (
+          <Button
+            variant="secondary"
+            onClick={onPrevious}
+            disabled={isFirstModule}
+            className="back-button"
+            style={{ minWidth: "150px" }}
+          >
+            Regresar
+          </Button>
+        )}
         <Button
           variant="success"
           onClick={() => handleFinish(activityScores)}
-          disabled={!allActivitiesDone}
+          
+          className="continue-button"
           style={{ minWidth: "150px" }}
         >
           Continuar

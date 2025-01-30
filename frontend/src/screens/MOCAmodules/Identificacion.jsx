@@ -1,8 +1,14 @@
+// src/screens/MOCAmodules/Identificacion.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button, Row, Col, Image, Alert, Form, Spinner } from "react-bootstrap";
 import { FaPlay, FaStop, FaMicrophone } from "react-icons/fa";
+import { useSelector } from "react-redux";
+import '../../assets/styles/mocamodules.css';
 
 const Identificacion = ({ onComplete, onPrevious, isFirstModule }) => {
+  const isAdmin = useSelector((state) => state.auth.userInfo?.isAdmin) || false;
+
   const animals = [
     {
       id: 1,
@@ -69,11 +75,26 @@ const Identificacion = ({ onComplete, onPrevious, isFirstModule }) => {
   }, []);
 
   const speakInstructions = (text) => {
+    return new Promise((resolve) => {
+      if (!ttsSupported) {
+        resolve();
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "es-ES";
+      utterance.onend = () => resolve();
+      window.speechSynthesis.speak(utterance);
+    });
+  };
+
+  const handleSpeakInstructions = () => {
     if (!ttsSupported) return;
     if (isSpeakingLocal) {
       window.speechSynthesis.cancel();
       setIsSpeakingLocal(false);
     } else {
+      const text =
+        "Nombre el animal mostrado en la imagen.";
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = "es-ES";
       utterance.onend = () => {
@@ -87,6 +108,10 @@ const Identificacion = ({ onComplete, onPrevious, isFirstModule }) => {
   const handleListen = () => {
     if (!recognitionRef.current) {
       alert("Reconocimiento de voz no disponible.");
+      return;
+    }
+    if (!useVoice) {
+      alert("El reconocimiento de voz no está habilitado.");
       return;
     }
     setListening(true);
@@ -111,11 +136,15 @@ const Identificacion = ({ onComplete, onPrevious, isFirstModule }) => {
 
   const handleConfirm = () => {
     const currentAnimal = animals[currentAnimalIndex];
-    const inputText = transcript || manualInput;
+    const inputText = normalizeText(transcript || manualInput);
+
+    const isCorrect = currentAnimal.correctAnswers.some(
+      (ans) => inputText === normalizeText(ans)
+    );
 
     setScores((prevScores) => ({
       ...prevScores,
-      [currentAnimal.id]: inputText,
+      [currentAnimal.id]: isCorrect ? 1 : 0,
     }));
 
     setManualInput("");
@@ -133,6 +162,7 @@ const Identificacion = ({ onComplete, onPrevious, isFirstModule }) => {
     setTranscript("");
     setManualInput("");
     setConfirmation(false);
+    handleListen();
   };
 
   const handleKeyPress = (e) => {
@@ -147,12 +177,8 @@ const Identificacion = ({ onComplete, onPrevious, isFirstModule }) => {
   const handleNext = () => {
     let totalScore = 0;
     animals.forEach((animal) => {
-      const answer = scores[animal.id];
-      if (answer) {
-        const normalizedAnswer = normalizeText(answer);
-        if (animal.correctAnswers.map(normalizeText).includes(normalizedAnswer)) {
-          totalScore += 1;
-        }
+      if (scores[animal.id]) {
+        totalScore += scores[animal.id];
       }
     });
     onComplete(totalScore, scores);
@@ -169,21 +195,24 @@ const Identificacion = ({ onComplete, onPrevious, isFirstModule }) => {
       if (recognitionRef.current && listening) {
         recognitionRef.current.abort();
       }
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
     };
   }, [listening]);
 
   return (
     <div className="module-container">
-      <div className="d-flex align-items-center">
+      {/* Título e instrucciones */}
+      <div className="d-flex align-items-center mb-2">
         <h4 className="mb-0">Identificación de Animales</h4>
         <Button
           variant="link"
-          onClick={() => speakInstructions("Nombre el animal mostrado en la imagen.")}
+          onClick={handleSpeakInstructions}
           disabled={isSpeakingLocal}
-          className="ms-3 text-decoration-none"
-          style={{ whiteSpace: "nowrap", textDecoration: "none", minWidth: "180px" }}
+          className="listen-button ms-3 text-decoration-none"
         >
-          {isSpeakingLocal ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
+          <FaPlay /> Escuchar<br />Instrucciones
         </Button>
       </div>
 
@@ -203,16 +232,19 @@ const Identificacion = ({ onComplete, onPrevious, isFirstModule }) => {
                 <div>
                   <Spinner animation="grow" variant="primary" />
                   <p className="mt-2">Escuchando...</p>
-                  <Button variant="danger" onClick={handleStop}>
+                  <Button
+                    variant="danger"
+                    onClick={handleStop}
+                    className="activity-button"
+                  >
                     Detener
                   </Button>
                 </div>
               ) : (
                 <Button
-                  variant="primary"
+                  className="activity-button d-flex align-items-center justify-content-center mx-auto mb-3"
                   onClick={handleListen}
-                  className="d-flex align-items-center justify-content-center mx-auto"
-                  style={{ minWidth: "150px" }}
+                  disabled={!useVoice}
                 >
                   <FaMicrophone className="me-2" />
                   Hablar
@@ -233,9 +265,8 @@ const Identificacion = ({ onComplete, onPrevious, isFirstModule }) => {
                 />
               </Form.Group>
               <Button
-                variant="success"
-                onClick={() => setConfirmation(true)}
-                className="me-2 mt-2"
+                className="continue-button me-2 mt-2"
+                onClick={handleConfirm}
                 disabled={!manualInput.trim()}
               >
                 Confirmar
@@ -251,12 +282,20 @@ const Identificacion = ({ onComplete, onPrevious, isFirstModule }) => {
               </Alert>
               <Row>
                 <Col className="d-flex justify-content-start">
-                  <Button variant="warning" onClick={handleRetry}>
+                  <Button
+                    className="activity-button me-3"
+                    variant="warning"
+                    onClick={handleRetry}
+                  >
                     Reintentar
                   </Button>
                 </Col>
                 <Col className="d-flex justify-content-end">
-                  <Button variant="success" onClick={handleConfirm}>
+                  <Button
+                    className="activity-button"
+                    variant="success"
+                    onClick={handleConfirm}
+                  >
                     Sí
                   </Button>
                 </Col>
@@ -266,25 +305,25 @@ const Identificacion = ({ onComplete, onPrevious, isFirstModule }) => {
         </Col>
       </Row>
 
+      {/* Botón de Regresar y Continuar */}
       <div className="d-flex justify-content-between mt-4">
-        <Button
-          variant="secondary"
-          onClick={onPrevious}
-          disabled={isFirstModule}
-        >
-          Regresar
-        </Button>
-
-        <div>
+        {isAdmin && (
           <Button
+            className="back-button"
             variant="secondary"
-            onClick={handlePreviousAnimal}
-            disabled={currentAnimalIndex === 0}
-            className="me-2"
+            onClick={onPrevious}
+            disabled={isFirstModule}
           >
-            Anterior
+            Regresar
           </Button>
-        </div>
+        )}
+        <Button
+          className="continue-button"
+          variant="success"
+          onClick={handleNext}
+        >
+          Continuar
+        </Button>
       </div>
     </div>
   );

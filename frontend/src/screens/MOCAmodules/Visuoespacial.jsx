@@ -1,13 +1,13 @@
 // src/screens/MOCAmodules/Visuoespacial.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Alert, Spinner, Form, Row, Col, ListGroup } from 'react-bootstrap';
+import { Button, Alert, Spinner, Form, Row, Col } from 'react-bootstrap';
 import { FaPlay, FaStop } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
+import '../../assets/styles/mocamodules.css';
 import cubo from '../../images/cubo_image.jpg';
 
 const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
-  // Para determinar si el usuario es admin o paciente
   const userInfo = useSelector((state) => state.auth.userInfo);
   const isAdmin = userInfo?.isAdmin || false;
 
@@ -63,7 +63,7 @@ const Visuoespacial = ({ onComplete, onPrevious, isFirstModule }) => {
     }
   };
 
-  // Mostrar los botones de cambio de actividad solo si es Admin
+  // Para seleccionar actividad (solo Admin)
   const handleSelectActivity = (activityIndex) => {
     if (!isAdmin) return;
     setCurrentActivity(activityIndex);
@@ -152,7 +152,6 @@ const AlternanciaConceptualActivity = ({
     { label: 'E', x: 250, y: 125 },
   ];
 
-  // Mantener las líneas punteadas de referencia
   const initialConnections = [
     { from: 0, to: 1, dashed: true },
     { from: 1, to: 2, dashed: true },
@@ -160,7 +159,6 @@ const AlternanciaConceptualActivity = ({
 
   const [markers] = useState(fixedMarkers);
   const [connections, setConnections] = useState(initialConnections);
-  // selectedMarker inicialmente en null (no comienza en ninguno)
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [mousePosition, setMousePosition] = useState(null);
   const [score, setScore] = useState(null);
@@ -172,7 +170,6 @@ const AlternanciaConceptualActivity = ({
       setSelectedMarker(index);
       setAnswers((prev) => [...prev, `${markers[selectedMarker].label}-${markers[index].label}`]);
     } else {
-      // Si no hay un marcador seleccionado, el usuario comenzará desde este
       setSelectedMarker(index);
     }
   };
@@ -217,31 +214,24 @@ const AlternanciaConceptualActivity = ({
 
   return (
     <div className="module-container">
+      {/* Título e instrucciones */}
       <div className="d-flex align-items-center mb-2">
         <h4 className="mb-0">Alternancia Conceptual</h4>
-        {isAdmin && (
-          <Button
-            variant="link"
-            onClick={() =>
-              speakInstructions(
-                `Instrucciones: Dibuje una línea alternando entre cifras y letras, 
-                 respetando el orden numérico y alfabético. Comience en 1, vaya a A, 
-                 luego a 2, B, etc., hasta E. Se puntúa con +1 si la secuencia final 
-                 es totalmente correcta. Puede pulsar Reiniciar para comenzar de nuevo.`
-              )
-            }
-            disabled={isSpeaking}
-            className="ms-3 text-decoration-none"
-            style={{ whiteSpace: "nowrap", minWidth: "220px" }}
-          >
-            {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones (Admin)
-          </Button>
-        )}
+        <Button
+          variant="link"
+          onClick={() => speakInstructions(
+            "Instrucciones: Dibuje una línea alternando cifras y letras, empezando en 1, luego A, 2, B, etc., hasta E. Presione Reiniciar para comenzar de nuevo y Continuar para avanzar."
+          )}
+          disabled={isSpeaking}
+          className="listen-button ms-3 text-decoration-none"
+        >
+          <FaPlay /> Escuchar<br />Instrucciones
+        </Button>
       </div>
 
       <p>
         “Dibuje una línea alternando entre cifras y letras, respetando el orden 
-        numérico y alfabético. Inicie en 1 y termine en E. Se evaluará la secuencia final.”
+        numérico y alfabético. Inicie en 1 y termine en E.”
       </p>
 
       <div className="d-flex justify-content-center">
@@ -323,22 +313,18 @@ const AlternanciaConceptualActivity = ({
         </svg>
       </div>
 
-      {/* Ocultar respuestas seleccionadas (trazos) si NO es admin */}
       {isAdmin && (
         <div className="mt-3 text-center">
           <Form.Group className="mb-3">
-            <Form.Label><strong>Respuestas seleccionadas (trazos) (Admin):</strong></Form.Label>
-            <div>
-              {answers.map((item, i) => (
-                <div key={i}>{item}</div>
-              ))}
-            </div>
+            <Form.Label><strong>Respuestas seleccionadas (Admin):</strong></Form.Label>
+            {answers.map((item, i) => (
+              <div key={i}>{item}</div>
+            ))}
           </Form.Group>
         </div>
       )}
 
       <Row className="mt-4">
-        {/* Ocultar botón de "Regresar" si NO es admin */}
         {isAdmin && (
           <Col xs="auto">
             <Button
@@ -350,7 +336,6 @@ const AlternanciaConceptualActivity = ({
             </Button>
           </Col>
         )}
-
         <Col className="d-flex justify-content-end">
           <Button
             variant="success"
@@ -389,7 +374,6 @@ const CuboActivity = ({
   const [alertMessage, setAlertMessage] = useState('');
   const [alertVariant, setAlertVariant] = useState('success');
 
-  // Para habilitar "Continuar" solo cuando se ha evaluado
   const [evaluated, setEvaluated] = useState(false);
 
   const handleMouseDown = (e) => {
@@ -510,6 +494,7 @@ const CuboActivity = ({
   };
 
   const handleContinue = () => {
+    // Ya no se deshabilita el botón, el usuario puede avanzar sin evaluar
     handleNext();
   };
 
@@ -517,23 +502,18 @@ const CuboActivity = ({
     <div className="module-container">
       <div className="d-flex align-items-center mb-2">
         <h4 className="mb-0">Capacidades Visuoconstructivas (Cubo)</h4>
-        {isAdmin && (
-          <Button
-            variant="link"
-            onClick={() =>
-              speakInstructions(
-                `Instrucciones: Copie este dibujo de la manera más precisa posible. 
-                 Se califica si el dibujo cumple todos los criterios (formas, líneas, 
-                 proporciones). Use deshacer, rehacer o borrar y luego presione "Evaluar".`
-              )
-            }
-            disabled={isSpeaking}
-            className="ms-3 text-decoration-none"
-            style={{ whiteSpace: "nowrap", minWidth: "220px" }}
-          >
-            {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones (Admin)
-          </Button>
-        )}
+        <Button
+          variant="link"
+          onClick={() =>
+            speakInstructions(
+              "Instrucciones: Copie el cubo de la manera más precisa posible. Puede usar las herramientas de deshacer, rehacer o borrar. Luego presione Evaluar y finalmente Continuar."
+            )
+          }
+          disabled={isSpeaking}
+          className="listen-button ms-3 text-decoration-none"
+        >
+          <FaPlay /> Escuchar<br />Instrucciones
+        </Button>
       </div>
       <p>“Copie este dibujo de la manera más precisa posible”. Se califica la exactitud y completitud del cubo.</p>
 
@@ -614,9 +594,9 @@ const CuboActivity = ({
       )}
 
       {error && (
-        <div className="alert alert-danger mt-3" role="alert">
+        <Alert variant="danger" className="mt-3 text-center">
           {error}
-        </div>
+        </Alert>
       )}
 
       <div className="d-flex flex-column align-items-center mt-3">
@@ -634,7 +614,6 @@ const CuboActivity = ({
       </div>
 
       <Row className="mt-4">
-        {/* Botón de regresar (solo admin) */}
         {isAdmin && (
           <Col xs="auto">
             <Button variant="secondary" onClick={handlePrevious} className="me-2">
@@ -646,7 +625,6 @@ const CuboActivity = ({
           <Button
             variant="success"
             onClick={handleContinue}
-            disabled={!evaluated}
           >
             Continuar
           </Button>
@@ -681,7 +659,6 @@ const RelojActivity = ({
   const [alertMessage, setAlertMessage] = useState('');
   const [alertVariant, setAlertVariant] = useState('success');
 
-  // Para habilitar "Continuar" solo cuando se haya evaluado
   const [evaluated, setEvaluated] = useState(false);
 
   const handleMouseDown = (e) => {
@@ -789,11 +766,11 @@ const RelojActivity = ({
           setAlertMessage('¡Perfecto! Contorno, números y agujas correctos (3 pts).');
           setAlertVariant('success');
         } else {
-          const { contorno, numeros, agujas } = data.detail;
+          const { contorno, numeros, agujas } = data.detail || {};
           setAlertMessage(`Puntaje: ${data.score}/3
-Contorno: ${contorno}
-Números: ${numeros}
-Agujas: ${agujas}`);
+Contorno: ${contorno || 'No cumple'}
+Números: ${numeros || 'No cumple'}
+Agujas: ${agujas || 'No cumple'}`);
           setAlertVariant('warning');
         }
         setShowAlert(true);
@@ -809,6 +786,7 @@ Agujas: ${agujas}`);
   };
 
   const handleContinue = () => {
+    // Siempre habilitado
     handleNext();
   };
 
@@ -816,25 +794,21 @@ Agujas: ${agujas}`);
     <div className="module-container">
       <div className="d-flex align-items-center mb-2">
         <h4 className="mb-0">Capacidades Visuoconstructivas (Reloj)</h4>
-        {isAdmin && (
-          <Button
-            variant="link"
-            onClick={() =>
-              speakInstructions(
-                `Instrucciones: Dibuje un reloj, con todos los números, y marque las 11 y 10. 
-                 Se revisará contorno, números y agujas. Use deshacer, rehacer o borrar, luego Evaluar.`
-              )
-            }
-            disabled={isSpeaking}
-            className="ms-3 text-decoration-none"
-            style={{ whiteSpace: "nowrap", minWidth: "220px" }}
-          >
-            {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones (Admin)
-          </Button>
-        )}
+        <Button
+          variant="link"
+          onClick={() =>
+            speakInstructions(
+              "Instrucciones: Dibuje un reloj, incluyendo todos los números, y marque las 11 y 10. Luego presione Evaluar y por último Continuar."
+            )
+          }
+          disabled={isSpeaking}
+          className="listen-button ms-3 text-decoration-none"
+        >
+          <FaPlay /> Escuchar<br />Instrucciones
+        </Button>
       </div>
 
-      <p>“Dibuje un reloj que incluya todos los números y marque las 11 y 10. Se evaluarán contorno, números y agujas.”</p>
+      <p>“Dibuje un reloj que incluya todos los números y marque las 11 y 10.”</p>
 
       <div className="d-flex justify-content-center">
         <canvas
@@ -906,9 +880,9 @@ Agujas: ${agujas}`);
       )}
 
       {error && (
-        <div className="alert alert-danger mt-3" role="alert">
+        <Alert variant="danger" className="mt-3 text-center">
           {error}
-        </div>
+        </Alert>
       )}
 
       <div className="d-flex flex-column align-items-center mt-3">
@@ -926,10 +900,13 @@ Agujas: ${agujas}`);
       </div>
 
       <Row className="mt-4">
-        {/* Botón de regresar (solo admin) */}
         {isAdmin && (
           <Col xs="auto">
-            <Button variant="secondary" onClick={handlePrevious} className="me-2">
+            <Button
+              variant="secondary"
+              onClick={handlePrevious}
+              className="me-2"
+            >
               Regresar
             </Button>
           </Col>
@@ -938,7 +915,6 @@ Agujas: ${agujas}`);
           <Button
             variant="success"
             onClick={handleContinue}
-            disabled={!evaluated}
           >
             Continuar
           </Button>

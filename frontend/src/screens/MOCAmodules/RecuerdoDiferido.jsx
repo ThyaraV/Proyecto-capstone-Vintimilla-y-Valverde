@@ -3,8 +3,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button, Row, Col, Alert, Form, Spinner } from "react-bootstrap";
 import { FaPlay, FaStop, FaMicrophone } from "react-icons/fa";
+import { useSelector } from "react-redux";
+import '../../assets/styles/mocamodules.css';
 
 const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
+  const isAdmin = useSelector((state) => state.auth.userInfo?.isAdmin) || false;
+
   const words = ["ROSTRO", "SEDA", "IGLESIA", "CLAVEL", "ROJO"];
 
   // Estado para el puntaje (única actividad)
@@ -48,9 +52,9 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
   // Opción múltiple
   const multipleChoice = {
     ROSTRO: ["nariz", "rostro", "mano"],
-    SEDA: ["lana", "algodon", "seda"],
+    SEDA: ["lana", "algodón", "seda"],
     IGLESIA: ["iglesia", "escuela", "hospital"],
-    CLAVEL: ["rosa", "clavel", "tulipan"],
+    CLAVEL: ["rosa", "clavel", "tulipán"],
     ROJO: ["rojo", "azul", "verde"],
   };
 
@@ -99,6 +103,9 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.abort();
+      }
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
       }
     };
   }, []);
@@ -269,11 +276,11 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
               "Antes le leí una serie de palabras. Dígame ahora todas las palabras de las que se acuerde."
             )
           }
-          disabled={isSpeaking}
-          className="ms-3 text-decoration-none"
+          disabled={isSpeaking || isSpeakingLocal}
+          className="listen-button ms-3 text-decoration-none"
           style={{ whiteSpace: "nowrap", minWidth: "220px" }}
         >
-          {isSpeaking ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
+          {isSpeaking || isSpeakingLocal ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
         </Button>
       </div>
 
@@ -409,10 +416,7 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
                         placeholder="Respuesta"
                         value={categoryAnswers[normalizeText(w)] || ""}
                         onChange={(e) =>
-                          setCategoryAnswers((prev) => ({
-                            ...prev,
-                            [normalizeText(w)]: normalizeText(e.target.value),
-                          }))
+                          handleCategoryInputChange(w, e.target.value)
                         }
                         style={{ maxWidth: "400px", marginRight: "10px" }}
                       />
@@ -458,10 +462,7 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
                             id={normalizeText(w) + normalizeText(opt)}
                             label={opt}
                             onChange={() =>
-                              setMultipleChoiceAnswers((prev) => ({
-                                ...prev,
-                                [normalizeText(w)]: opt,
-                              }))
+                              handleMultipleChoiceChange(w, normalizeText(opt))
                             }
                           />
                         </div>
@@ -473,13 +474,7 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
               <div className="d-flex justify-content-center mt-3">
                 <Button
                   variant="info"
-                  onClick={() => {
-                    // Calcular puntaje final basado solo en lo recordado espontáneamente
-                    const spontScore = spontaneousAnswers.filter((ans) =>
-                      words.map((x) => normalizeText(x)).includes(ans)
-                    ).length;
-                    setActivityScore(spontScore);
-                  }}
+                  onClick={handleMultipleChoiceConfirm}
                   style={{ minWidth: "220px" }}
                 >
                   Registrar respuestas
@@ -502,15 +497,19 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
 
       {/* Botones de navegación */}
       <div className="d-flex justify-content-between mt-4">
+        {isAdmin && (
+          <Button
+            className="back-button"
+            variant="secondary"
+            onClick={onPrevious}
+            disabled={isFirstModule}
+            style={{ minWidth: "150px" }}
+          >
+            Regresar
+          </Button>
+        )}
         <Button
-          variant="secondary"
-          onClick={onPrevious}
-          disabled={isFirstModule}
-          style={{ minWidth: "150px" }}
-        >
-          Regresar
-        </Button>
-        <Button
+          className="continue-button"
           variant="success"
           onClick={() => {
             const finalScore = activityScore || 0;
@@ -524,7 +523,6 @@ const RecuerdoDiferido = ({ onComplete, onPrevious, isFirstModule }) => {
               },
             });
           }}
-          disabled={activityScore === null}
           style={{ minWidth: "150px" }}
         >
           Continuar

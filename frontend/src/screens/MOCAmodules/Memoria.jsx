@@ -1,8 +1,14 @@
+// src/screens/MOCAmodules/Memoria.jsx
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button, Row, Col, Form, Alert, Spinner } from "react-bootstrap";
 import { FaPlay, FaStop, FaMicrophone } from "react-icons/fa";
+import { useSelector } from "react-redux";
+import '../../assets/styles/mocamodules.css';
 
 const Memoria = ({ onComplete, onPrevious, isFirstModule }) => {
+  const isAdmin = useSelector((state) => state.auth.userInfo?.isAdmin) || false;
+
   const wordList = ["ROSTRO", "SEDA", "IGLESIA", "CLAVEL", "ROJO"];
 
   // Definición de etapas
@@ -224,16 +230,16 @@ const Memoria = ({ onComplete, onPrevious, isFirstModule }) => {
 
   return (
     <div className="module-container">
-      <div className="d-flex align-items-center">
+      {/* Título e instrucciones */}
+      <div className="d-flex align-items-center mb-2">
         <h4 className="mb-0">Memoria</h4>
         <Button
           variant="link"
           onClick={handleSpeakInstructions}
           disabled={isSpeakingLocal}
-          className="ms-3 text-decoration-none"
-          style={{ whiteSpace: "nowrap", minWidth: "180px" }}
+          className="listen-button ms-3 text-decoration-none"
         >
-          {isSpeakingLocal ? <FaStop /> : <FaPlay />} Escuchar Instrucciones
+          <FaPlay /> Escuchar<br />Instrucciones
         </Button>
       </div>
 
@@ -255,16 +261,19 @@ const Memoria = ({ onComplete, onPrevious, isFirstModule }) => {
             <div>
               <Spinner animation="grow" variant="primary" />
               <p className="mt-2">Escuchando...</p>
-              <Button variant="danger" onClick={handleStopListening}>
+              <Button
+                className="activity-button"
+                variant="danger"
+                onClick={handleStopListening}
+              >
                 Detener
               </Button>
             </div>
           ) : (
             <Button
-              variant="primary"
+              className="activity-button d-flex align-items-center justify-content-center mx-auto mb-3"
               onClick={handleStartRecall}
-              className="d-flex align-items-center justify-content-center mx-auto mb-3"
-              style={{ minWidth: "150px" }}
+              disabled={!recognitionSupported}
             >
               <FaMicrophone className="me-2" />
               Hablar
@@ -279,12 +288,20 @@ const Memoria = ({ onComplete, onPrevious, isFirstModule }) => {
               </Alert>
               <Row>
                 <Col className="d-flex justify-content-start">
-                  <Button variant="warning" onClick={handleRetry}>
+                  <Button
+                    className="activity-button me-3"
+                    variant="warning"
+                    onClick={handleRetry}
+                  >
                     Reintentar
                   </Button>
                 </Col>
                 <Col className="d-flex justify-content-end">
-                  <Button variant="success" onClick={handleConfirmWord}>
+                  <Button
+                    className="activity-button"
+                    variant="success"
+                    onClick={handleConfirmWord}
+                  >
                     Sí
                   </Button>
                 </Col>
@@ -305,9 +322,9 @@ const Memoria = ({ onComplete, onPrevious, isFirstModule }) => {
               style={{ maxWidth: "350px" }}
             />
             <Button
+              className="activity-button mt-2"
               variant="success"
               onClick={handleAddManualWords}
-              className="mt-2"
             >
               Agregar
             </Button>
@@ -323,10 +340,9 @@ const Memoria = ({ onComplete, onPrevious, isFirstModule }) => {
           </div>
 
           <Button
+            className="activity-button mt-3 mx-auto d-block"
             variant="secondary"
             onClick={handleNoMoreWords}
-            className="mt-3 mx-auto d-block"
-            style={{ minWidth: "200px" }}
           >
             No recuerdo más
           </Button>
@@ -336,23 +352,36 @@ const Memoria = ({ onComplete, onPrevious, isFirstModule }) => {
       {stage === STAGE_FINAL && (
         <div className="text-center mt-3">
           {message && <Alert variant="info">{message}</Alert>}
-          <Button variant="success" onClick={handleNext}>
+          <Button
+            className="continue-button"
+            variant="success"
+            onClick={handleNext}
+          >
             Continuar
           </Button>
         </div>
       )}
 
-      {stage !== STAGE_FINAL && (
-        <div className="d-flex justify-content-between mt-4">
+      {/* Botón de Regresar y Continuar */}
+      <div className="d-flex justify-content-between mt-4">
+        {isAdmin && (
           <Button
+            className="back-button"
             variant="secondary"
             onClick={onPrevious}
             disabled={isFirstModule}
           >
             Regresar
           </Button>
-        </div>
-      )}
+        )}
+        <Button
+          className="continue-button"
+          variant="success"
+          onClick={handleNext}
+        >
+          Continuar
+        </Button>
+      </div>
     </div>
   );
 };
